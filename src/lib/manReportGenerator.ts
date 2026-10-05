@@ -18,17 +18,63 @@ import {
 import { normaliseComboGridText } from './manComboGridSection';
 import { normaliseSequentialManOutfitNumbers } from './manOutfitSection';
 import {
+  describeManContextSplit,
   formatManOutfitLibraryForPrompt,
+  getManContextSplit,
   getManOutfitLibraryAssignments,
+  getManOutfitLibraryVersion,
   getManOutfitSelectionWaivers,
+  getManOutfitSourceLooks,
   getManReportClimateProfile,
-  MAN_OUTFIT_LIBRARY_VERSION,
   type ManOutfitLibraryAssignment,
+  type ManOutfitLibraryVersion,
+  type ManOutfitSelectionOverrides,
 } from './manOutfitLibrary';
+import { restoreManSection4SourceColours } from './manOutfitSourceLock';
+import {
+  buildManRecommendationProfile,
+  describeManRecommendationProfile,
+  type ManRecommendationProfile,
+} from './manRecommendationProfile';
 
 const OUTFIT_SKILL = readFileSync(
   join(process.cwd(), 'src/lib/outfitrecommendationskill.md'), 'utf-8'
 );
+
+/** Section 4 controls for v3 reports, whose sources are recoloured into the client's palette. */
+const LEGACY_SECTION4_CONTROLS = `Mandatory v6.1 controls:
+- Garment Reality Rule: every garment must be a real searchable menswear item: one colour + one fabric + one standard garment type. No invented design details, colour-blocking, contrast trims, panels, draping, gathered/twist/asymmetric/cutout effects, or hybrid fantasy garments.
+- Colour Physics: optimise value, then contrast, then chroma, then temperature. Season palette is a prior, not a prison. Warm leather can resolve cool outfits.
+- Suit Exception: matched suits are legal in Office/Formal and Evening when the shirt/knit creates clear depth contrast. Monochrome separates are still banned.
+- Elevation Mandate: every outfit needs 2-4 elevation moves from the v6.1 Elevation Move Bank, with at least one move from categories A-C. Basic Combo Ban entries are forbidden unless rescued by at least two visible elevation moves.
+- Use Elevated Colour Vocabulary whenever it fits the client's season and anti-preferences. At least 6 of the final 20 outfits must use a non-default colour as a primary top or layer outside plain white/navy/black/beige/grey.
+- Apply the mannequin test before accepting each outfit. ICONIK kill threshold: Smart Casual and Evening must score at least 8; Office/Formal and Relaxed Casual must score at least 7. Realism and Relevance must each score at least 7.
+- Portfolio diversity: no silhouette family more than twice inside a context or three times overall, at least 8 colour families, at most 7 patterned pieces (patterns are optional, none if the client rejects them), and a varied mix of footwear and layers where climate permits.
+- Consecutive visual diversity: adjacent outfits must not repeat the same or near-identical primary top colour family. White/ecru/ivory/cream/off-white/chalk/bone are one light-neutral family; stone/oatmeal/sand/beige are one pale-earth family. Do not repeat a visible layer colour family in consecutive looks either.
+- Indian / ethnic wear default OFF. Include it only if explicitly requested in the client’s own words.`;
+
+/**
+ * Section 4 controls for v4 reports: the picker already matched the looks to
+ * his colouring, so the model keeps every source colour and elevates through
+ * fabric, fit and styling instead.
+ */
+const COLOUR_LOCKED_SECTION4_CONTROLS = `Mandatory controls:
+- SOURCE COLOUR LOCK: every garment keeps its source look's colour. Make a colour name more precise only within the same colour; never recolour, darken or mute a source into another colour family, and never adapt it to the client's season. This outranks the v6.1 Colour Moves (A1, A2), the Elevated Colour Vocabulary quota and Colour Physics.
+- Garment Reality Rule: every garment must be a real searchable menswear item: one colour + one fabric + one standard garment type. No invented design details, colour-blocking, contrast trims, panels, draping effects, gathered/twist/asymmetric/cutout effects, or hybrid fantasy garments. A two-colour pattern the source names (stripe, check, plaid) is allowed.
+- Elevation comes from execution, not new colours: every outfit names a real fabric for each garment, a fit for his body, and one precise styling move (tuck geometry, sleeve roll, collar open, layer worn open, belt matched to shoe, face-shape eyewear). Use texture and proportion moves (B, C, D, E in the Move Bank); Colour Moves are switched off.
+- Keep each source's garment types, layer or no-layer decision, bottom silhouette, footwear category, styling line and accessories.
+- Respect each source's LADDER line. Stretch looks stay bold.
+- Suits and ties appear only where the source has them.
+- Indian / ethnic wear appears only where a source has it.`;
+
+function section4SplitText(classification: ClassificationResult): string {
+  const lines = describeManContextSplit(classification);
+  return `${classification.recommendation_profile ? 'Output split for this client (follows how often he dresses for each occasion)' : 'Fixed output split'}:\n${lines.map(line => `- ${line}`).join('\n')}`;
+}
+
+function section4ControlsText(classification: ClassificationResult): string {
+  return classification.recommendation_profile ? COLOUR_LOCKED_SECTION4_CONTROLS : LEGACY_SECTION4_CONTROLS;
+}
 
 const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_AI_API_KEY! });
 const MAN_REPORT_TEXT_MODEL = process.env.GEMINI_MAN_TEXT_MODEL || process.env.GEMINI_TEXT_MODEL || 'gemini-3-flash-preview';
@@ -140,8 +186,13 @@ Tone: {{tone}}
 Register: {{register}}
 Style Blocker: {{style_blocker}}
 Anti-Pref: {{anti_pref}}
+Anti-Pref Detail: {{anti_pref_note}}
 Free Note: {{free_note}}
 --- END FORM DATA ---
+
+--- TASTE & OCCASION PROFILE (from the intake's experimentation, week, dress-code and taste-test questions) ---
+{{taste_profile}}
+--- END TASTE PROFILE ---
 
 --- IMAGE-DERIVED GROOMING PROFILE ---
 {{grooming_profile}}
@@ -378,22 +429,9 @@ The ICONIK Outfit Recommendation Skill v6.1 has been injected above. It is the c
 
 Generate the FINAL 20 outfits only. Perform the v6.1 two-pass candidate generation, elevation scoring, and QA internally; do not show candidates, scores, rejected options, QA notes, or reasoning.
 
-Fixed output split:
-- Outfits 1-6: OFFICE / FORMAL
-- Outfits 7-10: SMART CASUAL
-- Outfits 11-15: EVENING WEAR
-- Outfits 16-20: RELAXED CASUAL
+{{section4_split}}
 
-Mandatory v6.1 controls:
-- Garment Reality Rule: every garment must be a real searchable menswear item: one colour + one fabric + one standard garment type. No invented design details, colour-blocking, contrast trims, panels, draping, gathered/twist/asymmetric/cutout effects, or hybrid fantasy garments.
-- Colour Physics: optimise value, then contrast, then chroma, then temperature. Season palette is a prior, not a prison. Warm leather can resolve cool outfits.
-- Suit Exception: matched suits are legal in Office/Formal and Evening when the shirt/knit creates clear depth contrast. Monochrome separates are still banned.
-- Elevation Mandate: every outfit needs 2-4 elevation moves from the v6.1 Elevation Move Bank, with at least one move from categories A-C. Basic Combo Ban entries are forbidden unless rescued by at least two visible elevation moves.
-- Use Elevated Colour Vocabulary whenever it fits the client's season and anti-preferences. At least 6 of the final 20 outfits must use a non-default colour as a primary top or layer outside plain white/navy/black/beige/grey.
-- Apply the mannequin test before accepting each outfit. ICONIK kill threshold: Smart Casual and Evening must score at least 8; Office/Formal and Relaxed Casual must score at least 7. Realism and Relevance must each score at least 7.
-- Portfolio diversity: no silhouette family more than twice inside a context or three times overall, at least 8 colour families, at most 7 patterned pieces (patterns are optional, none if the client rejects them), and a varied mix of footwear and layers where climate permits.
-- Consecutive visual diversity: adjacent outfits must not repeat the same or near-identical primary top colour family. White/ecru/ivory/cream/off-white/chalk/bone are one light-neutral family; stone/oatmeal/sand/beige are one pale-earth family. Do not repeat a visible layer colour family in consecutive looks either.
-- Indian / ethnic wear default OFF. Include it only if explicitly requested in the client’s own words.
+{{section4_controls}}
 
 Use this exact parser-friendly field sequence for every outfit. Do not use markdown tables.
 
@@ -535,6 +573,12 @@ export interface ClassificationResult {
     total: number;
     categories: Array<{ category: string; count: number; rationale: string }>;
   };
+  /**
+   * Built by rules from the intake (never by the model) and read by the outfit
+   * picker. Reports classified before it existed don't have it and keep the
+   * v3 picker.
+   */
+  recommendation_profile?: ManRecommendationProfile;
 }
 
 export interface ReportSections {
@@ -582,13 +626,16 @@ export interface ReportData {
   deliverables?: ManBlueprintV2Deliverables;
   outfit_library?: {
     source: 'ICONIK_Mens_Library_100' | 'ICONIK_Mens_Library_Board';
-    version?: typeof MAN_OUTFIT_LIBRARY_VERSION | 'v2-9plus' | 'legacy';
+    version?: ManOutfitLibraryVersion | 'v2-9plus' | 'legacy';
     assignments: ManOutfitLibraryAssignment[];
     selectionProfile?: {
       archetypes: string[];
       patternWaiver: boolean;
       waivers?: string[];
       selectionSalt?: string;
+      /** Admin pick instructions (keep / never use) that later picks for this report must honour. */
+      overrides?: ManOutfitSelectionOverrides;
+      contextSplit?: Array<[string, number]>;
     };
   };
   generated_at: string;
@@ -599,9 +646,20 @@ export interface ReportData {
   edit?: ManEditIssueContent;
 }
 
+/** First outfit number of an occasion, so the social-post deliverables point at the right looks. */
+function firstOutfitNumberFor(classification: ClassificationResult, context: string, offset = 0): number {
+  let next = 1;
+  for (const [name, count] of getManContextSplit(classification)) {
+    if (name === context) return next + Math.min(offset, Math.max(0, count - 1));
+    next += count;
+  }
+  return 1;
+}
+
 export function buildManBlueprintV2StructuredData(
   classification: ClassificationResult,
   selectionSalt = '',
+  overrides: ManOutfitSelectionOverrides = {},
 ): Pick<ReportData, 'report_version' | 'diagnostics' | 'deliverables' | 'outfit_library'> {
   const shoulderFocus = /triangle|slim|narrow/i.test(classification.body.silhouette_type)
     ? 'Add shoulder width through lateral delts, rear delts, and upright posture.'
@@ -610,21 +668,22 @@ export function buildManBlueprintV2StructuredData(
     ? 'Use core bracing, walking volume, and tailoring that lets fabric skim the abdomen.'
     : 'Use posture and upper-back work to keep the vertical line clean.';
 
-  const assignments = getManOutfitLibraryAssignments(classification, undefined, new Date(), selectionSalt);
-  const patternWaiver = /\b(no|avoid|dislike|hate)\b.{0,24}\b(pattern|print|stripe|check)/i.test(
-    `${classification.style_brief.anti_preferences} ${classification.colour.pattern_guidance}`,
-  );
+  const assignments = getManOutfitLibraryAssignments(classification, undefined, new Date(), selectionSalt, overrides);
+  const waivers = getManOutfitSelectionWaivers(classification);
+  const hasOverrides = Boolean(overrides.excluded?.length || Object.keys(overrides.pinned ?? {}).length);
   return {
     report_version: MAN_BLUEPRINT_V2_VERSION,
     outfit_library: {
       source: 'ICONIK_Mens_Library_Board',
-      version: MAN_OUTFIT_LIBRARY_VERSION,
+      version: getManOutfitLibraryVersion(classification),
       assignments,
       selectionProfile: {
         archetypes: assignments.map(assignment => assignment.archetype ?? 'legacy'),
-        patternWaiver,
-        waivers: getManOutfitSelectionWaivers(classification),
+        patternWaiver: waivers.includes('patterns'),
+        waivers,
         ...(selectionSalt ? { selectionSalt } : {}),
+        ...(hasOverrides ? { overrides } : {}),
+        ...(classification.recommendation_profile ? { contextSplit: getManContextSplit(classification) } : {}),
       },
     },
     diagnostics: {
@@ -649,19 +708,19 @@ export function buildManBlueprintV2StructuredData(
       datingProfileShots: [
         {
           title: 'Evening style inspiration',
-          outfitNumber: 11,
+          outfitNumber: firstOutfitNumberFor(classification, 'Evening Wear'),
           scene: 'Warm restaurant or rooftop evening light, relaxed three-quarter pose, direct but natural expression.',
           usage: 'Use as inspiration for a polished evening post with confident, natural energy.',
         },
         {
           title: 'Candid street-style frame',
-          outfitNumber: 16,
+          outfitNumber: firstOutfitNumberFor(classification, 'Relaxed Casual'),
           scene: 'Outdoor cafe or street-side golden-hour candid, mid-walk body angle, approachable expression.',
           usage: 'Use as inspiration for a relaxed social post that still shows the outfit clearly.',
         },
         {
           title: 'Weekend lifestyle post',
-          outfitNumber: 18,
+          outfitNumber: firstOutfitNumberFor(classification, 'Relaxed Casual', 2),
           scene: 'Bookstore, gallery, coffee counter, or weekend activity setting with natural light and visible full outfit.',
           usage: 'Use as inspiration for a lifestyle post with a clear sense of place and personality.',
         },
@@ -822,6 +881,8 @@ function buildTemplateVars(
     register:           readable(sub.style_pole_register),
     style_blocker:      mapField('style_blocker',        sub.style_blocker),
     anti_pref:          mapField('style_anti_pref',      sub.style_anti_pref),
+    anti_pref_note:     sub.style_anti_pref_note        ?? 'Not provided',
+    taste_profile:      describeManRecommendationProfile(buildManRecommendationProfile(sub)),
     free_note:          sub.free_text_note              ?? 'Not provided',
     grooming_profile:   confidentProfile
       ? JSON.stringify(groomingProfile, null, 2)
@@ -1188,11 +1249,25 @@ Do not identify the person. Do not infer age, ethnicity, attractiveness, or sens
 export async function runClassification(
   submission: ManIntakeSubmission,
   groomingProfile: GroomingImageProfile = DEFAULT_GROOMING_PROFILE,
+  lookFeedback?: Record<string, number>,
 ): Promise<ClassificationResult> {
   const vars       = buildTemplateVars(submission, groomingProfile);
   const userPrompt = fillTemplate(CLASSIFICATION_USER_TEMPLATE, vars);
   const result     = await callGeminiJSON(CLASSIFICATION_SYSTEM_PROMPT, userPrompt);
-  return normaliseClassification(result as ClassificationResult, groomingProfile);
+  return withManRecommendationProfile(normaliseClassification(result as ClassificationResult, groomingProfile), submission, lookFeedback);
+}
+
+/**
+ * Attaches (or refreshes) the rule-built recommendation profile. Used at
+ * classification time and when an older report's outfits are redone, so the
+ * new picker sees the client's answers and the latest 👍/👎 totals.
+ */
+export function withManRecommendationProfile(
+  classification: ClassificationResult,
+  submission: ManIntakeSubmission,
+  lookFeedback?: Record<string, number>,
+): ClassificationResult {
+  return { ...classification, recommendation_profile: buildManRecommendationProfile(submission, lookFeedback) };
 }
 
 export async function runReportGeneration(
@@ -1200,6 +1275,8 @@ export async function runReportGeneration(
   submission: ManIntakeSubmission
 ): Promise<ReportSections> {
   const userPrompt = fillTemplate(REPORT_USER_TEMPLATE, {
+    section4_split: section4SplitText(classification),
+    section4_controls: section4ControlsText(classification),
     classification_json: JSON.stringify(classification, null, 2),
     free_note:           submission.free_text_note ?? 'Not provided',
     primary_goal:        mapField('primary_goal',   submission.primary_goal),
@@ -1251,6 +1328,7 @@ function buildSectionUserPrompt(
   classification: ClassificationResult,
   submission: ManIntakeSubmission,
   selectionSalt = '',
+  overrides: ManOutfitSelectionOverrides = {},
 ): string {
   const preamble = fillTemplate(SECTION_USER_PREAMBLE_TEMPLATE, {
     classification_json: JSON.stringify(classification, null, 2),
@@ -1259,35 +1337,39 @@ function buildSectionUserPrompt(
     style_blocker:       mapField('style_blocker', submission.style_blocker),
   });
 
-  let prompt = preamble + _SECTION_BLOCKS[sectionIndex];
+  let prompt = preamble + fillTemplate(_SECTION_BLOCKS[sectionIndex], {
+    section4_split: section4SplitText(classification),
+    section4_controls: section4ControlsText(classification),
+  });
 
   // Inject the outfit recommendation skill for Section 4 with an actual
   // date-aware regional climate mode, rather than a country-level HOT shortcut.
   if (sectionIndex === 4) {
     const now = new Date();
     const climate = getManReportClimateProfile(classification, now);
-    const outfitLibrary = formatManOutfitLibraryForPrompt(classification, undefined, now, selectionSalt);
+    const outfitLibrary = formatManOutfitLibraryForPrompt(classification, undefined, now, selectionSalt, overrides);
+    const splitLines = describeManContextSplit(classification).map(line => `- ${line}.`).join('\n');
+    const colourLocked = Boolean(classification.recommendation_profile);
     const climateHeader = `DERIVED VARIABLES (use these — do not re-derive):
 CLIMATE_MODE = ${climate.mode.toUpperCase()}
 CLIMATE_LABEL = ${climate.label}
 CLIMATE REQUIREMENTS: ${climate.promptGuidance}
 
-V6.1 FINAL-OUTPUT OVERRIDE:
-- Generate/scoring candidates internally per the v6.1 two-pass engine, but output exactly the final 20 outfits only.
-- Outfits 1-6: OFFICE / FORMAL.
-- Outfits 7-10: SMART CASUAL.
-- Outfits 11-15: EVENING WEAR.
-- Outfits 16-20: RELAXED CASUAL.
-- Enforce Garment Reality, Colour Physics, Suit Exception, v6.1 Elevation Mandate, Basic Combo Ban, Elevated Colour Vocabulary, and Four-Axis Evaluation.
+${colourLocked ? 'V4 SOURCE-LOCK FINAL-OUTPUT OVERRIDE (outranks the v6.1 skill wherever they disagree):' : 'V6.1 FINAL-OUTPUT OVERRIDE:'}
+- Generate/scoring candidates internally per the v6.1 two-pass engine, but output exactly the final ${getManContextSplit(classification).reduce((sum, [, count]) => sum + count, 0)} outfits only.
+${splitLines}
+${colourLocked ? `- Keep every source look's colours exactly (see SOURCE LOCK). Do not apply Colour Moves, the Elevated Colour Vocabulary quota, or palette recolouring; the looks were already chosen for his colouring.
+- Elevate through fabric, texture, proportion and one styling move per outfit, all visible in the garment lines.
+- Every garment line must be searchable menswear: one colour + one fabric + one standard garment type.` : `- Enforce Garment Reality, Colour Physics, Suit Exception, v6.1 Elevation Mandate, Basic Combo Ban, Elevated Colour Vocabulary, and Four-Axis Evaluation.
 - Every garment line must be searchable menswear: one colour + one fabric + one standard garment type.
 - Every outfit must include 2-4 visible elevation moves from the v6.1 Elevation Move Bank, with at least one from categories A-C.
 - No mannequin-default outfit: do not output white shirt + navy/black trouser + black shoe, navy polo + beige chino + white sneaker, black polo + black/grey trouser, white tee + blue denim + white sneaker without an open layer, check shirt + blue denim + sneaker without styling, or navy blazer + white shirt + navy trouser + black shoe unless clearly rescued by at least two visible elevation moves.
 - At least 6 final outfits must use a non-default elevated colour as a primary top or layer outside plain white/navy/black/beige/grey.
-- Use a varied mix of bottoms, tops, layers and shoes, at least 8 colour families, and at most 7 patterned pieces (none if the client rejects patterns).
+- Use a varied mix of bottoms, tops, layers and shoes, at least 8 colour families, and at most 7 patterned pieces (none if the client rejects patterns).`}
 - No satin, silk, or shiny fabric anywhere, including ties, pocket squares, and linings; ties are grenadine, knitted, or matte woven only.
 - CLIMATE REQUIREMENTS and the banned-descriptor list outrank the classification JSON and the skill examples. Never carry classification wording such as "architectural", "wool flannel", or "matte silk" into a garment line when those rules forbid it. In MONSOON, suede/nubuck shoes become smooth leather versions of the same shoe, and merino/wool/flannel become cotton, linen-cotton, or tropical-weight equivalents.
-- Adjacent visible layers must use different colour families: charcoal/grey/slate/slate grey are one grey family; navy/blue/slate blue/indigo/chambray/teal are one blue family.
-- Keep every assigned source look's footwear category and layer/no-layer decision exactly: adapt materials for climate within the category, and replace a climate-unsafe layer with a permitted equivalent instead of removing it.
+${colourLocked ? '' : `- Adjacent visible layers must use different colour families: charcoal/grey/slate/slate grey are one grey family; navy/blue/slate blue/indigo/chambray/teal are one blue family.
+`}- Keep every assigned source look's footwear category and layer/no-layer decision exactly: adapt materials for climate within the category, and replace a climate-unsafe layer with a permitted equivalent instead of removing it.
 - Office / Formal is office-appropriate: follow each source look (blazer separates, shirt-and-trouser looks, or a suit where the source has one) with zero polos, tees, denim, sneakers, drawstrings, cargos, camp collars, or casual overshirts. Suits and ties are not required; add a tie only where the source has one or the client asks for ties.
 - Evening must read night-out; keep any statement outerwear its sources have, and avoid more than 1 plain no-layer polo.
 - Relaxed Casual follows its sources, with no fixed resort or old-money split; avoid more than 3 plain tee-led or 3 open overshirt/utility looks.
@@ -1329,8 +1411,13 @@ function stripSection4Preamble(text: string): string {
     .trim();
 }
 
-export async function runSection4(classification: ClassificationResult, submission: ManIntakeSubmission, selectionSalt = ''): Promise<string> {
-  const raw = await callGeminiText(REPORT_SYSTEM_PROMPT, buildSectionUserPrompt(4, classification, submission, selectionSalt), 65536);
+export async function runSection4(
+  classification: ClassificationResult,
+  submission: ManIntakeSubmission,
+  selectionSalt = '',
+  overrides: ManOutfitSelectionOverrides = {},
+): Promise<string> {
+  const raw = await callGeminiText(REPORT_SYSTEM_PROMPT, buildSectionUserPrompt(4, classification, submission, selectionSalt, overrides), 65536);
   return stripSection4Preamble(raw);
 }
 
@@ -1338,12 +1425,17 @@ function buildSection4RepairPrompt(
   classification: ClassificationResult,
   currentSection4: string,
   issues: ManReportQaIssue[],
+  selectionSalt = '',
+  overrides: ManOutfitSelectionOverrides = {},
 ): string {
   const now = new Date();
   const climate = getManReportClimateProfile(classification, now);
+  const colourLocked = Boolean(classification.recommendation_profile);
+  const split = getManContextSplit(classification);
+  const total = split.reduce((sum, [, count]) => sum + count, 0);
   return `${OUTFIT_SKILL}
 
-${formatManOutfitLibraryForPrompt(classification, undefined, now)}
+${formatManOutfitLibraryForPrompt(classification, undefined, now, selectionSalt, overrides)}
 
 DERIVED VARIABLES (use these — do not re-derive):
 CLIMATE_MODE = ${climate.mode.toUpperCase()}
@@ -1361,8 +1453,11 @@ Repair goal:
 - If one outfit has a hot-climate restricted garment or fabric, replace the restricted item with a permitted HOT-climate equivalent and check the entire section for the same problem.
 - Apply the v6.1 Garment Reality Rule while repairing: no invented garments, no multi-colour single garments, no contrast trims/panels/piping, no draped/gathered/twist/asymmetric/cutout effects, and no fantasy hybrid garments.
 - Keep the v6.1 Suit Exception: matched suits are allowed in Office/Formal and Evening when the inner shirt/knit creates clear depth contrast.
-- Apply the v6.1 Elevation Mandate while repairing: every outfit must include 2-4 visible elevation moves, with at least one from categories A-C.
-- Remove mannequin-default combinations unless you can visibly rescue them with at least two elevation moves. Prefer elevated colour words such as ecru, warm ivory, ink navy, espresso, stone, oatmeal, sage, tobacco, burgundy, and dark olive where they fit the client.
+${colourLocked
+    ? `- SOURCE COLOUR LOCK: every garment keeps its mandatory source's colour. If an issue says a colour drifted, put the source colour back. Never fix an issue by recolouring; change fabric, fit or styling instead.
+- Elevation comes from fabric, texture, proportion and styling, never from new colours.`
+    : `- Apply the v6.1 Elevation Mandate while repairing: every outfit must include 2-4 visible elevation moves, with at least one from categories A-C.
+- Remove mannequin-default combinations unless you can visibly rescue them with at least two elevation moves. Prefer elevated colour words such as ecru, warm ivory, ink navy, espresso, stone, oatmeal, sage, tobacco, burgundy, and dark olive where they fit the client.`}
 - Keep the library portfolio: each outfit stays recognisably its source look; Office stays office-appropriate with no suit or tie quota; at most 7 patterns, none if the client rejects them.
 - The tonal varsity exception permits only a matte, plain, tonal varsity jacket with no logos, patches, lettering, shine, or loud contrast.
 
@@ -1376,22 +1471,21 @@ Current Section 4 text:
 ${currentSection4}
 
 Mandatory corrected output:
-- Exactly 20 outfits.
-- Outfits 1–6: OFFICE / FORMAL.
-- Outfits 7–10: SMART CASUAL.
-- Outfits 11–15: EVENING WEAR.
-- Outfits 16–20: RELAXED CASUAL.
+- Exactly ${total} outfits.
+${describeManContextSplit(classification, '–').map(line => `- ${line}.`).join('\n')}
 - Every outfit must include TOP, LAYER, BOTTOM, FOOTWEAR, ACCESSORY, and OCCASION ANCHOR.
 - No skinny or spray-on cuts. No cropped or ankle-cut trousers.
 - Every garment must read as a purchasable product: colour + fabric + standard garment type.
-- Every outfit must look styled, not basic: use at least two v6.1 elevation moves and avoid plain default combinations.
+${colourLocked
+    ? `- Every outfit must look styled, not basic: a real fabric on every garment and one precise styling move, without changing any source colour.`
+    : `- Every outfit must look styled, not basic: use at least two v6.1 elevation moves and avoid plain default combinations.
 - At least 6 final outfits must use a non-default elevated colour as a primary top or layer outside plain white/navy/black/beige/grey.
-- Adjacent outfits must not repeat the same or close primary top colour family. Treat white/ecru/ivory/cream/off-white/chalk/bone as one light-neutral family and stone/oatmeal/sand/beige as one pale-earth family. Do not repeat a visible layer colour family in consecutive looks either: charcoal/grey/slate/slate grey are one grey family and navy/blue/slate blue/indigo/chambray/teal are one blue family, so recolour the later layer into a genuinely different family.
+- Adjacent outfits must not repeat the same or close primary top colour family. Treat white/ecru/ivory/cream/off-white/chalk/bone as one light-neutral family and stone/oatmeal/sand/beige as one pale-earth family. Do not repeat a visible layer colour family in consecutive looks either: charcoal/grey/slate/slate grey are one grey family and navy/blue/slate blue/indigo/chambray/teal are one blue family, so recolour the later layer into a genuinely different family.`}
 - Each QA issue names the offending field and word in brackets. Remove or replace exactly that word in that garment line; banned words in OCCASION ANCHOR are not the problem.
 - No blazer in RELAXED CASUAL.
 - Never introduce satin, silk, or shiny fabrics anywhere, including ties and pocket squares; ties are grenadine, knitted, or matte woven only.
 - Never remove a layer while repairing: replace a climate- or preference-unsafe layer with a permitted equivalent of similar formality. Evening keeps at most 2 no-layer looks.
-- Never change an outfit's footwear category while repairing; the portfolio must keep at least 6 distinct footwear types across the 20 outfits.
+- Never change an outfit's footwear category while repairing.
 - Follow CLIMATE REQUIREMENTS exactly. In MONSOON mode, keep the outfit rain-aware: no suede/nubuck, heavy winter fabrics, overcoats, puffers, or scarves; keep each outfit's existing footwear category in its most rain-practical leather or rubber-soled version, and use weather-sensible fabrics.
 - Use the exact outfit header format: OUTFIT [NUMBER] — [CONTEXT NAME].
 - Use the exact field labels: TOP:, LAYER:, BOTTOM:, FOOTWEAR:, ACCESSORY:, OCCASION ANCHOR:`;
@@ -1401,25 +1495,50 @@ export async function repairSection4Outfits(
   classification: ClassificationResult,
   currentSection4: string,
   issues: ManReportQaIssue[],
+  selectionSalt = '',
+  overrides: ManOutfitSelectionOverrides = {},
 ): Promise<string> {
   const raw = await callGeminiText(
     REPORT_SYSTEM_PROMPT,
-    buildSection4RepairPrompt(classification, currentSection4, issues),
+    buildSection4RepairPrompt(classification, currentSection4, issues, selectionSalt, overrides),
     65536,
   );
   return stripSection4Preamble(raw);
 }
 
-function buildManSection4QaOptions(classification: ClassificationResult) {
-  const antiPreferences = classification.style_brief.anti_preferences;
+function buildManSection4QaOptions(
+  classification: ClassificationResult,
+  selectionSalt = '',
+  overrides: ManOutfitSelectionOverrides = {},
+) {
+  const waivers = getManOutfitSelectionWaivers(classification);
+  const colourLocked = Boolean(classification.recommendation_profile);
   return {
     enforceV2: true,
-    patternWaiver: /\b(no|avoid|dislike|hate)\b.{0,24}\b(pattern|print|stripe|check)/i.test(
-      `${antiPreferences} ${classification.colour.pattern_guidance}`,
-    ),
-    suitWaiver: /\b(no|avoid|dislike|hate)\b.{0,18}\bsuits?\b/i.test(antiPreferences),
-    tieWaiver: /\b(no|avoid|dislike|hate)\b.{0,18}\bties?\b/i.test(antiPreferences),
-  } as const;
+    patternWaiver: waivers.includes('patterns'),
+    suitWaiver: waivers.includes('suits'),
+    tieWaiver: waivers.includes('ties'),
+    ...(colourLocked ? {
+      assignments: getManOutfitLibraryAssignments(classification, undefined, new Date(), selectionSalt, overrides),
+      colourLock: 'block' as const,
+    } : {}),
+  };
+}
+
+/**
+ * v4 reports: put each board look's colour back wherever the model drifted,
+ * before QA sees the text. Only the colour phrase at the start of a garment
+ * line is touched.
+ */
+function lockSection4Colours(
+  classification: ClassificationResult,
+  section4: string,
+  selectionSalt = '',
+  overrides: ManOutfitSelectionOverrides = {},
+): string {
+  if (!classification.recommendation_profile) return section4;
+  const sources = getManOutfitSourceLooks(getManOutfitLibraryAssignments(classification, undefined, new Date(), selectionSalt, overrides));
+  return restoreManSection4SourceColours(section4, sources);
 }
 
 function section4QaPassed(qa: ManReportQaResult): boolean {
@@ -1430,9 +1549,11 @@ export async function repairSection4OutfitsUntilQaPass(
   classification: ClassificationResult,
   currentSection4: string,
   maxRepairAttempts = 2,
+  selectionSalt = '',
+  overrides: ManOutfitSelectionOverrides = {},
 ): Promise<{ section4: string; qa: ManReportQaResult; repaired: boolean }> {
-  let section4 = currentSection4;
-  const qaOptions = buildManSection4QaOptions(classification);
+  let section4 = lockSection4Colours(classification, currentSection4, selectionSalt, overrides);
+  const qaOptions = buildManSection4QaOptions(classification, selectionSalt, overrides);
   let qa = validateManReportSection4(section4, classification, qaOptions);
   let repaired = false;
 
@@ -1440,7 +1561,12 @@ export async function repairSection4OutfitsUntilQaPass(
     const blockingIssues = qa.issues.filter(issue => issue.severity === 'error');
     if (blockingIssues.length === 0) break;
 
-    section4 = await repairSection4Outfits(classification, section4, blockingIssues);
+    section4 = lockSection4Colours(
+      classification,
+      normaliseSequentialManOutfitNumbers(await repairSection4Outfits(classification, section4, blockingIssues, selectionSalt, overrides)),
+      selectionSalt,
+      overrides,
+    );
     qa = validateManReportSection4(section4, classification, qaOptions);
     repaired = true;
   }
@@ -1453,9 +1579,10 @@ export async function generateSection4AtQualityFloor(
   submission: ManIntakeSubmission,
   currentSection4 = '',
   currentSelectionSalt = '',
+  overrides: ManOutfitSelectionOverrides = {},
 ): Promise<{ section4: string; qa: ManReportQaResult; repaired: boolean; reselected: boolean; selectionSalt: string }> {
-  const initial = currentSection4.trim() ? currentSection4 : await runSection4(classification, submission, currentSelectionSalt);
-  const repaired = await repairSection4OutfitsUntilQaPass(classification, normaliseSequentialManOutfitNumbers(initial), 2);
+  const initial = currentSection4.trim() ? currentSection4 : await runSection4(classification, submission, currentSelectionSalt, overrides);
+  const repaired = await repairSection4OutfitsUntilQaPass(classification, normaliseSequentialManOutfitNumbers(initial), 2, currentSelectionSalt, overrides);
   if (section4QaPassed(repaired.qa)) {
     return { ...repaired, reselected: false, selectionSalt: currentSelectionSalt };
   }
@@ -1466,9 +1593,9 @@ export async function generateSection4AtQualityFloor(
   let lastQa = repaired.qa;
   for (const selectionSalt of ['reselection-v2', 'reselection-v3'].filter(salt => salt !== currentSelectionSalt)) {
     const reselectedText = normaliseSequentialManOutfitNumbers(
-      await runSection4(classification, submission, selectionSalt),
+      await runSection4(classification, submission, selectionSalt, overrides),
     );
-    const reselected = await repairSection4OutfitsUntilQaPass(classification, reselectedText, 2);
+    const reselected = await repairSection4OutfitsUntilQaPass(classification, reselectedText, 2, selectionSalt, overrides);
     if (section4QaPassed(reselected.qa)) {
       return { section4: reselected.section4, qa: reselected.qa, repaired: reselected.repaired, reselected: true, selectionSalt };
     }

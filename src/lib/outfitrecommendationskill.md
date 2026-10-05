@@ -1,21 +1,21 @@
 # ICONIK Men's Blueprint Engine — v6.1 ELEVATION UPDATE
 
-## V2-9PLUS PORTFOLIO OVERRIDE — CONTROLLING
+## PORTFOLIO RULES — CONTROLLING (updated October 2026)
 
-The attached `v2-9plus` library assignment is the controlling portfolio specification. These rules override every older context formula or quota below when they conflict.
+The outfit library section injected alongside this skill is the controlling portfolio specification: it assigns one mandatory source look to every outfit, gives the occasion split for this client, and states whether the source colours are locked. Where anything below disagrees with that library section, the library section wins. The fixed quotas from earlier versions (exactly 2 suits, 2 blazers and 2 shirt-led office looks, ties in 3+ looks, a 2/2/1 Resort/Old-Money/Urban relaxed split, 5-7 patterns, a fixed 6/4/5/5 split) are retired.
 
-- **Office / Formal:** strict corporate formal only. Exactly 2 matched suits, 2 blazer-and-tailored-trouser looks, and 2 dress-shirt-and-tailored-trouser looks. At least 3 looks name a tie. If the client explicitly rejects suits, replace the 2 suit slots with 2 climate-appropriate formal layers; if he rejects ties, remove ties without relaxing any other formal rule. No tee, polo, denim, sneaker, drawstring, cargo, camp collar, casual overshirt, or rolled sleeve.
-- **Smart Casual:** exactly one tailored-polo, one shirt/chino, one layered-smart, and one expressive/resort-smart archetype.
-- **Evening:** visibly night-out, never ordinary coffee/weekend casual. Mild/temperate/cool requires 2 statement outerwear looks; hot/monsoon requires 1 lightweight statement outerwear look plus patterned/tailored statement. At most 2 no-layer looks and 1 plain no-layer polo.
-- **Relaxed Casual:** exactly 2 Resort/Riviera, 2 Daily Old-Money, and 1 Urban/Travel. At most 2 plain tee-led looks and 2 open overshirt/utility silhouettes.
-- **Portfolio:** 5-7 patterned pieces, with minima of Formal 1, Smart Casual 1, Evening 1, Relaxed 2, unless the classification explicitly rejects patterns. At least 6 footwear types and 4 layer types when climate permits. No silhouette family more than twice inside a context or three times overall.
+- **Office / Formal:** follows its sources and the client's workplace. No tee, polo, denim, sneaker, drawstring, cargo, camp collar, or casual overshirt. Suits and ties appear only where a source has them.
+- **Evening:** visibly night-out, never ordinary coffee/weekend casual. Keep any statement outerwear the sources have.
+- **Relaxed Casual:** follows its sources. At most 3 plain tee-led looks and 3 open overshirt/utility silhouettes.
+- **Portfolio:** at most 7 patterned pieces (none if the client rejects patterns). No silhouette family more than twice inside a context.
+- **Colour lock:** when the library section says SOURCE COLOUR LOCK, every garment keeps its source colour. The Colour Moves (A1, A2), the Elevated Colour Vocabulary quota and palette recolouring are switched off; elevation comes from fabric, texture, proportion and styling (Move Bank B-E).
 - A tonal varsity jacket is a standard commercial garment exception: matte cotton-twill or wool-blend, plain body, tonal sleeves, restrained ribbing, no logos, patches, lettering, shine, or loud contrast. It counts as one statement garment.
-- Preserve the mandatory source's ARCHETYPE and SILHOUETTE FAMILY. Do not turn a suit into separates, a statement jacket look into a plain polo, or a Resort/Riviera look into generic tee-and-chinos.
+- Preserve the mandatory source's SILHOUETTE FAMILY. Do not turn a suit into separates, a statement jacket look into a plain polo, or a Resort/Riviera look into generic tee-and-chinos.
 - Every rationale must state the client-specific body/colour/context mechanism in at least one complete sentence. Do not expose scores, moves, library IDs, archetype labels, or internal QA language in client-facing copy.
 
 **Version:** 6.1 — Reality-Anchored + Elevation Mandate
 **Scope:** Automated Blueprint report generation — men's outfit recommendation section only
-**Output:** Exactly **20 outfits**: 6 Office/Formal · 4 Smart Casual · 5 Evening · 5 Relaxed Casual
+**Output:** Exactly **20 outfits**, split across Office/Formal, Smart Casual, Evening and Relaxed Casual as the library section states
 **Supersedes:** v6.0. All v6.0 rules remain in force. This update REPLACES Section 01's Self-Style Gate, ADDS Sections 01C–01F, and REPLACES the ICONIK axis definition in Section 24 and the prompt template in Section 26.
 
 ## Why v6.0 output was boring — the diagnosis, so this never regresses
@@ -189,7 +189,7 @@ Score ICONIK using the recalibrated rubric and the five worked Basic→Elevated 
 
 **Version:** 6.0 — Reality-Anchored + Four-Axis Evaluation
 **Scope:** Automated Blueprint report generation — men's outfit recommendation section only
-**Output:** Exactly **20 outfits**: 6 Office/Formal · 4 Smart Casual · 5 Evening · 5 Relaxed Casual
+**Output:** Exactly **20 outfits**, split across Office/Formal, Smart Casual, Evening and Relaxed Casual as the library section states
 **Supersedes:** v5.1. All v5.1 bans, climate rules, footwear rules and formulas remain in force unless explicitly changed here.
 
 **What v6.0 changes:**
@@ -585,7 +585,7 @@ GENERATION CONSTRAINTS (non-negotiable):
 10. Reality remains absolute. Elevation comes only from colour, third element, texture pairing, proportion and styling detail — never invented garments.
 
 PASS 2 — SCORE (perform as if a separate strict evaluator who did not generate these):
-Score every candidate 0-10 on REALISM, RELEVANCE, ICONIK using Section 24 and the Basic→Elevated pairs in Section 01F as anchors. Apply the mannequin test first. Kill threshold: ICONIK >= 8 for Smart Casual and Evening, ICONIK >= 7 for Office and Relaxed Casual, Realism >= 7, Relevance >= 7. Then select the final 20 (6/4/5/5) maximising total ICONIK score subject to ALL Diversity quotas: no formula >2 uses, no silhouette family >3, >=8 colour families, no exact colour >3 outfits, 2-4 patterned pieces, >=5 footwear types, layer and accessory variety.
+Score every candidate 0-10 on REALISM, RELEVANCE, ICONIK using Section 24 and the Basic→Elevated pairs in Section 01F as anchors. Apply the mannequin test first. Kill threshold: ICONIK >= 8 for Smart Casual and Evening, ICONIK >= 7 for Office and Relaxed Casual, Realism >= 7, Relevance >= 7. Then select the final 20 (in the occasion split the library section gives) maximising total ICONIK score subject to ALL Diversity quotas: no formula >2 uses, no silhouette family >3, >=8 colour families, no exact colour >3 outfits, 2-4 patterned pieces, >=5 footwear types, layer and accessory variety.
 
 OUTPUT: the final 20 outfits in the exact Section 25 format. Do not show candidates, scores or reasoning.
 ```
@@ -628,10 +628,7 @@ The v6.1 rules above are controlling. Use the retained v5.1 material below only 
 **Update Focus:** v5.1 adds a stronger classy-modern taste layer, richer smart-casual formulas, premium colour pairing banks, styling-detail logic and an aspirational quality filter so recommendations feel more like refined ICONIK reference outfits, not merely rule-correct combinations.
 
 
-- **6 Office / Formal**
-- **4 Smart Casual**
-- **5 Evening Wear**
-- **5 Relaxed Casual**
+- **Office / Formal**, **Smart Casual**, **Evening Wear** and **Relaxed Casual**, in the counts the library section gives for this client (the old fixed 6/4/5/5 split is retired)
 
 **Geography:** Indian men and global Indian clients in India, UAE, UK, Europe, USA, Canada and other warm or temperate markets.
 

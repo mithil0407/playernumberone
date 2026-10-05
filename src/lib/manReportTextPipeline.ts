@@ -21,6 +21,8 @@ import type { ManIntakeSubmission } from '@/lib/supabaseMan';
 import { supabaseAdmin } from '@/lib/supabase';
 import { revalidateManReportCache } from '@/lib/manReportCache';
 import { normaliseSequentialManOutfitNumbers } from '@/lib/manOutfitSection';
+import { loadManLookFeedbackTotals } from '@/lib/manOutfitFeedback';
+import type { ManOutfitSelectionOverrides } from '@/lib/manOutfitLibrary';
 
 type SectionField = keyof ReportSections;
 type PartialSections = Partial<Record<SectionField, string>>;
@@ -106,6 +108,7 @@ async function writePartialData(
   nextStage: string,
   qa?: ReportData['qa'],
   selectionSalt = '',
+  overrides: ManOutfitSelectionOverrides = {},
 ) {
   const { data: previous, error: readError } = await supabaseAdmin
     .from('man_reports').select('report_data, image_urls').eq('id', reportId).single();
@@ -119,7 +122,7 @@ async function writePartialData(
       report_data: {
         // Keep admin-added fields (e.g. face_style_swap_history) across resumes.
         ...previous?.report_data,
-        ...buildManBlueprintV2StructuredData(classification, selectionSalt),
+        ...buildManBlueprintV2StructuredData(classification, selectionSalt, overrides),
         classification,
         sections: { ...sections },
         generated_at: new Date().toISOString(),
@@ -146,13 +149,14 @@ export async function runManReportTextPipeline(
   const sections = state.sections;
   let qa = state.qa;
   let selectionSalt = existingReportData?.outfit_library?.selectionProfile?.selectionSalt ?? '';
+  const overrides: ManOutfitSelectionOverrides = existingReportData?.outfit_library?.selectionProfile?.overrides ?? {};
 
   try {
     if (!classification) {
       currentStage = 'classifying';
       await updateStage(reportId, currentStage, shareToken);
       const groomingProfile = await runGroomingImageClassification(submission);
-      classification = await runClassification(submission, groomingProfile);
+      classification = await runClassification(submission, groomingProfile, await loadManLookFeedbackTotals());
       await writePartialData(reportId, shareToken, classification, sections, 'generating_s0', qa);
     }
 
@@ -187,32 +191,32 @@ export async function runManReportTextPipeline(
     if (!hasText(sections.s4_outfits) || section4NeedsQa({ classification, sections: sections as ReportSections, generated_at: new Date().toISOString(), qa })) {
       currentStage = 'generating_s4';
       await updateStage(reportId, currentStage, shareToken);
-      const section4Result = await generateSection4AtQualityFloor(classification, submission, sections.s4_outfits ?? '', selectionSalt);
+      const section4Result = await generateSection4AtQualityFloor(classification, submission, sections.s4_outfits ?? '', selectionSalt, overrides);
       sections.s4_outfits = normaliseSequentialManOutfitNumbers(section4Result.section4);
       selectionSalt = section4Result.selectionSalt;
       qa = { ...(qa ?? {}), section4: section4Result.qa };
-      await writePartialData(reportId, shareToken, classification, sections, 'generating_s4_combo_grids', qa, selectionSalt);
+      await writePartialData(reportId, shareToken, classification, sections, 'generating_s4_combo_grids', qa, selectionSalt, overrides);
     }
 
     if (!hasText(sections.s4_combo_grids)) {
       currentStage = 'generating_s4_combo_grids';
       await updateStage(reportId, currentStage, shareToken);
       sections.s4_combo_grids = await runSection5(classification, submission);
-      await writePartialData(reportId, shareToken, classification, sections, 'generating_s5_shopping', qa, selectionSalt);
+      await writePartialData(reportId, shareToken, classification, sections, 'generating_s5_shopping', qa, selectionSalt, overrides);
     }
 
     if (!hasText(sections.s5_shopping) && !hasText(sections.s5_rules)) {
       currentStage = 'generating_s5_shopping';
       await updateStage(reportId, currentStage, shareToken);
       sections.s5_shopping = await runSection6Shopping(classification, submission);
-      await writePartialData(reportId, shareToken, classification, sections, 'generating_s5_grooming_skin', qa, selectionSalt);
+      await writePartialData(reportId, shareToken, classification, sections, 'generating_s5_grooming_skin', qa, selectionSalt, overrides);
     }
 
     if (!hasText(sections.s5_grooming_skin)) {
       currentStage = 'generating_s5_grooming_skin';
       await updateStage(reportId, currentStage, shareToken);
       sections.s5_grooming_skin = await runSection7GroomingSkin(classification, submission);
-      await writePartialData(reportId, shareToken, classification, sections, 'generating_s6', qa, selectionSalt);
+      await writePartialData(reportId, shareToken, classification, sections, 'generating_s6', qa, selectionSalt, overrides);
     }
 
     if (!hasText(sections.s6_identity)) {
@@ -241,7 +245,7 @@ export async function runManReportTextPipeline(
         progress_stage: null,
         error_message: null,
         report_data: {
-          ...buildManBlueprintV2StructuredData(classification, selectionSalt),
+          ...buildManBlueprintV2StructuredData(classification, selectionSalt, overrides),
           classification,
           sections: completeSections,
           generated_at: new Date().toISOString(),

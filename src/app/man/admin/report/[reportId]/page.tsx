@@ -3,9 +3,10 @@
 import { useEffect, useState, use, useCallback, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Ban, Check, CheckCheck, ChevronDown, ChevronUp, Copy, ExternalLink, ImageIcon, Loader2, Pencil, Printer, RotateCcw, Send, ShoppingBag, Trash2, Undo2, Zap } from 'lucide-react';
+import { ArrowLeft, Ban, Check, CheckCheck, ChevronDown, ChevronUp, Copy, ExternalLink, ImageIcon, Loader2, Pencil, Printer, RotateCcw, Send, ShoppingBag, ThumbsUp, Trash2, Undo2, Zap } from 'lucide-react';
 import ManReport, { getManReportSlideMeta, type ManReportSlideMeta, type ShoppingSelectPayload } from '@/components/ManReport';
 import { Avatar, Button, OverflowMenu, Pill, Segmented, Sheet, clientDisplayName, reportStatusMeta } from '@/components/manAdmin/ui';
+import OutfitRatingsSheet from '@/components/manAdmin/OutfitRatingsSheet';
 import type { ReportData, ReportSections } from '@/lib/manReportGenerator';
 import type { ResolvedImageUrls, FaceImageKind, ManV2ImageTarget } from '@/lib/manImageGenerator';
 import type { ComboGridKind } from '@/lib/manComboGridSection';
@@ -293,6 +294,7 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
   // Only used when Gemini is the fallback; Man generation runs on ChatGPT via Codex locally.
   const imageModel = 'gemini-3.1-flash-image-preview';
   const [issuesOpen, setIssuesOpen]         = useState(false);
+  const [ratingsOpen, setRatingsOpen]       = useState(false);
   const [confirmAction, setConfirmAction]   = useState<'redo' | 'reject' | null>(null);
   const [aiEngine, setAiEngine]             = useState<{ engine: 'codex' | 'gemini'; note: string | null } | null>(null);
   const [elapsedSecs, setElapsedSecs]       = useState(0);
@@ -1186,8 +1188,8 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
   const approvals    = report?.section_approvals ?? { s0: false, s1: false, s2: false, s3: false, s4: false, s4g: false, s5s: false, s5g: false, s5: false, s6: false };
   const outfitQuality = report?.report_data?.qa?.section4?.quality;
   const outfitQaErrors = (report?.report_data?.qa?.section4?.issues ?? []).filter(item => item.severity === 'error');
-  // v2-9plus and v3-board-first reports were picked from the library; inline because this page cannot load the library module.
-  const qualityGateRequired = ['v2-9plus', 'v3-board-first'].includes(report?.report_data?.outfit_library?.version ?? '');
+  // v2-9plus, v3-board-first and v4-taste-led reports were picked from the library; inline because this page cannot load the library module.
+  const qualityGateRequired = ['v2-9plus', 'v3-board-first', 'v4-taste-led'].includes(report?.report_data?.outfit_library?.version ?? '');
   const qualityGatePassed = !qualityGateRequired || Boolean(outfitQuality?.passed);
   const ready        = allPagesApproved(approvals, slideMeta);
   const isGenerating = report?.status === 'generating';
@@ -1677,6 +1679,11 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
               options={[{ value: 'page', label: 'Page' }, { value: 'full', label: 'Full report' }]}
             />
           )}
+          {safeData?.sections?.s4_outfits && (
+            <Button size="sm" variant="ghost" icon={<ThumbsUp size={14} />} onClick={() => setRatingsOpen(true)} title="Rate each outfit; replace the ones you don't like">
+              Rate outfits
+            </Button>
+          )}
           {qaFindings.length > 0 && (
             <Button size="sm" variant="ghost" onClick={() => setIssuesOpen(true)} title="Automated outfit checks">
               <span className="ma-pill ma-pill--amber">{qaFindings.length} outfit {qaFindings.length === 1 ? 'note' : 'notes'}</span>
@@ -1818,6 +1825,17 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
         </div>
       )}
 
+      {/* ── Outfit ratings ─────────────────────────────────────────────────── */}
+      <OutfitRatingsSheet
+        open={ratingsOpen}
+        onClose={() => setRatingsOpen(false)}
+        reportId={reportId}
+        section4={safeData?.sections?.s4_outfits ?? ''}
+        outfitImageUrls={report.image_urls?.outfitCards}
+        busy={busyWithJob || redoingOutfits}
+        onReplaced={() => load({ fresh: true, force: true })}
+      />
+
       {/* ── Outfit QA notes ─────────────────────────────────────────────────── */}
       <Sheet
         open={issuesOpen}
@@ -1853,7 +1871,7 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
       >
         <p className="ma-muted text-[15px] leading-relaxed">
           {confirmAction === 'redo'
-            ? 'All outfit text is written again from the current outfit system. Outfit images, grids and before/after shots will need to be regenerated. Your other pages stay as they are.'
+            ? 'Every outfit is picked again with the current outfit system (any 👎 looks stay out) and rewritten. Outfit images, grids and before/after shots will need to be regenerated. Your other pages stay as they are. To swap only the outfits you dislike, use Rate outfits instead.'
             : 'This report is thrown away and a new one is generated from the intake. Any edits on this report are lost.'}
         </p>
       </Sheet>

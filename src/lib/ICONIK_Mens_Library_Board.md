@@ -6,6 +6,11 @@ default footwear were assigned by the rules in the conversion script, not by a m
 look, change its header. IDs are 200 + the board number. Looks marked PRIORITY: board are
 ranked ahead of ICONIK_Mens_Library_100.md.
 
+Each look's style tribes and boldness (1 plain classic … 5 fashion-forward) are worked out by
+visible rules in manOutfitLibrary.ts. To overrule them for one look, add lines such as
+`TRIBES: old_money, quiet_luxury` or `BOLDNESS: 4` to that look. Outfits keep the colours
+written here: the picker matches looks to a client's colouring instead of recolouring them.
+
 ---
 
 ## OFFICE / FORMAL

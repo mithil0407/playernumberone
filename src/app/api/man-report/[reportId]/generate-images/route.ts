@@ -376,11 +376,12 @@ export async function POST(
         submission as ManIntakeSubmission,
         reportDataWithQa.sections.s4_outfits ?? '',
         reportDataWithQa.outfit_library?.selectionProfile?.selectionSalt ?? '',
+        reportDataWithQa.outfit_library?.selectionProfile?.overrides ?? {},
       );
 
       reportDataWithQa = withManReportSection4Qa({
         ...reportDataWithQa,
-        ...buildManBlueprintV2StructuredData(reportDataWithQa.classification, repaired.selectionSalt),
+        ...buildManBlueprintV2StructuredData(reportDataWithQa.classification, repaired.selectionSalt, reportDataWithQa.outfit_library?.selectionProfile?.overrides ?? {}),
         sections: {
           ...reportDataWithQa.sections,
           s4_outfits: normaliseSequentialManOutfitNumbers(repaired.section4),

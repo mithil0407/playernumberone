@@ -51,6 +51,8 @@ export interface ManIntakeSubmission {
     style_anti_pref?: string;
     style_anti_pref_note?: string;
     free_text_note?: string;
+    /** Section 6 taste answers (JSON); see ManStyleProfileAnswers. */
+    style_profile?: unknown;
     created_at?: string;
 }
 

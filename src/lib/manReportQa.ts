@@ -1,7 +1,16 @@
 import { requiresIndianCasual } from './manOutfitConsistency';
 import type { ClassificationResult, ReportData } from './manReportGenerator';
 import { inferOutfitContext, parseManOutfitsFromSection } from './manOutfitSection';
-import { getManOutfitPrimaryColourFamily, getManReportClimateProfile, usesManLibraryPortfolio } from './manOutfitLibrary';
+import {
+  getManOutfitPrimaryColourFamily,
+  getManOutfitSourceLooks,
+  getManReportClimateProfile,
+  usesManColourLock,
+  usesManLibraryPortfolio,
+  type ManOutfitLibraryAssignment,
+} from './manOutfitLibrary';
+import { findManSection4ColourDrift } from './manOutfitSourceLock';
+import { computeManContextSplit } from './manRecommendationProfile';
 
 export interface ManReportQaIssue {
   code: string;
@@ -32,8 +41,8 @@ export interface ManOutfitPortfolioQuality {
   overallScore: number;
   contextScores: Record<string, number>;
   outfitScores: ManOutfitQualityScore[];
-  rubricVersion: 'iconik-men-9plus-v1';
-  evaluatorVersion: 'deterministic-independent-v1';
+  rubricVersion: 'iconik-men-9plus-v1' | 'iconik-men-taste-v4';
+  evaluatorVersion: 'deterministic-independent-v1' | 'deterministic-source-fit-v4';
   minimumOutfitScore: number;
   passed: boolean;
   failedCriteria: string[];
@@ -53,6 +62,14 @@ export interface ManReportQaOptions {
   portfolio?: 'blueprint' | 'edit';
   /** Judge climate rules for this date instead of today — an Edit dresses him for the coming month. */
   climateDate?: Date;
+  /** The board looks each outfit was written from (v4). Enables the colour lock and the source-fit scores. */
+  assignments?: ManOutfitLibraryAssignment[];
+  /**
+   * 'block' while the generator writes Section 4 (drift is an error the repair
+   * loop fixes); 'warn' on a stored report, where a stylist may have changed a
+   * colour on purpose.
+   */
+  colourLock?: 'block' | 'warn';
 }
 
 interface ParsedQaOutfit {
@@ -64,12 +81,6 @@ interface ParsedQaOutfit {
 }
 
 const EXPECTED_CONTEXTS = ['Office / Formal', 'Smart Casual', 'Evening Wear', 'Relaxed Casual'] as const;
-const EXPECTED_CONTEXT_COUNTS: Record<string, number> = {
-  'Office / Formal': 6,
-  'Smart Casual': 4,
-  'Evening Wear': 5,
-  'Relaxed Casual': 5,
-};
 
 const CONTEXT_ALIASES: Array<[RegExp, string]> = [
   [/\boffice\b|\bformal\b/i, 'Office / Formal'],
@@ -323,6 +334,64 @@ function addV2PortfolioIssues(outfits: ParsedQaOutfit[], climateMode: ReturnType
   if (new Set(outfits.map(outfitLayerType).filter(Boolean)).size < 3) issues.push(issue('layer_diversity', 'warning', 'The portfolio uses fewer than 3 layer types.'));
 }
 
+/**
+ * v4 scores say something real: how faithful each outfit stayed to its board
+ * look, how well that look matches his style answers and colouring, and how
+ * close it sat to the boldness it was picked for. Passing means no blocking
+ * QA errors; the numbers are for the stylist, not a gate.
+ */
+function evaluateSourceFitQuality(
+  outfits: ParsedQaOutfit[],
+  issues: ManReportQaIssue[],
+  assignments: ManOutfitLibraryAssignment[],
+  driftedOutfits: number[],
+): ManOutfitPortfolioQuality {
+  const diversityWarnings = issues.filter(item => /diversity|silhouette|_cap|repeated_colour/.test(item.code)).length;
+  const portfolioDiversity = Math.max(6, 9.6 - diversityWarnings * 0.3);
+  const outfitScores = outfits.map(outfit => {
+    const assignment = assignments.find(item => item.outfitNumber === outfit.number);
+    const errors = issues.filter(item => item.severity === 'error' && new RegExp(`\\bOutfit ${outfit.number}\\b`).test(item.message)).length;
+    const fidelity = driftedOutfits.includes(outfit.number) ? 6 : errors ? Math.max(5, 9.4 - errors * 0.8) : 9.6;
+    const styleMatch = assignment?.styleMatch !== undefined ? 4 + assignment.styleMatch * 6 : 8;
+    const paletteFit = assignment?.paletteFit !== undefined ? 4 + assignment.paletteFit * 6 : 8;
+    const ladderFit = assignment?.boldness !== undefined && assignment.targetBoldness !== undefined
+      ? Math.max(5, 10 - Math.abs(assignment.boldness - assignment.targetBoldness) * 1.5)
+      : 8;
+    const wearabilityErrors = issues.filter(item => item.severity === 'error' && /climate|fabric|garment|banned|formal_context/.test(item.code) && item.message.includes(`Outfit ${outfit.number}`)).length;
+    const climateWearability = wearabilityErrors ? Math.max(5, 9.5 - wearabilityErrors) : 9.6;
+    const personalisation = (styleMatch + paletteFit) / 2;
+    const score = roundScore(fidelity * 0.25 + personalisation * 0.3 + ladderFit * 0.15 + portfolioDiversity * 0.15 + climateWearability * 0.15);
+    return {
+      outfitNumber: outfit.number,
+      context: outfit.context,
+      score,
+      categoryFidelity: roundScore(fidelity),
+      aspirationNovelty: roundScore(ladderFit),
+      personalisation: roundScore(personalisation),
+      portfolioDiversity: roundScore(portfolioDiversity),
+      climateWearability: roundScore(climateWearability),
+    };
+  });
+  const contexts = [...new Set(outfitScores.map(item => item.context))];
+  const contextScores = Object.fromEntries(contexts.map(context => {
+    const scores = outfitScores.filter(item => item.context === context).map(item => item.score);
+    return [context, scores.length ? roundScore(scores.reduce((sum, score) => sum + score, 0) / scores.length) : 0];
+  }));
+  const overallScore = outfitScores.length ? roundScore(outfitScores.reduce((sum, item) => sum + item.score, 0) / outfitScores.length) : 0;
+  const minimumOutfitScore = outfitScores.length ? Math.min(...outfitScores.map(item => item.score)) : 0;
+  const failedCriteria = issues.some(item => item.severity === 'error') ? ['Deterministic outfit QA has blocking errors.'] : [];
+  return {
+    overallScore,
+    contextScores,
+    outfitScores,
+    rubricVersion: 'iconik-men-taste-v4',
+    evaluatorVersion: 'deterministic-source-fit-v4',
+    minimumOutfitScore,
+    passed: failedCriteria.length === 0,
+    failedCriteria,
+  };
+}
+
 function roundScore(value: number): number {
   return Math.round(value * 10) / 10;
 }
@@ -383,12 +452,15 @@ export function validateManReportSection4(
     contextCounts[outfit.context] = (contextCounts[outfit.context] ?? 0) + 1;
   }
 
-  const expectedTotal = Object.values(EXPECTED_CONTEXT_COUNTS).reduce((sum, count) => sum + count, 0);
+  // v4 reports split the 20 outfits by how often he dresses for each occasion.
+  const expectedContextCounts: Record<string, number> = Object.fromEntries(computeManContextSplit(classification.recommendation_profile));
+  const expectedTotal = Object.values(expectedContextCounts).reduce((sum, count) => sum + count, 0);
+  const tasteLed = Boolean(classification.recommendation_profile);
   if (!isEditPortfolio && outfits.length !== expectedTotal) {
     issues.push(issue('outfit_count', 'error', `Expected ${expectedTotal} parsed outfits, found ${outfits.length}.`));
   }
 
-  for (const [context, expected] of isEditPortfolio ? [] : Object.entries(EXPECTED_CONTEXT_COUNTS)) {
+  for (const [context, expected] of isEditPortfolio ? [] : Object.entries(expectedContextCounts)) {
     if ((contextCounts[context] ?? 0) !== expected) {
       issues.push(issue('context_split', 'error', `${context} should have ${expected} outfits, found ${contextCounts[context] ?? 0}.`));
     }
@@ -456,7 +528,9 @@ export function validateManReportSection4(
     }
 
     if (looksLikeBasicCombo(outfit) && countVisibleElevationMoves(outfit) < 2) {
-      issues.push(issue('basic_combo_ban', 'error', `Outfit ${outfit.number} matches a v6.1 Basic Combo Ban pattern without at least two visible elevation moves.`));
+      // v4 sources are chosen for the client and their colours are locked, so a
+      // plain-looking pairing is a note for the stylist, not a reason to recolour.
+      issues.push(issue('basic_combo_ban', tasteLed ? 'warning' : 'error', `Outfit ${outfit.number} matches a v6.1 Basic Combo Ban pattern without at least two visible elevation moves.`));
     }
 
     if (/relaxed\s+casual/i.test(outfit.context) && findGarmentTerm(outfit, /\bblazer\b/i)) {
@@ -488,7 +562,7 @@ export function validateManReportSection4(
     if (previousTopFamily && previousTopFamily === currentTopFamily) {
       issues.push(issue(
         'consecutive_top_colour',
-        'error',
+        tasteLed ? 'warning' : 'error',
         `Outfits ${previous.number} and ${current.number} repeat the ${currentTopFamily.replace(/^patterned-/, '')} top-colour family; adjacent looks must read visibly different.`,
       ));
     }
@@ -499,23 +573,38 @@ export function validateManReportSection4(
       if (previousLayerFamily && previousLayerFamily === currentLayerFamily) {
         issues.push(issue(
           'consecutive_layer_colour',
-          'error',
-          `Outfits ${previous.number} and ${current.number} repeat the ${currentLayerFamily.replace(/^patterned-/, '')} visible layer colour family ("${previous.fields.layer}" / "${current.fields.layer}"); recolour the second look's layer into a different colour family.`,
+          tasteLed ? 'warning' : 'error',
+          tasteLed
+            ? `Outfits ${previous.number} and ${current.number} both lead with a ${currentLayerFamily.replace(/^patterned-/, '')} layer ("${previous.fields.layer}" / "${current.fields.layer}").`
+            : `Outfits ${previous.number} and ${current.number} repeat the ${currentLayerFamily.replace(/^patterned-/, '')} visible layer colour family ("${previous.fields.layer}" / "${current.fields.layer}"); recolour the second look's layer into a different colour family.`,
         ));
       }
     }
   }
 
+  // v3 only: a quota met by renaming colours. v4 keeps each board look's colours.
   const elevatedPrimaryCount = countElevatedPrimaryColourOutfits(outfits);
-  if (outfits.length === expectedTotal && elevatedPrimaryCount < 6) {
+  if (!tasteLed && outfits.length === expectedTotal && elevatedPrimaryCount < 6) {
     issues.push(issue('elevated_primary_colour_quota', 'error', `Only ${elevatedPrimaryCount} outfits appear to use an elevated non-default colour as a primary top/layer; v6.1 requires at least 6.`));
+  }
+
+  const sources = options.assignments?.length ? getManOutfitSourceLooks(options.assignments) : null;
+  const drift = sources && options.colourLock ? findManSection4ColourDrift(s4Text, sources) : [];
+  for (const item of drift) {
+    issues.push(issue(
+      'source_colour_drift',
+      options.colourLock === 'block' ? 'error' : 'warning',
+      `Outfit ${item.outfitNumber} ${item.field.toUpperCase()} changed colour from its board look: expected "${item.expected}", found "${item.found}". Keep the board look's colour.`,
+    ));
   }
 
   if (options.enforceV2 && outfits.length === expectedTotal) {
     addV2PortfolioIssues(outfits, climate.mode, issues, options);
   }
 
-  const quality = evaluatePortfolioQuality(outfits, issues);
+  const quality = tasteLed && options.assignments?.length
+    ? evaluateSourceFitQuality(outfits, issues, options.assignments, drift.map(item => item.outfitNumber))
+    : evaluatePortfolioQuality(outfits, issues);
   if (options.enforceV2 && !quality.passed) {
     issues.push(issue('quality_floor', 'error', quality.failedCriteria.join(' ')));
   }
@@ -539,6 +628,9 @@ export function withManReportSection4Qa(reportData: ReportData): ReportData {
         reportData.classification,
         {
           enforceV2: usesManLibraryPortfolio(reportData.outfit_library?.version),
+          ...(usesManColourLock(reportData.outfit_library?.version)
+            ? { assignments: reportData.outfit_library?.assignments, colourLock: 'warn' as const }
+            : {}),
           patternWaiver: reportData.outfit_library?.selectionProfile?.patternWaiver,
           suitWaiver: reportData.outfit_library?.selectionProfile?.waivers?.includes('suits'),
           tieWaiver: reportData.outfit_library?.selectionProfile?.waivers?.includes('ties'),
