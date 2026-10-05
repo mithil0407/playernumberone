@@ -19,6 +19,10 @@ export const FREE_LIMITS = {
   invitesPerUser: envNumber('ICONIK_AGENT_INVITES_PER_USER', 5),
   /** Friends who must join with someone's link to unlock their Face Analysis. */
   faceUnlockFriends: envNumber('ICONIK_AGENT_FACE_UNLOCK_FRIENDS', 3),
+  /** Photo checks (outfit ratings, "is this my colour?") a free user gets each month after their Colour Card. */
+  monthlyPhotoChecks: envNumber('ICONIK_AGENT_FREE_PHOTO_CHECKS', 5),
+  /** Extra photo checks each month for every friend who joined with their link. */
+  photoChecksPerFriend: envNumber('ICONIK_AGENT_PHOTO_CHECKS_PER_FRIEND', 5),
   /** Messages a free user can send per day (chat is cheap; this stops abuse). */
   dailyMessages: envNumber('ICONIK_AGENT_FREE_DAILY_MESSAGES', 30),
   /** Shopping runs across all free users per day: the spend safety net. */
@@ -156,20 +160,70 @@ export function isDaytimeInIndia(now = new Date()) {
   return hour >= 9 && hour < 21;
 }
 
+function indiaHour(now: Date) {
+  const [hour, minute] = new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: false })
+    .format(now).split(':').map(Number);
+  return hour + minute / 60;
+}
+
+/**
+ * When the next-day follow-up goes: late in the 24h window (19h+ after their
+ * last message), but only in the Indian daytime. If the window closes before
+ * the next morning, it goes in the last evening slot (from 8:30pm IST) instead.
+ */
+export function followUpDue(lastInboundAt: Date, now = new Date()) {
+  const hoursSince = (now.getTime() - lastInboundAt.getTime()) / 3_600_000;
+  if (hoursSince < 6 || hoursSince > 23 || !isDaytimeInIndia(now)) return false;
+  if (hoursSince >= 19) return true;
+  const hour = indiaHour(now);
+  const hoursUntilNextMorning = 24 - hour + 9;
+  // Half an hour of margin: a window closing at 9:05am leaves the scheduler no real chance.
+  return hour >= 20.5 && 23 - hoursSince < hoursUntilNextMorning + 0.5;
+}
+
 // ── The invite unlock: friends who join unlock the Face Analysis ──
 
 export function faceAnalysisUnlocked(friendsJoined: number, limits = FREE_LIMITS) {
   return friendsJoined >= limits.faceUnlockFriends;
 }
 
-/** Sent right before their forwardable invite: what it unlocks and how far they are. */
+/** Sent right before their forwardable invite: what each friend unlocks and how far they are. */
 export function inviteUnlockIntro(friendsJoined: number, limits = FREE_LIMITS) {
   const needed = limits.faceUnlockFriends;
-  if (faceAnalysisUnlocked(friendsJoined, limits)) {
-    return 'Forward this to a friend 👇 the link is for them. Every friend who joins gets you both extra product hunts.';
-  }
-  const progress = friendsJoined > 0 ? ` (${friendsJoined}/${needed} so far)` : '';
-  return `🔓 Unlock your Face Analysis next: your face shape, and the necklines, earrings, hairstyles and glasses that suit it. It unlocks when ${needed} friends get their Colour Card with your link${progress}.\n\nForward the message below 👇 the link is for them, not you.`;
+  const perFriend = `Every friend who gets their free Colour Card with your link gives you ${limits.photoChecksPerFriend} more photo checks a month, and you both get +${limits.referralBonus} product hunts.`;
+  const face = faceAnalysisUnlocked(friendsJoined, limits)
+    ? ''
+    : ` ${needed} friends also unlock your Face Analysis${friendsJoined > 0 ? ` (${friendsJoined}/${needed} so far)` : ''}.`;
+  return `${perFriend}${face}\n\nForward the message below 👇 the link is for them, not you.`;
+}
+
+// ── Photo checks: the free allowance, and sharing when it runs out ──
+
+/** Photo checks a free client gets this month, given the friends who joined with their link. */
+export function photoCheckAllowance(friendsJoined: number, limits = FREE_LIMITS) {
+  return limits.monthlyPhotoChecks + friendsJoined * limits.photoChecksPerFriend;
+}
+
+/** Checks count from their Colour Card, and start again each calendar month in India. */
+export function photoChecksCountFrom(colourCardAt: string | null | undefined, now = new Date()) {
+  const monthStart = new Date(`${indiaMonthKey(now)}-01T00:00:00+05:30`);
+  const cardAt = colourCardAt ? new Date(colourCardAt) : null;
+  return cardAt && Number.isFinite(cardAt.getTime()) && cardAt > monthStart ? cardAt : monthStart;
+}
+
+/**
+ * When their free photo checks are used up: thank them, then the one moment we
+ * ask them to share — after they've had the value, not before.
+ */
+export function outOfPhotoChecksMessage(allowance: number, canInvite: boolean, friendsJoined: number, limits = FREE_LIMITS) {
+  const used = `That's your ${allowance} free photo checks for this month used up 🙌 I loved doing them.`;
+  if (!canInvite) return `${used} They reset on the 1st — and questions in chat are always free, so ask me anything meanwhile.`;
+  return `${used}\n\nWant more right now? ${inviteUnlockIntro(friendsJoined, limits)}`;
+}
+
+/** If they send another photo soon after the share message, a short reminder instead of the invite again. */
+export function stillOutOfPhotoChecksMessage(limits = FREE_LIMITS) {
+  return `You're out of free photo checks for now — each friend who joins with your link adds ${limits.photoChecksPerFriend} more (the invite is just above 👆). Questions in chat are always free.`;
 }
 
 /** Told to the inviter when a friend joins with their link. */
@@ -180,9 +234,9 @@ export function friendJoinedMessage(friendsJoined: number, limits = FREE_LIMITS)
   }
   if (friendsJoined < needed) {
     const left = needed - friendsJoined;
-    return `🎉 A friend just joined with your link — ${friendsJoined}/${needed}. ${left} more and your Face Analysis unlocks. (You both get +${limits.referralBonus} product hunts too.)`;
+    return `🎉 A friend just joined with your link — +${limits.photoChecksPerFriend} photo checks for you, and you both get +${limits.referralBonus} product hunts. ${friendsJoined}/${needed}: ${left} more and your Face Analysis unlocks.`;
   }
-  return `🎉 Another friend joined with your link — you both get +${limits.referralBonus} product hunts.`;
+  return `🎉 Another friend joined with your link — +${limits.photoChecksPerFriend} photo checks for you, and you both get +${limits.referralBonus} product hunts.`;
 }
 
 /** When someone taps their own invite link and sends us their own code. */

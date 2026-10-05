@@ -38,6 +38,7 @@ import {
   getIconikManWhatsappPilotConfig,
   formatWhatsappStylistReply,
   isIconikManWhatsappPilotSender,
+  PILOT_UNCAPTIONED_PHOTO_PROMPT,
   wantsGeneratedOutfitImage,
   whatsappImageCaptionCopy,
   whatsappImageProgressCopy,
@@ -235,6 +236,7 @@ async function loadPilotContext(config: IconikManWhatsappPilotConfig) {
 }
 
 export async function processIconikManWhatsappPilotMessage(message: WhatsappInboundMessage) {
+  if (message.type === 'image' && !message.text) message = { ...message, text: PILOT_UNCAPTIONED_PHOTO_PROMPT };
   const config = getIconikManWhatsappPilotConfig();
   if (!isIconikManWhatsappPilotSender(message.from, config) || !config) {
     return { status: 'ignored' as const };

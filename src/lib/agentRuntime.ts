@@ -34,14 +34,17 @@ import {
   FREE_LIMITS,
   SELFIE_RECEIVED_MESSAGE,
   asksForColourAnalysis,
-  faceAnalysisUnlocked,
   forwardableInvite,
   inviteUnlockIntro,
   isOpenerMessage,
   isOverDailyMessageCap,
+  outOfPhotoChecksMessage,
   ownInviteReply,
   parseInviteCode,
+  photoCheckAllowance,
+  photoChecksCountFrom,
   selfieAskMessage,
+  stillOutOfPhotoChecksMessage,
 } from '@/lib/agentGrowth';
 import { parseColourAnalysis } from '@/lib/agentColourCard';
 import { prewarmCardBrowser, renderColourCard } from '@/lib/agentProductCards';
@@ -56,6 +59,7 @@ import {
   inboundMessagesToday,
   inviteOwner,
   joinWaitlist,
+  photoChecksUsed,
 } from '@/lib/agentGrowthStore';
 import {
   ensureMemoryTree,
@@ -290,7 +294,7 @@ export async function handleAgentInbound(message: WhatsappInboundMessage) {
     clientId: client.id,
     kind: message.type === 'image' && !hasPhoto ? 'unsupported' : message.type,
     content: message.type === 'image' && !hasPhoto
-      ? `${message.text} [the photo did not come through]`
+      ? `${message.text} [the photo did not come through]`.trim()
       : message.text,
     whatsappMessageId: message.id,
     metadata: hasPhoto ? { ...metadata, media_pending: true } : metadata,
@@ -317,7 +321,7 @@ export async function handleAgentInbound(message: WhatsappInboundMessage) {
         await sendWhatsAppTextMessage(client.phone, DAILY_CAP_REPLY).catch(() => undefined);
         await recordOutboundMessage({ clientId: client.id, content: DAILY_CAP_REPLY, metadata: { type: 'daily_cap' } });
       }
-      if (hasPhoto) await attachInboundImage(stored.id, null, metadata, `${message.text} [photo not kept: daily limit]`);
+      if (hasPhoto) await attachInboundImage(stored.id, null, metadata, `${message.text} [photo not kept: daily limit]`.trim());
       await markMessagesAnswered([stored.id], stored.id);
       return 'daily_cap' as const;
     }
@@ -354,7 +358,7 @@ export async function handleAgentInbound(message: WhatsappInboundMessage) {
         console.error('[agent] image intake failed:', error);
         return null;
       })
-      .then(image => attachInboundImage(stored.id, image, metadata, `${message.text} [the photo did not come through]`))
+      .then(image => attachInboundImage(stored.id, image, metadata, `${message.text} [the photo did not come through]`.trim()))
     : Promise.resolve();
 
   try {
@@ -540,7 +544,7 @@ export function agentTools(options: { freeTier: boolean; outfitImages: boolean }
   tools.push({
     type: 'function',
     name: 'share_invite',
-    description: 'Send the client a ready-to-forward invite message with their personal ICONIK link. On the free tier, 3 friends joining unlocks their Face Analysis (the intro explaining that is sent for you); each friend also gives both of them extra product hunts.',
+    description: 'Send the client a ready-to-forward invite message with their personal ICONIK link. Only when they ask how to share or get more, ask for the locked Face Analysis, or run out of product hunts — never unprompted. On the free tier each friend who joins gives them more photo checks and both of them extra product hunts, and 3 friends unlock the Face Analysis (the intro explaining that is sent for you).',
     strict: true,
     parameters: {
       type: 'object', additionalProperties: false, required: ['intro'],
@@ -559,7 +563,7 @@ export function agentTools(options: { freeTier: boolean; outfitImages: boolean }
     tools.push({
       type: 'function',
       name: 'send_colour_card',
-      description: "Deliver the free colour analysis: saves their colour profile and sends their personal ICONIK Colour Card image (season, undertone, best colours, neutrals, colours to avoid, metal), then your wow message, their forwardable invite and your next-step question. Call it in your FIRST response once you have read a clear selfie — before anything else.",
+      description: "Deliver the free colour analysis: saves their colour profile and sends their personal ICONIK Colour Card image (season, undertone, best colours, neutrals, colours to avoid, metal), then your wow message and your next-step question. Call it in your FIRST response once you have read a clear selfie — before anything else.",
       strict: true,
       parameters: {
         type: 'object', additionalProperties: false,
@@ -575,7 +579,7 @@ export function agentTools(options: { freeTier: boolean; outfitImages: boolean }
           avoid_colours: swatchList('3 colours to keep away from the face.'),
           metal: { type: ['string', 'null'], enum: ['gold', 'silver', 'both', null] },
           caption: { type: 'string', description: 'Short caption under the card, e.g. "Riya, you\'re a Deep Autumn 🍂".' },
-          wow: { type: 'string', description: 'Sent right after the card (max 70 words): what you saw in their photo (e.g. golden warmth along the jaw, deep brown eyes, the contrast with their hair) and one surprising, specific insight — a colour they very likely wear that drains them, and the swap that lights them up. If their message asked something about the photo (e.g. "rate my outfit"), answer it here: a quick verdict and the one fix, in their colours.' },
+          wow: { type: 'string', description: 'Sent right after the card (max 70 words): what you saw in their photo (e.g. golden warmth along the jaw, deep brown eyes, the contrast with their hair) and one surprising, specific insight — a colour they very likely wear that drains them, and the swap that lights them up. If their message asked something about the photo (e.g. "rate my outfit"), answer it here: a quick verdict and the one fix, in their colours. Never give a rating or score they did not ask for.' },
           next_step: { type: 'string', description: 'The last message, a question they will want to answer (max 30 words) that moves forward from the wow — never re-ask what the wow answered. Default: invite them to send a photo of something in their wardrobe they are unsure about, and you will tell them if it is their colour. If they mentioned an occasion, offer to plan their look for it instead.' },
         },
       },
@@ -823,7 +827,7 @@ async function runTool(state: TurnState, call: ResponseFunctionToolCall): Promis
     case 'share_invite': {
       const invite = await ensureInviteCode(state.client);
       if (invite.remaining <= 0) return 'All their invites have been used. Tell them, and thank them for spreading the word.';
-      const intro = state.client.tier === 'free' && !faceAnalysisUnlocked(state.friendsJoined)
+      const intro = state.client.tier === 'free'
         ? inviteUnlockIntro(state.friendsJoined)
         : String(args.intro ?? '').trim().slice(0, 200) || 'Here you go — forward this to a friend 👇 the link is for them.';
       await sendText(state, intro, { type: 'invite_intro' });
@@ -899,25 +903,18 @@ async function runTool(state: TurnState, call: ResponseFunctionToolCall): Promis
       state.client = { ...state.client, lite_profile: delivered };
 
       // Straight after the card, without waiting for another model call: the wow,
-      // the forwardable invite while they're excited, and the question last so
-      // it's the thing they answer.
-      const invite = await ensureInviteCode(state.client).catch(() => null);
+      // then the question last so it's the thing they answer. No invite here —
+      // they share once they've had the value (when their free checks run out).
       const wow = String(args.wow ?? '').trim().slice(0, 700);
       const nextStep = String(args.next_step ?? '').trim().slice(0, 300);
       const followUps: Array<{ text: string; metadata?: Record<string, unknown> }> = [];
       if (wow) followUps.push({ text: wow, metadata: { type: 'colour_wow' } });
-      if (invite && invite.remaining > 0) {
-        followUps.push(
-          { text: inviteUnlockIntro(state.friendsJoined), metadata: { type: 'invite_intro' } },
-          { text: forwardableInvite({ code: invite.code, link: invite.link, inviterName: firstName, season: analysis.season }), metadata: { type: 'invite', code: invite.code } },
-        );
-      }
       if (nextStep) followUps.push({ text: nextStep, metadata: { type: 'colour_next_step' } });
       await sendPaced(state, followUps, { previousSendStartedAt: cardSentAt });
       state.interimSent += 1 + followUps.length;
       // Everything is sent; no "typing…" left hanging while the model wraps up.
       await state.typing.stop();
-      return `Colour Card, your wow message${invite && invite.remaining > 0 ? ', their forwardable invite (with the Face Analysis unlock)' : ''} and your next-step question are all sent, and the profile is saved. Your wow already answered any question about their photo, so reply exactly ${NO_REPLY_SENTINEL} — unless a message asked about something unrelated that still needs an answer.`;
+      return `Colour Card, your wow message and your next-step question are all sent, and the profile is saved. Your wow already answered any question about their photo, so reply exactly ${NO_REPLY_SENTINEL} — unless a message asked about something unrelated that still needs an answer.`;
     }
     case 'save_style_profile': {
       if (state.client.tier !== 'free') return 'This client has a Blueprint; their report is the profile.';
@@ -1028,6 +1025,53 @@ async function waitForTurnSlot(clientId: string) {
   while (Date.now() < deadline && await turnShouldWait(clientId)) await sleep(TURN_WAIT_POLL_MS);
 }
 
+async function photoCheckStatus(client: AgentClient) {
+  const joined = await friendsJoined(client.id);
+  const allowance = photoCheckAllowance(joined);
+  const colourCardAt = typeof client.lite_profile?.colour_card_at === 'string' ? client.lite_profile.colour_card_at : null;
+  const used = await photoChecksUsed(client.id, photoChecksCountFrom(colourCardAt));
+  return { joined, allowance, left: allowance - used };
+}
+
+/** Their free photo checks are used up: thank them and offer the invite — once; after that a short reminder. */
+async function sendOutOfPhotoChecks(
+  client: AgentClient,
+  pending: AgentMessageRow[],
+  checks: { joined: number; allowance: number },
+  options: TurnOptions,
+) {
+  const turnId = await startTurn(client.id, pending.map(message => message.id), 'instant');
+  await options.typing?.stop();
+  const askedRecently = await sentRecently(client.id, 'share_ask', 12 * 3_600_000);
+  const invite = askedRecently ? null : await ensureInviteCode(client).catch(() => null);
+  const canInvite = Boolean(invite && invite.remaining > 0);
+  const season = typeof client.lite_profile?.season === 'string' ? client.lite_profile.season : null;
+  const messages: Array<{ text: string; metadata: Record<string, unknown> }> = askedRecently
+    ? [{ text: stillOutOfPhotoChecksMessage(), metadata: { type: 'share_reminder' } }]
+    : [{ text: outOfPhotoChecksMessage(checks.allowance, canInvite, checks.joined), metadata: { type: canInvite ? 'share_ask' : 'photo_checks_out' } }];
+  if (invite && canInvite) {
+    messages.push({
+      text: forwardableInvite({ code: invite.code, link: invite.link, inviterName: client.first_name, season }),
+      metadata: { type: 'invite', code: invite.code },
+    });
+  }
+  let ok = true;
+  for (const message of messages) {
+    const sent = await sendWhatsAppTextMessage(client.phone, message.text);
+    if (!sent.success) {
+      ok = false;
+      break;
+    }
+    await recordOutboundMessage({ clientId: client.id, content: message.text, whatsappMessageId: sent.messageId ?? null, turnId, metadata: message.metadata });
+  }
+  await markMessagesAnswered(pending.map(message => message.id), turnId);
+  await finishTurn(turnId, ok ? 'completed' : 'failed', {
+    toolCalls: [{ name: 'out_of_photo_checks', ok, summary: messages.map(message => message.metadata.type).join(', ') }],
+    error: ok ? null : 'send failed',
+  });
+  return ok ? 'replied' as const : 'failed' as const;
+}
+
 async function runAgentTurnInner(client: AgentClient, options: TurnOptions) {
   await waitForTurnSlot(client.id);
   if (options.inboundId) {
@@ -1061,6 +1105,17 @@ async function runAgentTurnInner(client: AgentClient, options: TurnOptions) {
   }
   // The selfie is in: start the card renderer now, while the model reads it.
   if (awaitingCard && newestPhoto) prewarmCardBrowser();
+
+  // A photo after the Colour Card uses one of this month's free photo checks.
+  // When they're used up, the share message goes instead of a model call: the
+  // one moment we ask them to invite friends, after they've had the value.
+  const checks = client.tier === 'free' && !awaitingCard && newestPhoto
+    ? await photoCheckStatus(client).catch(error => {
+      console.warn('[agent] photo check count failed:', error);
+      return null;
+    })
+    : null;
+  if (checks && checks.left <= 0) return sendOutOfPhotoChecks(client, pending, checks, options);
 
   const turnId = await startTurn(client.id, pending.map(message => message.id), AGENT_TEXT_MODEL);
 
@@ -1126,6 +1181,7 @@ async function runAgentTurnInner(client: AgentClient, options: TurnOptions) {
       runsLeft,
       invitesLeft: invite?.remaining ?? 0,
       friendsJoined: joined,
+      photoChecksLeft: checks?.left ?? null,
       blueprintUrl: new URL(client.line === 'man' ? '/man' : '/', process.env.NEXT_PUBLIC_SITE_URL || 'https://www.iconik.pro').toString(),
     });
 

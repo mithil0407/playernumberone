@@ -22,6 +22,8 @@ export interface AgentPromptContext {
   invitesLeft?: number;
   /** Free tier: friends who joined with their invite link (unlocks the Face Analysis). */
   friendsJoined?: number;
+  /** Free tier, when this message has a photo: photo checks left this month, counting this one. */
+  photoChecksLeft?: number | null;
   blueprintUrl?: string;
   now?: Date;
 }
@@ -135,6 +137,13 @@ function faceAnalysisSection(context: AgentPromptContext) {
 `;
 }
 
+function photoChecksLine(left: number | null | undefined) {
+  if (left == null) return '';
+  const after = Math.max(0, left - 1);
+  return `- Photo checks (outfit ratings, "is this my colour?") left this month after this one: ${after}. ${after === 0 ? 'This is their last free one: give it your best, then add one light line that it was their last free photo check this month (chat stays free).' : 'Don\'t mention the count.'}
+`;
+}
+
 function freeTierSection(context: AgentPromptContext) {
   const profile = context.profile ?? {};
   const hasColours = Array.isArray(profile.best_colours) && profile.best_colours.length > 0;
@@ -146,11 +155,12 @@ ${hasColours
 `
     : `- THE FREE COLOUR ANALYSIS is why most people are here (many come from an ICONIK reel). Speed is the magic — the Colour Card should land within a minute of their selfie:
   1. An instant message has usually already asked for their selfie. If you need to ask (they opened with a question, or the photo didn't work): answer briefly, then ask in ONE short warm message — a single paragraph, it arrives as one bubble — for a close selfie (face to the camera, no sunglasses or filter; daylight is best but any good light works). ${context.firstConversation ? 'Open with a few words of welcome in the same paragraph.' : ''} They usually tapped a link that typed their first message for them, so never mention codes, invite codes or links.
-  2. When the selfie arrives (a "reading your colours now" message has already gone out — don't repeat it), study it properly: undertone (golden/peachy vs pink/blue vs olive, along the jaw and neck), depth (light/medium/deep), and contrast between skin, hair and eyes. Don't wait for their name — make the card without it. People often send an outfit photo asking "rate my outfit": if you can read their face (skin, eyes, hair), that photo is enough — make the card FIRST and answer their question inside the wow. If you can't read their face (sunglasses, face small or far away, filter, very dark or yellow light), don't make the card from guesses: say in one line exactly what you need — a close, front-facing selfie without sunglasses — then answer their question briefly. They were already told their card is coming, so never leave the selfie ask out.
-  3. In your FIRST response, call send_colour_card with their season, undertone, depth, contrast, exactly 8 best colours, 3 neutrals, 3 to avoid (each with a real #RRGGBB hex), their metal, the wow and the next step. It sends everything — card, wow, invite, question — so do nothing else before it.
+  2. When the selfie arrives (a "reading your colours now" message has already gone out — don't repeat it), study it properly: undertone (golden/peachy vs pink/blue vs olive, along the jaw and neck), depth (light/medium/deep), and contrast between skin, hair and eyes. Don't wait for their name — make the card without it. A photo with no caption is their selfie for the card: don't rate it or their outfit unless they ask — being scored on a selfie feels like being judged. If the photo is an outfit shot and you can read their face (skin, eyes, hair), it is enough — make the card FIRST, and if they asked about the outfit, answer inside the wow. If you can't read their face (sunglasses, face small or far away, filter, very dark or yellow light), don't make the card from guesses: say in one line exactly what you need — a close, front-facing selfie without sunglasses — then answer their question briefly. They were already told their card is coming, so never leave the selfie ask out.
+  3. In your FIRST response, call send_colour_card with their season, undertone, depth, contrast, exactly 8 best colours, 3 neutrals, 3 to avoid (each with a real #RRGGBB hex), their metal, the wow and the next step. It sends everything — card, wow, question — so do nothing else before it.
 `}${faceAnalysisSection(context)}- You can't see their body proportions from a selfie. Don't pretend to. Right now the goal is that they love using you every day, not selling: bring up the ICONIK Blueprint (a stylist's full body, face and colour analysis, ${context.blueprintUrl ?? 'https://www.iconik.pro'}) only if they ask for that depth — never as a sales line.
 - Shopping runs left this month: ${runs}. Each product hunt (search + checked cards) uses one; chat and styling advice are free. ${runs <= 1 ? 'They are nearly out — if they ask for products and have none left, offer invites (both get +' + FREE_LIMITS.referralBonus + ' runs) or the Blueprint (unlimited).' : ''}
 - Before their first product hunt, if you don't know whether they shop menswear or womenswear, ask (and save it with save_style_profile).
-- Invites left: ${context.invitesLeft ?? 0}. Their invite (with the Face Analysis unlock) is sent automatically with the Colour Card. Offer it again (share_invite) when they ask for something the Face Analysis covers while it's locked, after another moment they love, or when they run out of hunts. Never nag.
+${photoChecksLine(context.photoChecksLeft)}- Value first, sharing later: never offer the invite unprompted. It goes out on its own when their free photo checks run out; offer it yourself (share_invite) only when they ask how to share or get more, ask for the Face Analysis while it's locked, or run out of hunts. Invites left: ${context.invitesLeft ?? 0}.
+- Each time, end with one easy next thing they can do with you, matched to what they just did (a wardrobe piece to colour-check, an occasion to plan, a product to find, a lipstick or foundation shade to match) — so they discover what you can do one step at a time, never as a menu.
 `;
 }

@@ -19,9 +19,14 @@ import {
   faceAnalysisUnlocked,
   friendJoinedMessage,
   inviteUnlockIntro,
+  followUpDue,
   isDaytimeInIndia,
   ownInviteReply,
   SELFIE_REMINDER_MESSAGE,
+  outOfPhotoChecksMessage,
+  photoCheckAllowance,
+  photoChecksCountFrom,
+  stillOutOfPhotoChecksMessage,
 } from './agentGrowth.ts';
 import { buildAgentInstructions } from './agentPrompt.ts';
 
@@ -235,11 +240,11 @@ test('the invite unlocks the Face Analysis at 3 friends, with progress along the
   const limits = { ...FREE_LIMITS, faceUnlockFriends: 3, referralBonus: 2 };
   assert.equal(faceAnalysisUnlocked(2, limits), false);
   assert.equal(faceAnalysisUnlocked(3, limits), true);
-  assert.match(inviteUnlockIntro(0, limits), /Unlock your Face Analysis[\s\S]*3 friends[\s\S]*the link is for them/);
+  assert.match(inviteUnlockIntro(0, limits), /more photo checks[\s\S]*3 friends also unlock your Face Analysis[\s\S]*the link is for them/);
   assert.doesNotMatch(inviteUnlockIntro(0, limits), /so far/);
   assert.match(inviteUnlockIntro(1, limits), /\(1\/3 so far\)/);
-  assert.doesNotMatch(inviteUnlockIntro(3, limits), /Unlock/);
-  assert.match(friendJoinedMessage(1, limits), /1\/3\. 2 more/);
+  assert.doesNotMatch(inviteUnlockIntro(3, limits), /Face Analysis/);
+  assert.match(friendJoinedMessage(1, limits), /photo checks[\s\S]*1\/3: 2 more/);
   assert.match(friendJoinedMessage(3, limits), /Face Analysis is unlocked/);
   assert.match(friendJoinedMessage(4, limits), /Another friend/);
   assert.match(ownInviteReply(1, limits), /your own invite link[\s\S]*1\/3/);
@@ -254,4 +259,34 @@ test('the selfie ask and reminder accept any good light; reminders only in the I
   assert.equal(isDaytimeInIndia(new Date('2026-10-04T20:00:00Z')), false); // 1:30 IST
   assert.equal(isDaytimeInIndia(new Date('2026-10-05T15:20:00Z')), true); // 20:50 IST
   assert.equal(isDaytimeInIndia(new Date('2026-10-05T15:40:00Z')), false); // 21:10 IST
+});
+
+test('next-day follow-ups go late in the window, in the daytime, or in the last evening slot', () => {
+  const at = (iso: string) => new Date(iso);
+  // Last message 10:01 IST: 19h later is 5am, so it goes in the evening slot (20:30-21:00 IST) instead.
+  const morning = at('2026-10-05T04:31:00Z');
+  assert.equal(followUpDue(morning, at('2026-10-05T14:45:00Z')), false); // 20:15 IST, can still wait
+  assert.equal(followUpDue(morning, at('2026-10-05T15:05:00Z')), true); // 20:35 IST, last chance
+  assert.equal(followUpDue(morning, at('2026-10-05T23:31:00Z')), false); // 5:01 IST, night
+  // Last message 15:00 IST: 19h later is 10am next day — daytime, so then.
+  const afternoon = at('2026-10-05T09:30:00Z');
+  assert.equal(followUpDue(afternoon, at('2026-10-05T15:05:00Z')), false); // evening, but tomorrow morning is still in the window
+  assert.equal(followUpDue(afternoon, at('2026-10-06T04:31:00Z')), true); // 10:01 IST, 19h
+  assert.equal(followUpDue(afternoon, at('2026-10-06T09:00:00Z')), false); // 23.5h, window closed
+});
+
+test('photo checks: a monthly allowance from the Colour Card, more per friend, and the share ask only when used up', () => {
+  const limits = { ...FREE_LIMITS, monthlyPhotoChecks: 5, photoChecksPerFriend: 5, faceUnlockFriends: 3, referralBonus: 2 };
+  assert.equal(photoCheckAllowance(0, limits), 5);
+  assert.equal(photoCheckAllowance(2, limits), 15);
+  const now = new Date('2026-10-20T06:00:00Z');
+  // Card this month: count from the card. Card last month: count from 1 Oct (IST).
+  assert.equal(photoChecksCountFrom('2026-10-05T10:00:00Z', now).toISOString(), '2026-10-05T10:00:00.000Z');
+  assert.equal(photoChecksCountFrom('2026-09-12T10:00:00Z', now).toISOString(), '2026-09-30T18:30:00.000Z');
+  assert.equal(photoChecksCountFrom(null, now).toISOString(), '2026-09-30T18:30:00.000Z');
+  const ask = outOfPhotoChecksMessage(5, true, 0, limits);
+  assert.match(ask, /5 free photo checks for this month used up[\s\S]*5 more photo checks a month[\s\S]*the link is for them/);
+  assert.match(outOfPhotoChecksMessage(5, false, 0, limits), /reset on the 1st/);
+  assert.doesNotMatch(outOfPhotoChecksMessage(5, false, 0, limits), /link/);
+  assert.match(stillOutOfPhotoChecksMessage(limits), /adds 5 more/);
 });
