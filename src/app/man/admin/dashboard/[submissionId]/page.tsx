@@ -5,6 +5,18 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Check, ExternalLink, Loader2, RotateCcw, Sparkles, Upload } from 'lucide-react';
 import { Avatar, Button, ReportStatusPill, clientDisplayName } from '@/components/manAdmin/ui';
+import {
+  MAN_AGE_RANGES,
+  MAN_COLOUR_STOPS,
+  MAN_DRESS_CODES,
+  MAN_EXPERIMENTATION_STOPS,
+  MAN_STYLE_PIECES,
+  MAN_TASTE_LOOKS,
+  MAN_WEEK_LEVELS,
+  MAN_WEEK_ROWS,
+  manScaleStop,
+  parseManStyleProfileAnswers,
+} from '@/lib/manRecommendationProfile';
 
 interface ManReport {
   id: string;
@@ -18,6 +30,7 @@ interface ManReport {
   created_at: string;
   updated_at?: string | null;
 }
+
 
 interface ManSubmission {
   id: string;
@@ -55,7 +68,33 @@ interface ManSubmission {
   style_anti_pref: string | null;
   style_anti_pref_note: string | null;
   free_text_note: string | null;
+  style_profile?: unknown;
   created_at: string;
+}
+
+/** The intake's Section 6 answers as readable rows (empty for older intakes). */
+function styleProfileRows(raw: unknown): Array<[string, string | null]> {
+  const answers = parseManStyleProfileAnswers(raw);
+  if (!answers) return [['Answered', 'Not asked — intake predates these questions']];
+  const pieces = (ids?: string[]) => ids?.length ? ids.map(id => MAN_STYLE_PIECES.find(piece => piece.id === id)?.label ?? id).join(', ') : null;
+  const taste = (verdict: string) => {
+    const looks = MAN_TASTE_LOOKS.filter(look => answers.taste?.[String(look.id)] === verdict).map(look => look.title);
+    return looks.length ? looks.join(', ') : null;
+  };
+  return [
+    ['Age', MAN_AGE_RANGES.find(range => range.value === answers.age_range)?.label ?? null],
+    ['City', answers.city ?? null],
+    ['Week', answers.week ? MAN_WEEK_ROWS.map(row => `${row.label}: ${MAN_WEEK_LEVELS[answers.week?.[row.key] ?? 0]}`).join(' · ') : null],
+    ['Work dress code', MAN_DRESS_CODES.find(code => code.value === answers.dress_code)?.label ?? null],
+    ['Experimentation', answers.experimentation ? `${answers.experimentation}/10 — ${manScaleStop(MAN_EXPERIMENTATION_STOPS, answers.experimentation).label}` : null],
+    ['Colour', answers.colour_boldness ? `${answers.colour_boldness}/10 — ${manScaleStop(MAN_COLOUR_STOPS, answers.colour_boldness).label}` : null],
+    ['Loved', taste('love')],
+    ['Would try', taste('try')],
+    ['Not him', taste('never')],
+    ['Wants to try', pieces(answers.try_pieces)],
+    ['Never', pieces(answers.never_pieces)],
+    ['Style reference', answers.style_reference ?? null],
+  ];
 }
 
 function fmt(value: string | null | undefined) {
@@ -398,6 +437,7 @@ export default function SubmissionDetailPage({ params }: { params: Promise<{ sub
           ['Holding him back', fmt(submission.style_blocker)],
           ['Won’t wear', fmt(submission.style_anti_pref)],
         ]} />
+        <AnswerGroup title="How he wants to dress" rows={styleProfileRows(submission.style_profile)} />
       </div>
     </div>
   );

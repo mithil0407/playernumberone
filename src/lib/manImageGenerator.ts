@@ -768,17 +768,23 @@ function buildSocialMediaInspirationPrompt(
   sections: ReportSections,
   shotIndex: number,
 ): string {
+  // The occasion split varies per client, so find the looks by context rather than by fixed number.
+  const outfits = parseManOutfitsFromSection(sections.s4_outfits ?? '');
+  const nthInContext = (context: string, nth: number, fallback: number) => {
+    const matches = outfits.filter(outfit => outfit.context === context);
+    return matches[Math.min(nth, matches.length - 1)]?.number ?? fallback;
+  };
   const specs = [
     {
-      outfitNumber: 11,
+      outfitNumber: nthInContext('Evening Wear', 0, 11),
       scene: 'warm restaurant terrace or rooftop evening setting, flattering ambient light, confident relaxed three-quarter pose',
     },
     {
-      outfitNumber: 16,
+      outfitNumber: nthInContext('Relaxed Casual', 0, 16),
       scene: 'outdoor cafe or walkable street in golden-hour light, natural candid mid-walk pose, approachable expression',
     },
     {
-      outfitNumber: 18,
+      outfitNumber: nthInContext('Relaxed Casual', 2, 18),
       scene: 'bookstore, gallery, coffee counter, or weekend activity setting with natural light and easy body language',
     },
   ];

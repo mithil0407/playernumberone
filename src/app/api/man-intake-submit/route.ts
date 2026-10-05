@@ -4,7 +4,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import {
+    isMissingStyleProfileColumn,
     persistManIntakeWithRollback,
+    toManIntakeRow,
     validateManIntakeSubmission,
 } from '@/lib/manIntakeSubmission';
 import {
@@ -67,11 +69,22 @@ async function submitUploadSession(request: NextRequest, body: Record<string, un
     const validation = validateManIntakeSubmission(payload, supabaseUrl);
     if (!validation.ok) return invalidIntake(validation.error);
 
-    const inserted = await supabaseAdmin
+    const insertRow = (row: Record<string, unknown>) => supabaseAdmin
         .from('man_intake_submissions')
-        .insert([{ ...validation.data, upload_session_id: session.id }])
+        .insert([{ ...row, upload_session_id: session.id }])
         .select()
         .single();
+    let inserted = await insertRow(toManIntakeRow(validation.data));
+    if (isMissingStyleProfileColumn(inserted.error)) {
+        // The style_profile migration hasn't run yet: never lose the intake over it.
+        console.error('Man intake style_profile column missing; saving without the taste answers', {
+            sessionId: session.id,
+            styleProfile: validation.data.style_profile,
+        });
+        const { style_profile: _dropped, ...withoutProfile } = toManIntakeRow(validation.data);
+        void _dropped;
+        inserted = await insertRow(withoutProfile);
+    }
 
     if (inserted.error) {
         if (inserted.error.code === '23505') {
@@ -141,12 +154,19 @@ export async function POST(request: NextRequest) {
             submission: validation.data,
             supabaseUrl,
             insert: async (payload) => {
-                const { data, error } = await supabaseAdmin
+                const insertRow = (row: Record<string, unknown>) => supabaseAdmin
                     .from('man_intake_submissions')
-                    .insert([payload])
+                    .insert([row])
                     .select()
                     .single();
-                return { data, error };
+                let result = await insertRow(toManIntakeRow(payload));
+                if (isMissingStyleProfileColumn(result.error)) {
+                    console.error('Man intake style_profile column missing; saving without the taste answers', { styleProfile: payload.style_profile });
+                    const { style_profile: _dropped, ...withoutProfile } = toManIntakeRow(payload);
+                    void _dropped;
+                    result = await insertRow(withoutProfile);
+                }
+                return { data: result.data, error: result.error };
             },
             remove: async (paths) => {
                 const { error } = await supabaseAdmin.storage.from(PHOTO_BUCKET).remove(paths);

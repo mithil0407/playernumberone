@@ -32,6 +32,21 @@ import type { ManIntakePhotoKind } from '@/lib/manIntakeUploadSession';
 import { INDIA_PHONE_COUNTRY_CODE, trackCompleteRegistration, updateUserData } from '@/lib/metaPixel';
 import { getManPricing } from '@/lib/manPricing';
 import { useManRegion } from '@/hooks/useManRegion';
+import {
+    MAN_AGE_RANGES,
+    MAN_COLOUR_STOPS,
+    MAN_DRESS_CODES,
+    MAN_EXPERIMENTATION_STOPS,
+    MAN_STYLE_PIECES,
+    MAN_TASTE_LOOKS,
+    MAN_WEEK_LEVELS,
+    MAN_WEEK_ROWS,
+    manScaleStop,
+    type ManStyleProfileAnswers,
+    type ManTasteVerdict,
+    type ManWeekKey,
+} from '@/lib/manRecommendationProfile';
+import { findManColourMentions } from '@/lib/manOutfitColour';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -75,6 +90,17 @@ interface FormState {
     styleAntiPref: string;
     styleAntiPrefNote: string;
     freeTextNote: string;
+    // Section 6 — How you want to dress (stored together as style_profile)
+    ageRange: string;
+    city: string;
+    week: Partial<Record<ManWeekKey, number>>;
+    dressCode: string;
+    experimentation: number | null;
+    colourBoldness: number | null;
+    taste: Record<string, ManTasteVerdict>;
+    tryPieces: string[];
+    neverPieces: string[];
+    styleReference: string;
 }
 
 type PhotoUploadPhase = 'idle' | 'preparing' | 'uploading' | 'retrying' | 'resuming' | 'complete' | 'error';
@@ -414,9 +440,85 @@ const ANTI_PREFS = [
     { value: 'never_thought', label: "I've never thought about this" },
 ];
 
-// Step 0 = welcome, Steps 1–27 = content, Step 28 = confirmation
-const CONFIRMATION_STEP = 28;
-const QUESTION_COUNT = 27;
+// Step 0 = welcome, Steps 1–31 = content, Step 32 = confirmation
+const CONFIRMATION_STEP = 32;
+const QUESTION_COUNT = 31;
+const LAST_QUESTION_STEP = 31;
+
+/** The Section 6 answers, as stored in man_intake_submissions.style_profile. */
+function buildStyleProfileAnswers(form: FormState): ManStyleProfileAnswers | null {
+    const answers: ManStyleProfileAnswers = {
+        version: 1,
+        ...(form.ageRange ? { age_range: form.ageRange as ManStyleProfileAnswers['age_range'] } : {}),
+        ...(form.city.trim() ? { city: form.city.trim() } : {}),
+        ...(Object.keys(form.week).length ? { week: form.week } : {}),
+        ...(form.dressCode ? { dress_code: form.dressCode as ManStyleProfileAnswers['dress_code'] } : {}),
+        ...(form.experimentation !== null ? { experimentation: form.experimentation } : {}),
+        ...(form.colourBoldness !== null ? { colour_boldness: form.colourBoldness } : {}),
+        ...(Object.keys(form.taste).length ? { taste: form.taste } : {}),
+        ...(form.tryPieces.length ? { try_pieces: form.tryPieces } : {}),
+        ...(form.neverPieces.length ? { never_pieces: form.neverPieces } : {}),
+        ...(form.styleReference.trim() ? { style_reference: form.styleReference.trim() } : {}),
+    };
+    return Object.keys(answers).length > 1 ? answers : null;
+}
+
+/** Colour dots for a taste-test piece: "Blue-and-white striped shirt" → blue, white. */
+function pieceSwatches(piece: string): string[] {
+    return findManColourMentions(piece).slice(0, 2).map(mention => mention.info.hex);
+}
+
+function ScaleQuestion({ label, value, onChange, stops, lowLabel, highLabel }: {
+    label: string;
+    value: number | null;
+    onChange: (value: number) => void;
+    stops: Array<{ max: number; label: string; sub: string }>;
+    lowLabel: string;
+    highLabel: string;
+}) {
+    const stop = value === null ? null : manScaleStop(stops, value);
+    return (
+        <div className="rounded-2xl p-5" style={{ background: '#FAFAF8', border: '1px solid rgba(44,38,34,0.1)' }}>
+            <div className="flex items-baseline justify-between gap-4 mb-1">
+                <p className="iconik-micro" style={{ color: '#2C2622', opacity: 0.5 }}>{label}</p>
+                <span className="iconik-display" style={{ fontSize: '22px', color: value === null ? 'rgba(44,38,34,0.25)' : '#2C2622' }}>{value ?? '–'}<span style={{ fontSize: '13px', opacity: 0.4 }}> / 10</span></span>
+            </div>
+            <div style={{ minHeight: '44px' }}>
+                {stop ? (
+                    <>
+                        <p style={{ fontSize: '15px', color: '#2C2622' }}>{stop.label}</p>
+                        <p style={{ fontSize: '13px', color: '#2C2622', opacity: 0.55 }}>{stop.sub}</p>
+                    </>
+                ) : (
+                    <p style={{ fontSize: '13px', color: '#2C2622', opacity: 0.45 }}>Tap or drag the line to choose.</p>
+                )}
+            </div>
+            <input
+                type="range"
+                min={1}
+                max={10}
+                step={1}
+                value={value ?? 5}
+                aria-label={label}
+                onChange={event => onChange(Number(event.target.value))}
+                onClick={event => onChange(Number((event.target as HTMLInputElement).value))}
+                className="w-full mt-3"
+                style={{ accentColor: '#2C2622', opacity: value === null ? 0.4 : 1 }}
+            />
+            <div className="flex justify-between mt-1">
+                <span className="iconik-micro" style={{ color: '#2C2622', opacity: 0.4 }}>{lowLabel}</span>
+                <span className="iconik-micro" style={{ color: '#2C2622', opacity: 0.4 }}>{highLabel}</span>
+            </div>
+        </div>
+    );
+}
+
+const TASTE_VERDICTS: Array<{ value: ManTasteVerdict; label: string }> = [
+    { value: 'love', label: 'Love it' },
+    { value: 'try', label: "I'd try it" },
+    { value: 'never', label: 'Not me' },
+];
+
 
 // ── Sub-components ────────────────────────────────────────────────────────────
 
@@ -608,6 +710,16 @@ function ManIntakePageInner() {
         styleAntiPref: '',
         styleAntiPrefNote: '',
         freeTextNote: '',
+        ageRange: '',
+        city: '',
+        week: {},
+        dressCode: '',
+        experimentation: null,
+        colourBoldness: null,
+        taste: {},
+        tryPieces: [],
+        neverPieces: [],
+        styleReference: '',
     });
 
     useEffect(() => {
@@ -641,7 +753,7 @@ function ManIntakePageInner() {
                         photoSideProfile: null,
                     }));
                 }
-                if (typeof draft.step === 'number' && draft.step >= 0 && draft.step <= 27) setStep(draft.step);
+                if (typeof draft.step === 'number' && draft.step >= 0 && draft.step <= LAST_QUESTION_STEP) setStep(draft.step);
                 const restoredFingerprints = draft.fingerprints || {};
                 setPhotoFingerprints(restoredFingerprints);
                 uploadReceiptsRef.current = draft.receipts || {};
@@ -1284,6 +1396,10 @@ function ManIntakePageInner() {
                 style_anti_pref: form.styleAntiPref,
                 style_anti_pref_note: form.styleAntiPrefNote || undefined,
                 free_text_note: form.freeTextNote || undefined,
+                style_profile: (() => {
+                    const answers = buildStyleProfileAnswers(form);
+                    return answers ? JSON.stringify(answers) : undefined;
+                })(),
             };
 
             submissionStage = 'save';
@@ -1361,7 +1477,7 @@ function ManIntakePageInner() {
             case 24: return !!form.stylePoleStructure && !!form.stylePoleExpression && !!form.stylePoleTone && !!form.stylePoleRegister;
             case 25: return !!form.styleBlocker;
             case 26: return !!form.styleAntiPref;
-            case 27: return true; // optional free text
+            case LAST_QUESTION_STEP: return true; // optional free text
             default: return true;
         }
     }, [step, form, uploadProgress]);
@@ -1372,7 +1488,7 @@ function ManIntakePageInner() {
         exit: (dir: number) => ({ x: dir > 0 ? -40 : 40, opacity: 0 }),
     };
 
-    const isLastQuestion = step === 27;
+    const isLastQuestion = step === LAST_QUESTION_STEP;
     const visibleUploadKinds = (['fullbody', 'headshot', 'side_profile'] as ManIntakePhotoKind[])
         .filter(kind => kind !== 'side_profile'
             || Boolean(form.photoSideProfile)
@@ -1426,7 +1542,7 @@ function ManIntakePageInner() {
                                     </div>
                                     <div className="iconik-display mb-5" style={{ fontSize: 'clamp(28px, 6vw, 44px)', color: '#2C2622' }}>Let&apos;s build your Blueprint.</div>
                                     <p style={{ fontSize: '15px', lineHeight: 1.8, color: '#2C2622', opacity: 0.65, marginBottom: '24px', maxWidth: '420px', margin: '0 auto 24px' }}>
-                                        Two photos and a few key details so our system can personalise your report before a human stylist reviews it. Takes exactly <strong style={{ fontWeight: 500, color: '#2C2622', opacity: 1 }}>7 minutes</strong>.
+                                        Two photos and a few key details so our system can personalise your report before a human stylist reviews it. Takes about <strong style={{ fontWeight: 500, color: '#2C2622', opacity: 1 }}>9 minutes</strong>.
                                     </p>
                                     {contactPrefilled && form.email && (
                                         <div className="rounded-xl px-5 py-3 mb-8 inline-block" style={{ background: 'rgba(44,38,34,0.04)', border: '1px solid rgba(44,38,34,0.08)' }}>
@@ -1545,7 +1661,7 @@ function ManIntakePageInner() {
                             {/* ── Step 4: Q1 Primary Goal ──────────────────────── */}
                             {step === 4 && (
                                 <div>
-                                    <SectionLabel label="Section 1 of 5 — The Basics" />
+                                    <SectionLabel label="Section 1 of 6 — The Basics" />
                                     <h2 className="iconik-display mb-3" style={{ fontSize: 'clamp(22px, 5vw, 34px)', color: '#2C2622', lineHeight: 1.2 }}>What&apos;s your primary goal with ICONIK today?</h2>
                                     <p style={{ fontSize: '13px', color: '#2C2622', opacity: 0.5, marginBottom: '24px' }}>Select one.</p>
                                     <div className="space-y-3">
@@ -1561,7 +1677,7 @@ function ManIntakePageInner() {
                             {/* ── Step 5: Q2 Style Relationship ────────────────── */}
                             {step === 5 && (
                                 <div>
-                                    <SectionLabel label="Section 1 of 5 — The Basics" />
+                                    <SectionLabel label="Section 1 of 6 — The Basics" />
                                     <h2 className="iconik-display mb-3" style={{ fontSize: 'clamp(22px, 5vw, 34px)', color: '#2C2622', lineHeight: 1.2 }}>How would you describe your current relationship with getting dressed?</h2>
                                     <p style={{ fontSize: '13px', color: '#2C2622', opacity: 0.5, marginBottom: '24px' }}>Select one.</p>
                                     <div className="space-y-3">
@@ -1577,7 +1693,7 @@ function ManIntakePageInner() {
                             {/* ── Step 6: Q3 Dressing Context ──────────────────── */}
                             {step === 6 && (
                                 <div>
-                                    <SectionLabel label="Section 1 of 5 — The Basics" />
+                                    <SectionLabel label="Section 1 of 6 — The Basics" />
                                     <h2 className="iconik-display mb-3" style={{ fontSize: 'clamp(22px, 5vw, 34px)', color: '#2C2622', lineHeight: 1.2 }}>What&apos;s your primary dressing context?</h2>
                                     <p style={{ fontSize: '13px', color: '#2C2622', opacity: 0.5, marginBottom: '4px' }}>Select up to 2.</p>
                                     <p className="iconik-micro mt-2 mb-6" style={{ color: '#2C2622', opacity: 0.35 }}>Choose the situations you dress for most</p>
@@ -1597,7 +1713,7 @@ function ManIntakePageInner() {
                             {/* ── Step 7: Q4 Location ──────────────────────────── */}
                             {step === 7 && (
                                 <div>
-                                    <SectionLabel label="Section 1 of 5 — The Basics" />
+                                    <SectionLabel label="Section 1 of 6 — The Basics" />
                                     <h2 className="iconik-display mb-3" style={{ fontSize: 'clamp(22px, 5vw, 34px)', color: '#2C2622', lineHeight: 1.2 }}>Where are you based?</h2>
                                     <p style={{ fontSize: '13px', color: '#2C2622', opacity: 0.5, marginBottom: '24px' }}>Select one.</p>
                                     <div className="space-y-3">
@@ -1607,13 +1723,45 @@ function ManIntakePageInner() {
                                             </RadioCard>
                                         ))}
                                     </div>
+                                    <div className="mt-6">
+                                        <label className="block iconik-mono mb-2" style={{ fontSize: '10px', color: '#2C2622', opacity: 0.45, letterSpacing: '0.2em' }}>WHICH CITY? SO WE DRESS YOU FOR YOUR WEATHER</label>
+                                        <input
+                                            type="text"
+                                            value={form.city}
+                                            maxLength={60}
+                                            onChange={e => setForm(p => ({ ...p, city: e.target.value }))}
+                                            className="w-full px-4 py-3.5 rounded-xl text-base outline-none transition-all"
+                                            style={{ border: '1px solid rgba(44,38,34,0.15)', background: '#FAFAF8', color: '#2C2622', fontFamily: 'var(--font-inter, Inter, sans-serif)', fontWeight: 300 }}
+                                            placeholder="e.g. Pune, Dubai, London"
+                                        />
+                                    </div>
+                                    <div className="mt-6">
+                                        <p className="iconik-micro mb-3" style={{ color: '#2C2622', opacity: 0.45 }}>Your age</p>
+                                        <div className="flex flex-wrap gap-2">
+                                            {MAN_AGE_RANGES.map(range => {
+                                                const selected = form.ageRange === range.value;
+                                                return (
+                                                    <button
+                                                        key={range.value}
+                                                        type="button"
+                                                        onClick={() => setForm(p => ({ ...p, ageRange: selected ? '' : range.value }))}
+                                                        className="rounded-full px-4 py-2 transition-all duration-200"
+                                                        style={{ fontSize: '13px', border: `1px solid ${selected ? '#94A6AD' : 'rgba(44,38,34,0.12)'}`, background: selected ? 'rgba(148,166,173,0.12)' : '#FAFAF8', color: '#2C2622' }}
+                                                    >
+                                                        {range.label}
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
                                 </div>
                             )}
+
 
                             {/* ── Step 8: Q5 Height ────────────────────────────── */}
                             {step === 8 && (
                                 <div>
-                                    <SectionLabel label="Section 2 of 5 — Your Body" />
+                                    <SectionLabel label="Section 2 of 6 — Your Body" />
                                     <h2 className="iconik-display mb-3" style={{ fontSize: 'clamp(22px, 5vw, 34px)', color: '#2C2622', lineHeight: 1.2 }}>How tall are you?</h2>
                                     <p style={{ fontSize: '13px', color: '#2C2622', opacity: 0.5, marginBottom: '24px' }}>Select one.</p>
                                     <div className="space-y-3">
@@ -1629,7 +1777,7 @@ function ManIntakePageInner() {
                             {/* ── Step 9: Q6 Body Shape ────────────────────────── */}
                             {step === 9 && (
                                 <div>
-                                    <SectionLabel label="Section 2 of 5 — Your Body" />
+                                    <SectionLabel label="Section 2 of 6 — Your Body" />
                                     <h2 className="iconik-display mb-3" style={{ fontSize: 'clamp(22px, 5vw, 34px)', color: '#2C2622', lineHeight: 1.2 }}>Which of these body types is closest to yours?</h2>
                                     <p style={{ fontSize: '13px', color: '#2C2622', opacity: 0.5, marginBottom: '24px' }}>Select one.</p>
                                     <div className="space-y-3">
@@ -1648,7 +1796,7 @@ function ManIntakePageInner() {
                             {/* ── Step 10: Q7 Fat Storage Zone ─────────────────── */}
                             {step === 10 && (
                                 <div>
-                                    <SectionLabel label="Section 2 of 5 — Your Body" />
+                                    <SectionLabel label="Section 2 of 6 — Your Body" />
                                     <h2 className="iconik-display mb-3" style={{ fontSize: 'clamp(22px, 5vw, 34px)', color: '#2C2622', lineHeight: 1.2 }}>Where does your body carry most of its weight?</h2>
                                     <p style={{ fontSize: '13px', color: '#2C2622', opacity: 0.5, marginBottom: '24px' }}>Select one.</p>
                                     <div className="space-y-3">
@@ -1664,7 +1812,7 @@ function ManIntakePageInner() {
                             {/* ── Step 11: Q8 Highlight + Minimise ─────────────── */}
                             {step === 11 && (
                                 <div>
-                                    <SectionLabel label="Section 2 of 5 — Your Body" />
+                                    <SectionLabel label="Section 2 of 6 — Your Body" />
                                     <h2 className="iconik-display mb-3" style={{ fontSize: 'clamp(22px, 5vw, 34px)', color: '#2C2622', lineHeight: 1.2 }}>When you look in the mirror, which area do you most want to highlight or minimise?</h2>
                                     <p style={{ fontSize: '13px', color: '#2C2622', opacity: 0.5, marginBottom: '24px' }}>Select one for each.</p>
                                     <p className="iconik-mono mb-3" style={{ fontSize: '10px', color: '#2C2622', opacity: 0.45, letterSpacing: '0.22em' }}>Highlight</p>
@@ -1690,7 +1838,7 @@ function ManIntakePageInner() {
                             {/* ── Step 12: Q9 Fit Preference ───────────────────── */}
                             {step === 12 && (
                                 <div>
-                                    <SectionLabel label="Section 2 of 5 — Your Body" />
+                                    <SectionLabel label="Section 2 of 6 — Your Body" />
                                     <h2 className="iconik-display mb-3" style={{ fontSize: 'clamp(22px, 5vw, 34px)', color: '#2C2622', lineHeight: 1.2 }}>How do you feel about fitted clothing?</h2>
                                     <p style={{ fontSize: '13px', color: '#2C2622', opacity: 0.5, marginBottom: '24px' }}>Select one.</p>
                                     <div className="space-y-3">
@@ -1706,7 +1854,7 @@ function ManIntakePageInner() {
                             {/* ── Step 13: Q10 Wardrobe Composition ───────────── */}
                             {step === 13 && (
                                 <div>
-                                    <SectionLabel label="Section 2 of 5 — Your Body" />
+                                    <SectionLabel label="Section 2 of 6 — Your Body" />
                                     <h2 className="iconik-display mb-3" style={{ fontSize: 'clamp(22px, 5vw, 34px)', color: '#2C2622', lineHeight: 1.2 }}>What&apos;s your current wardrobe mostly made up of?</h2>
                                     <p style={{ fontSize: '13px', color: '#2C2622', opacity: 0.5, marginBottom: '4px' }}>Select up to 3.</p>
                                     <p className="iconik-micro mt-2 mb-6" style={{ color: '#2C2622', opacity: 0.35 }}>Choose all that apply</p>
@@ -1726,7 +1874,7 @@ function ManIntakePageInner() {
                             {/* ── Step 14: Q12 Skin Tone ───────────────────────── */}
                             {step === 14 && (
                                 <div>
-                                    <SectionLabel label="Section 3 of 5 — Your Face & Colouring" />
+                                    <SectionLabel label="Section 3 of 6 — Your Face & Colouring" />
                                     <h2 className="iconik-display mb-3" style={{ fontSize: 'clamp(22px, 5vw, 34px)', color: '#2C2622', lineHeight: 1.2 }}>What is your skin tone?</h2>
                                     <p style={{ fontSize: '13px', color: '#2C2622', opacity: 0.5, marginBottom: '24px' }}>Select one.</p>
                                     <div className="space-y-3">
@@ -1742,7 +1890,7 @@ function ManIntakePageInner() {
                             {/* ── Step 15: Q13 Vein Undertone ──────────────────── */}
                             {step === 15 && (
                                 <div>
-                                    <SectionLabel label="Section 3 of 5 — Your Face & Colouring" />
+                                    <SectionLabel label="Section 3 of 6 — Your Face & Colouring" />
                                     <h2 className="iconik-display mb-3" style={{ fontSize: 'clamp(22px, 5vw, 34px)', color: '#2C2622', lineHeight: 1.2 }}>What are the veins on your inner wrist closest to?</h2>
                                     <p style={{ fontSize: '13px', color: '#2C2622', opacity: 0.5, marginBottom: '24px' }}>Hold your wrist under natural light and select one.</p>
                                     <div className="space-y-3">
@@ -1758,7 +1906,7 @@ function ManIntakePageInner() {
                             {/* ── Step 16: Q14 White Test ──────────────────────── */}
                             {step === 16 && (
                                 <div>
-                                    <SectionLabel label="Section 3 of 5 — Your Face & Colouring" />
+                                    <SectionLabel label="Section 3 of 6 — Your Face & Colouring" />
                                     <h2 className="iconik-display mb-3" style={{ fontSize: 'clamp(22px, 5vw, 34px)', color: '#2C2622', lineHeight: 1.2 }}>When you wear white, which white feels most &ldquo;alive&rdquo; on your face?</h2>
                                     <p style={{ fontSize: '13px', color: '#2C2622', opacity: 0.5, marginBottom: '24px' }}>Select one.</p>
                                     <div className="space-y-3">
@@ -1774,7 +1922,7 @@ function ManIntakePageInner() {
                             {/* ── Step 17: Q15 Hair Colour ─────────────────────── */}
                             {step === 17 && (
                                 <div>
-                                    <SectionLabel label="Section 3 of 5 — Your Face & Colouring" />
+                                    <SectionLabel label="Section 3 of 6 — Your Face & Colouring" />
                                     <h2 className="iconik-display mb-3" style={{ fontSize: 'clamp(22px, 5vw, 34px)', color: '#2C2622', lineHeight: 1.2 }}>What is your natural hair colour?</h2>
                                     <p style={{ fontSize: '13px', color: '#2C2622', opacity: 0.5, marginBottom: '24px' }}>Select one.</p>
                                     <div className="space-y-3">
@@ -1790,7 +1938,7 @@ function ManIntakePageInner() {
                             {/* ── Step 18: Q16 Eye Colour ──────────────────────── */}
                             {step === 18 && (
                                 <div>
-                                    <SectionLabel label="Section 3 of 5 — Your Face & Colouring" />
+                                    <SectionLabel label="Section 3 of 6 — Your Face & Colouring" />
                                     <h2 className="iconik-display mb-3" style={{ fontSize: 'clamp(22px, 5vw, 34px)', color: '#2C2622', lineHeight: 1.2 }}>What is your eye colour?</h2>
                                     <p style={{ fontSize: '13px', color: '#2C2622', opacity: 0.5, marginBottom: '24px' }}>Select one.</p>
                                     <div className="space-y-3">
@@ -1806,7 +1954,7 @@ function ManIntakePageInner() {
                             {/* ── Step 19: Q17 Face Shape ──────────────────────── */}
                             {step === 19 && (
                                 <div>
-                                    <SectionLabel label="Section 4 of 5 — Your Face Shape" />
+                                    <SectionLabel label="Section 4 of 6 — Your Face Shape" />
                                     <h2 className="iconik-display mb-3" style={{ fontSize: 'clamp(22px, 5vw, 34px)', color: '#2C2622', lineHeight: 1.2 }}>Which of these face shapes is closest to yours?</h2>
                                     <p style={{ fontSize: '13px', color: '#2C2622', opacity: 0.5, marginBottom: '24px' }}>Select one.</p>
                                     <div className="grid grid-cols-3 gap-3">
@@ -1842,7 +1990,7 @@ function ManIntakePageInner() {
                             {/* ── Step 20: Q18 Facial Features ─────────────────── */}
                             {step === 20 && (
                                 <div>
-                                    <SectionLabel label="Section 4 of 5 — Your Face Shape" />
+                                    <SectionLabel label="Section 4 of 6 — Your Face Shape" />
                                     <h2 className="iconik-display mb-3" style={{ fontSize: 'clamp(22px, 5vw, 34px)', color: '#2C2622', lineHeight: 1.2 }}>How would you describe your facial features in general?</h2>
                                     <p style={{ fontSize: '13px', color: '#2C2622', opacity: 0.5, marginBottom: '24px' }}>Select one.</p>
                                     <div className="space-y-3">
@@ -1858,7 +2006,7 @@ function ManIntakePageInner() {
                             {/* ── Step 21: Q18 Primary Style Goal ──────────────── */}
                             {step === 21 && (
                                 <div>
-                                    <SectionLabel label="Section 5 of 5 — Style Identity" />
+                                    <SectionLabel label="Section 5 of 6 — Style Identity" />
                                     <h2 className="iconik-display mb-3" style={{ fontSize: 'clamp(22px, 5vw, 34px)', color: '#2C2622', lineHeight: 1.2 }}>What is your primary style goal right now?</h2>
                                     <p style={{ fontSize: '13px', color: '#2C2622', opacity: 0.5, marginBottom: '24px' }}>Select one.</p>
                                     <div className="space-y-3">
@@ -1874,7 +2022,7 @@ function ManIntakePageInner() {
                             {/* ── Step 22: Q18a Branch sub-question ────────────── */}
                             {step === 22 && BRANCH_OPTIONS[form.primaryStyleGoal] && (
                                 <div>
-                                    <SectionLabel label="Section 5 of 5 — Style Identity" />
+                                    <SectionLabel label="Section 5 of 6 — Style Identity" />
                                     <h2 className="iconik-display mb-3" style={{ fontSize: 'clamp(22px, 5vw, 34px)', color: '#2C2622', lineHeight: 1.2 }}>{BRANCH_OPTIONS[form.primaryStyleGoal].question}</h2>
                                     <p style={{ fontSize: '13px', color: '#2C2622', opacity: 0.5, marginBottom: '24px' }}>Select one.</p>
                                     <div className="space-y-3">
@@ -1890,7 +2038,7 @@ function ManIntakePageInner() {
                             {/* ── Step 23: Q19 Style Tribes ────────────────────── */}
                             {step === 23 && (
                                 <div>
-                                    <SectionLabel label="Section 5 of 5 — Style Identity" />
+                                    <SectionLabel label="Section 5 of 6 — Style Identity" />
                                     <h2 className="iconik-display mb-3" style={{ fontSize: 'clamp(22px, 5vw, 34px)', color: '#2C2622', lineHeight: 1.2 }}>Pick up to 2 that feel most like the version of you you&apos;re building toward.</h2>
                                     <p style={{ fontSize: '13px', color: '#2C2622', opacity: 0.5, marginBottom: '4px' }}>Select across any context.</p>
                                     <p className="iconik-micro mt-2 mb-6" style={{ color: '#2C2622', opacity: 0.35 }}>Max 2 total</p>
@@ -1935,7 +2083,7 @@ function ManIntakePageInner() {
                             {/* ── Step 24: Q20 Style Poles ─────────────────────── */}
                             {step === 24 && (
                                 <div>
-                                    <SectionLabel label="Section 5 of 5 — Style Identity" />
+                                    <SectionLabel label="Section 5 of 6 — Style Identity" />
                                     <h2 className="iconik-display mb-3" style={{ fontSize: 'clamp(22px, 5vw, 34px)', color: '#2C2622', lineHeight: 1.2 }}>Where do you sit on each of these axes?</h2>
                                     <p style={{ fontSize: '13px', color: '#2C2622', opacity: 0.5, marginBottom: '4px' }}>Pick one per row.</p>
                                     <p className="iconik-micro mt-2 mb-6" style={{ color: '#2C2622', opacity: 0.35 }}>Your 4-point style coordinate</p>
@@ -1968,7 +2116,7 @@ function ManIntakePageInner() {
                             {/* ── Step 25: Q21 Style Blocker ───────────────────── */}
                             {step === 25 && (
                                 <div>
-                                    <SectionLabel label="Section 5 of 5 — Style Identity" />
+                                    <SectionLabel label="Section 5 of 6 — Style Identity" />
                                     <h2 className="iconik-display mb-3" style={{ fontSize: 'clamp(22px, 5vw, 34px)', color: '#2C2622', lineHeight: 1.2 }}>What most often stops you from dressing how you want?</h2>
                                     <p style={{ fontSize: '13px', color: '#2C2622', opacity: 0.5, marginBottom: '24px' }}>Select one.</p>
                                     <div className="space-y-3">
@@ -1984,7 +2132,7 @@ function ManIntakePageInner() {
                             {/* ── Step 26: Q22 Anti-Preferences ────────────────── */}
                             {step === 26 && (
                                 <div>
-                                    <SectionLabel label="Section 5 of 5 — Style Identity" />
+                                    <SectionLabel label="Section 5 of 6 — Style Identity" />
                                     <h2 className="iconik-display mb-3" style={{ fontSize: 'clamp(22px, 5vw, 34px)', color: '#2C2622', lineHeight: 1.2 }}>Has anyone ever told you something looks good on you — but you personally dislike wearing it?</h2>
                                     <p style={{ fontSize: '13px', color: '#2C2622', opacity: 0.5, marginBottom: '24px' }}>Select one.</p>
                                     <div className="space-y-3">
@@ -2011,10 +2159,203 @@ function ManIntakePageInner() {
                                 </div>
                             )}
 
-                            {/* ── Step 27: Q23 Anything Else (Optional) ────────── */}
+                            {/* ── Step 27: How the week splits + dress code ────────── */}
                             {step === 27 && (
                                 <div>
-                                    <SectionLabel label="Section 5 of 5 — Style Identity" />
+                                    <SectionLabel label="Section 6 of 6 — How You Want to Dress" />
+                                    <h2 className="iconik-display mb-3" style={{ fontSize: 'clamp(22px, 5vw, 34px)', color: '#2C2622', lineHeight: 1.2 }}>What does a normal week look like?</h2>
+                                    <p style={{ fontSize: '13px', color: '#2C2622', opacity: 0.5, marginBottom: '24px' }}>We split your 20 outfits the same way, so you get more looks for the places you actually go.</p>
+                                    <div className="space-y-5">
+                                        {MAN_WEEK_ROWS.map(row => (
+                                            <div key={row.key}>
+                                                <div className="flex items-baseline justify-between gap-3 mb-2">
+                                                    <span style={{ fontSize: '14px', color: '#2C2622' }}>{row.label}</span>
+                                                    <span className="text-right" style={{ fontSize: '12px', color: '#2C2622', opacity: 0.45 }}>{row.hint}</span>
+                                                </div>
+                                                <div className="grid grid-cols-4 gap-2">
+                                                    {MAN_WEEK_LEVELS.map((level, index) => {
+                                                        const selected = form.week[row.key] === index;
+                                                        return (
+                                                            <button
+                                                                key={level}
+                                                                type="button"
+                                                                aria-pressed={selected}
+                                                                onClick={() => setForm(p => ({ ...p, week: { ...p.week, [row.key]: index } }))}
+                                                                className="rounded-xl px-1 py-2.5 transition-all duration-200"
+                                                                style={{ fontSize: '12px', border: `1px solid ${selected ? '#94A6AD' : 'rgba(44,38,34,0.1)'}`, background: selected ? 'rgba(148,166,173,0.14)' : '#FAFAF8', color: '#2C2622' }}
+                                                            >
+                                                                {level}
+                                                            </button>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <h3 className="iconik-display mt-10 mb-4" style={{ fontSize: 'clamp(18px, 4vw, 24px)', color: '#2C2622' }}>What can you wear to work?</h3>
+                                    <div className="space-y-3">
+                                        {MAN_DRESS_CODES.map(code => (
+                                            <RadioCard key={code.value} selected={form.dressCode === code.value} onClick={() => setForm(p => ({ ...p, dressCode: code.value }))}>
+                                                <span className="flex flex-col">
+                                                    <span style={{ fontSize: '14px', color: '#2C2622', fontWeight: 400 }}>{code.label}</span>
+                                                    <span style={{ fontSize: '12px', color: '#2C2622', opacity: 0.5 }}>{code.sub}</span>
+                                                </span>
+                                            </RadioCard>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* ── Step 28: Experimentation + colour sliders ────────── */}
+                            {step === 28 && (
+                                <div>
+                                    <SectionLabel label="Section 6 of 6 — How You Want to Dress" />
+                                    <h2 className="iconik-display mb-3" style={{ fontSize: 'clamp(22px, 5vw, 34px)', color: '#2C2622', lineHeight: 1.2 }}>How far should we push you?</h2>
+                                    <p style={{ fontSize: '13px', color: '#2C2622', opacity: 0.5, marginBottom: '24px' }}>Most of your outfits sit at your level. A few go a step further, so you can see what&apos;s possible.</p>
+                                    <div className="space-y-4">
+                                        <ScaleQuestion
+                                            label="How experimental?"
+                                            value={form.experimentation}
+                                            onChange={value => setForm(p => ({ ...p, experimentation: value }))}
+                                            stops={MAN_EXPERIMENTATION_STOPS}
+                                            lowLabel="Keep it safe"
+                                            highLabel="Go all in"
+                                        />
+                                        <ScaleQuestion
+                                            label="How much colour?"
+                                            value={form.colourBoldness}
+                                            onChange={value => setForm(p => ({ ...p, colourBoldness: value }))}
+                                            stops={MAN_COLOUR_STOPS}
+                                            lowLabel="Neutrals only"
+                                            highLabel="Bring it on"
+                                        />
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* ── Step 29: Taste test ────────── */}
+                            {step === 29 && (
+                                <div>
+                                    <SectionLabel label="Section 6 of 6 — How You Want to Dress" />
+                                    <h2 className="iconik-display mb-3" style={{ fontSize: 'clamp(22px, 5vw, 34px)', color: '#2C2622', lineHeight: 1.2 }}>Quick taste test</h2>
+                                    <p style={{ fontSize: '13px', color: '#2C2622', opacity: 0.5, marginBottom: '4px' }}>React to as many as you like. Gut feel is perfect.</p>
+                                    <p className="iconik-micro mt-2 mb-6" style={{ color: '#2C2622', opacity: 0.35 }}>{Object.keys(form.taste).length} of {MAN_TASTE_LOOKS.length} rated</p>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                        {MAN_TASTE_LOOKS.map(look => {
+                                            const verdict = form.taste[String(look.id)];
+                                            return (
+                                                <div
+                                                    key={look.id}
+                                                    className="rounded-2xl p-4 flex flex-col"
+                                                    style={{ background: '#FAFAF8', border: `1px solid ${verdict === 'love' ? '#2C2622' : verdict === 'try' ? '#94A6AD' : verdict === 'never' ? 'rgba(161,61,70,0.35)' : 'rgba(44,38,34,0.1)'}`, opacity: verdict === 'never' ? 0.72 : 1 }}
+                                                >
+                                                    <p className="iconik-display mb-2" style={{ fontSize: '15px', color: '#2C2622' }}>{look.title}</p>
+                                                    <ul className="space-y-1.5 mb-4 flex-1">
+                                                        {look.pieces.map(piece => {
+                                                            const swatches = pieceSwatches(piece);
+                                                            return (
+                                                                <li key={piece} className="flex items-center gap-2" style={{ fontSize: '13px', color: '#2C2622', opacity: 0.78 }}>
+                                                                    <span className="flex shrink-0 gap-0.5" aria-hidden="true">
+                                                                        {(swatches.length ? swatches : ['transparent']).map((hex, index) => (
+                                                                            <span key={index} className="inline-block w-3 h-3 rounded-full" style={{ background: hex, border: '1px solid rgba(44,38,34,0.18)' }} />
+                                                                        ))}
+                                                                    </span>
+                                                                    {piece}
+                                                                </li>
+                                                            );
+                                                        })}
+                                                    </ul>
+                                                    <div className="grid grid-cols-3 gap-1.5">
+                                                        {TASTE_VERDICTS.map(option => {
+                                                            const selected = verdict === option.value;
+                                                            return (
+                                                                <button
+                                                                    key={option.value}
+                                                                    type="button"
+                                                                    aria-pressed={selected}
+                                                                    onClick={() => setForm(p => {
+                                                                        const taste = { ...p.taste };
+                                                                        if (selected) delete taste[String(look.id)];
+                                                                        else taste[String(look.id)] = option.value;
+                                                                        return { ...p, taste };
+                                                                    })}
+                                                                    className="rounded-full px-1 py-2 transition-all duration-200"
+                                                                    style={{
+                                                                        fontSize: '11px',
+                                                                        border: `1px solid ${selected ? (option.value === 'never' ? '#A13D46' : '#2C2622') : 'rgba(44,38,34,0.12)'}`,
+                                                                        background: selected ? (option.value === 'never' ? '#A13D46' : '#2C2622') : 'transparent',
+                                                                        color: selected ? '#F4EFE5' : '#2C2622',
+                                                                    }}
+                                                                >
+                                                                    {option.label}
+                                                                </button>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* ── Step 30: Pieces to try / never ────────── */}
+                            {step === 30 && (
+                                <div>
+                                    <SectionLabel label="Section 6 of 6 — How You Want to Dress" />
+                                    <h2 className="iconik-display mb-3" style={{ fontSize: 'clamp(22px, 5vw, 34px)', color: '#2C2622', lineHeight: 1.2 }}>Anything you&apos;ve wanted to try?</h2>
+                                    <p style={{ fontSize: '13px', color: '#2C2622', opacity: 0.5, marginBottom: '20px' }}>We&apos;ll work these into your outfits. Optional.</p>
+                                    <div className="flex flex-wrap gap-2">
+                                        {MAN_STYLE_PIECES.map(piece => {
+                                            const selected = form.tryPieces.includes(piece.id);
+                                            return (
+                                                <button
+                                                    key={piece.id}
+                                                    type="button"
+                                                    aria-pressed={selected}
+                                                    onClick={() => setForm(p => ({
+                                                        ...p,
+                                                        tryPieces: selected ? p.tryPieces.filter(id => id !== piece.id) : [...p.tryPieces, piece.id],
+                                                        neverPieces: p.neverPieces.filter(id => id !== piece.id),
+                                                    }))}
+                                                    className="rounded-full px-4 py-2 transition-all duration-200"
+                                                    style={{ fontSize: '13px', border: `1px solid ${selected ? '#2C2622' : 'rgba(44,38,34,0.12)'}`, background: selected ? '#2C2622' : '#FAFAF8', color: selected ? '#F4EFE5' : '#2C2622' }}
+                                                >
+                                                    {piece.label}
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                    <h3 className="iconik-display mt-10 mb-3" style={{ fontSize: 'clamp(18px, 4vw, 24px)', color: '#2C2622' }}>Anything we should never put you in?</h3>
+                                    <div className="flex flex-wrap gap-2">
+                                        {MAN_STYLE_PIECES.map(piece => {
+                                            const selected = form.neverPieces.includes(piece.id);
+                                            return (
+                                                <button
+                                                    key={piece.id}
+                                                    type="button"
+                                                    aria-pressed={selected}
+                                                    onClick={() => setForm(p => ({
+                                                        ...p,
+                                                        neverPieces: selected ? p.neverPieces.filter(id => id !== piece.id) : [...p.neverPieces, piece.id],
+                                                        tryPieces: p.tryPieces.filter(id => id !== piece.id),
+                                                    }))}
+                                                    className="rounded-full px-4 py-2 transition-all duration-200"
+                                                    style={{ fontSize: '13px', border: `1px solid ${selected ? '#A13D46' : 'rgba(44,38,34,0.12)'}`, background: selected ? 'rgba(161,61,70,0.08)' : '#FAFAF8', color: selected ? '#A13D46' : '#2C2622', textDecoration: selected ? 'line-through' : 'none' }}
+                                                >
+                                                    {piece.label}
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* ── Step 31: Anything Else (Optional) ────────── */}
+                            {step === LAST_QUESTION_STEP && (
+                                <div>
+                                    <SectionLabel label="Section 6 of 6 — How You Want to Dress" />
+
                                     <h2 className="iconik-display mb-3" style={{ fontSize: 'clamp(22px, 5vw, 34px)', color: '#2C2622', lineHeight: 1.2 }}>Anything else you want your stylist to know?</h2>
                                     <p style={{ fontSize: '13px', color: '#2C2622', opacity: 0.5, marginBottom: '4px' }}><span style={{ color: '#94A6AD' }}>Optional.</span></p>
                                     <p className="iconik-micro mt-2 mb-6" style={{ color: '#2C2622', opacity: 0.35 }}>No prompt — just space</p>
@@ -2027,6 +2368,19 @@ function ManIntakePageInner() {
                                         maxLength={200}
                                     />
                                     <p className="iconik-micro mt-2 text-right" style={{ color: '#2C2622', opacity: 0.35 }}>{form.freeTextNote.length}/200</p>
+                                    <div className="mt-6">
+                                        <label className="block iconik-mono mb-2" style={{ fontSize: '10px', color: '#2C2622', opacity: 0.45, letterSpacing: '0.2em' }}>STYLE YOU ADMIRE? INSTAGRAM, PINTEREST OR A NAME (OPTIONAL)</label>
+                                        <input
+                                            type="text"
+                                            value={form.styleReference}
+                                            maxLength={300}
+                                            onChange={e => setForm(p => ({ ...p, styleReference: e.target.value }))}
+                                            className="w-full px-4 py-3.5 rounded-xl text-base outline-none transition-all"
+                                            style={{ border: '1px solid rgba(44,38,34,0.15)', background: '#FAFAF8', color: '#2C2622', fontFamily: 'var(--font-inter, Inter, sans-serif)', fontWeight: 300 }}
+                                            placeholder="e.g. a Pinterest board link"
+                                        />
+                                    </div>
+
                                     {(uploadSession || submitting || Object.values(uploadProgress).some(item => item.phase !== 'idle')) && (
                                         <div className="mt-6 rounded-xl p-4 space-y-3" style={{ background: 'rgba(44,38,34,0.035)', border: '1px solid rgba(44,38,34,0.08)' }}>
                                             <div className="flex items-center justify-between">
@@ -2119,7 +2473,7 @@ function ManIntakePageInner() {
                                 </div>
                             )}
 
-                            {/* ── Step 28: Confirmation ─────────────────────────── */}
+                            {/* ── Step 32: Confirmation ─────────────────────────── */}
                             {step === CONFIRMATION_STEP && (
                                 <div className="text-center py-10">
                                     <motion.div

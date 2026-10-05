@@ -34,6 +34,7 @@ export const MAN_INTAKE_FIELDS = [
   'style_anti_pref',
   'style_anti_pref_note',
   'free_text_note',
+  'style_profile',
 ] as const;
 
 export type ManIntakeField = (typeof MAN_INTAKE_FIELDS)[number];
@@ -42,6 +43,8 @@ export type SanitizedManIntakeSubmission = Partial<Record<ManIntakeField, string
   photo_fullbody_url: string;
   photo_headshot_url: string;
 };
+
+import { parseManStyleProfileAnswers } from './manRecommendationProfile.ts';
 
 export type ManIntakeValidationResult =
   | { ok: true; data: SanitizedManIntakeSubmission }
@@ -62,6 +65,7 @@ const PHOTO_FIELDS = ['photo_fullbody_url', 'photo_headshot_url', 'photo_side_pr
 const MAX_TEXT_LENGTH = 2_000;
 const MAX_NOTE_LENGTH = 200;
 const MAX_URL_LENGTH = 2_048;
+const MAX_STYLE_PROFILE_LENGTH = 6_000;
 const PHOTO_BUCKET_PATH = '/storage/v1/object/public/man-intake-photos/';
 const RECENT_UPLOAD_WINDOW_MS = 60 * 60 * 1_000;
 
@@ -120,10 +124,18 @@ export function validateManIntakeSubmission(
       ? MAX_URL_LENGTH
       : field === 'free_text_note'
         ? MAX_NOTE_LENGTH
-        : MAX_TEXT_LENGTH;
+        : field === 'style_profile'
+          ? MAX_STYLE_PROFILE_LENGTH
+          : MAX_TEXT_LENGTH;
 
     if (trimmed.length > maxLength) {
       return { ok: false, error: `${field} is too long.` };
+    }
+    if (field === 'style_profile') {
+      // Keep only known, in-range answers; an unreadable profile is dropped, not fatal.
+      const answers = parseManStyleProfileAnswers(trimmed);
+      if (answers) sanitized[field] = JSON.stringify(answers);
+      continue;
     }
     sanitized[field] = trimmed;
   }
@@ -146,6 +158,20 @@ export function validateManIntakeSubmission(
   }
 
   return { ok: true, data: sanitized as SanitizedManIntakeSubmission };
+}
+
+/**
+ * The row to insert: style_profile goes into a JSONB column, so it is sent as
+ * an object rather than the JSON string the form posts.
+ */
+export function toManIntakeRow(submission: SanitizedManIntakeSubmission): Record<string, unknown> {
+  const { style_profile: styleProfile, ...rest } = submission;
+  return styleProfile ? { ...rest, style_profile: JSON.parse(styleProfile) } : rest;
+}
+
+/** Postgres/PostgREST errors that mean the style_profile column hasn't been migrated yet. */
+export function isMissingStyleProfileColumn(error: { code?: string; message?: string } | null): boolean {
+  return Boolean(error && /style_profile/.test(error.message ?? '') && (error.code === 'PGRST204' || error.code === '42703' || /column/i.test(error.message ?? '')));
 }
 
 export function getRollbackPhotoPaths(
