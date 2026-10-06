@@ -163,7 +163,7 @@ export async function runManReportTextPipeline(
     if (!hasText(sections.s0_snapshot)) {
       currentStage = 'generating_s0';
       await updateStage(reportId, currentStage, shareToken);
-      sections.s0_snapshot = await runSection0(classification, submission);
+      sections.s0_snapshot = await runSection0(classification, submission, sections.s4_outfits);
       await writePartialData(reportId, shareToken, classification, sections, 'generating_s1', qa);
     }
 
@@ -208,7 +208,7 @@ export async function runManReportTextPipeline(
     if (!hasText(sections.s5_shopping) && !hasText(sections.s5_rules)) {
       currentStage = 'generating_s5_shopping';
       await updateStage(reportId, currentStage, shareToken);
-      sections.s5_shopping = await runSection6Shopping(classification, submission);
+      sections.s5_shopping = await runSection6Shopping(classification, submission, sections.s4_outfits);
       await writePartialData(reportId, shareToken, classification, sections, 'generating_s5_grooming_skin', qa, selectionSalt, overrides);
     }
 
@@ -222,7 +222,7 @@ export async function runManReportTextPipeline(
     if (!hasText(sections.s6_identity)) {
       currentStage = 'generating_s6';
       await updateStage(reportId, currentStage, shareToken);
-      sections.s6_identity = await runSection6(classification, submission);
+      sections.s6_identity = await runSection6(classification, submission, sections.s4_outfits);
     }
 
     const completeSections: ReportSections = {

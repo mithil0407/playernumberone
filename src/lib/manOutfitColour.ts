@@ -160,6 +160,24 @@ const ENTRIES: Entry[] = [
   ['mauve', 'purple', '#8E6A85', 'cool', 'medium', 1],
   ['plum', 'purple', '#5E2750', 'cool', 'deep', 1],
   ['purple', 'purple', '#5B3A80', 'cool', 'medium', 2],
+  // Occasion and festive colours (Indian wedding wear).
+  ['gold', 'yellow', '#C9A646', 'warm', 'medium', 1],
+  ['muted gold', 'yellow', '#B89B5E', 'warm', 'medium', 1],
+  ['champagne', 'beige', '#E3D3B0', 'warm', 'light', 0],
+  ['saffron', 'orange', '#E8902E', 'warm', 'medium', 2],
+  ['saffron yellow', 'yellow', '#EBA937', 'warm', 'medium', 2],
+  ['marigold', 'yellow', '#E7A32A', 'warm', 'medium', 2],
+  ['marigold yellow', 'yellow', '#E7A32A', 'warm', 'medium', 2],
+  ['turmeric', 'yellow', '#D9A520', 'warm', 'medium', 2],
+  ['turmeric yellow', 'yellow', '#D9A520', 'warm', 'medium', 2],
+  ['pale lemon', 'yellow', '#F3EBA8', 'warm', 'light', 1],
+  ['lemon', 'yellow', '#EEDD5A', 'warm', 'light', 2],
+  ['dusty rose', 'pink', '#C99A9A', 'neutral', 'medium', 1],
+  ['rose pink', 'pink', '#D9899C', 'cool', 'medium', 1],
+  ['onion pink', 'pink', '#D9A3A3', 'neutral', 'light', 1],
+  ['rani pink', 'pink', '#C2185B', 'cool', 'medium', 2],
+  ['silver-grey', 'grey', '#A9ADB1', 'cool', 'light', 0],
+  ['silver grey', 'grey', '#A9ADB1', 'cool', 'light', 0],
 ];
 
 const COLOURS = new Map<string, ManColourInfo>(

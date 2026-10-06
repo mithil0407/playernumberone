@@ -173,9 +173,15 @@ function toTitleCase(str: string): string {
 }
 
 // Known context names from new format — used to detect if label IS the category
-const KNOWN_CONTEXTS = new Set(['OFFICE / FORMAL', 'FORMAL', 'SMART CASUAL', 'EVENING WEAR', 'RELAXED CASUAL']);
+const KNOWN_CONTEXTS = new Set(['OFFICE / FORMAL', 'FORMAL', 'SMART CASUAL', 'EVENING WEAR', 'RELAXED CASUAL', 'HALDI', 'MEHENDI', 'SANGEET', 'WEDDING CEREMONY', 'RECEPTION']);
 
 function inferContextName(rawLabel: string, outfitNumber: number): string {
+  // Wedding functions first: "Wedding Ceremony" must not fall through to a generic match.
+  if (/\bhaldi\b/i.test(rawLabel)) return 'Haldi';
+  if (/\bmehe?ndi\b/i.test(rawLabel)) return 'Mehendi';
+  if (/\bsangeet\b/i.test(rawLabel)) return 'Sangeet';
+  if (/\bwedding\b|\bceremony\b|\bpheras?\b|\bbaraat\b/i.test(rawLabel)) return 'Wedding Ceremony';
+  if (/\breception\b/i.test(rawLabel)) return 'Reception';
   if (/\boffice\b|\bformal\b/i.test(rawLabel)) return 'Office / Formal';
   if (/\bsmart\s+casual\b/i.test(rawLabel)) return 'Smart Casual';
   if (/\bevening\b/i.test(rawLabel)) return 'Evening Wear';
@@ -3920,14 +3926,24 @@ function ComboGridSection({
   const [brokenGridImages, setBrokenGridImages] = useState<Partial<Record<ComboGridKind, boolean>>>({});
   const parsed = useMemo(() => text ? normaliseComboGridText(text) : null, [text]);
   const parsedGroups = parsed?.groups ?? [];
+  // Wedding reports title their grids "Wedding Day …" etc.; show the guide's own headings when they differ.
+  const customTitle = (kind: ComboGridKind) => {
+    const title = parsedGroups.find(group => group.kind === kind)?.title;
+    return title && title !== comboGridGroupTitle(kind) ? title : null;
+  };
+  const shortLabel = (title: string) => title.replace(/\s*(?:outfit\s+)?combinations?$/i, '');
   const grids = [
     { key: 'office' as const, label: 'Formal', title: 'Formal outfit combinations', sourceUrl: gridOverrides.office ?? comboGridCards?.office },
     { key: 'relaxed' as const, label: 'Relaxed Casual', title: 'Relaxed casual combinations', sourceUrl: gridOverrides.relaxed ?? comboGridCards?.relaxed },
     { key: 'evening' as const, label: 'Evening', title: 'Evening outfit combinations', sourceUrl: gridOverrides.evening ?? comboGridCards?.evening },
-  ].map(grid => ({
-    ...grid,
-    url: brokenGridImages[grid.key] ? null : grid.sourceUrl,
-  }));
+  ].map(grid => {
+    const custom = customTitle(grid.key);
+    return {
+      ...grid,
+      ...(custom ? { label: shortLabel(custom), title: custom } : {}),
+      url: brokenGridImages[grid.key] ? null : grid.sourceUrl,
+    };
+  });
   const editingGrid = editingKind ? grids.find(grid => grid.key === editingKind) : null;
   const hasContent = !!text || grids.some(grid => !!grid.url);
   const canEdit = adminMode && (!!onSaveComboGridText || !!onRegenerateComboGrid) && !!text;

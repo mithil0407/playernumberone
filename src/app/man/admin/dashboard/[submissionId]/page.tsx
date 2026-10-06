@@ -10,6 +10,7 @@ import {
   MAN_COLOUR_STOPS,
   MAN_DRESS_CODES,
   MAN_EXPERIMENTATION_STOPS,
+  MAN_OCCASION_ANSWERS,
   MAN_STYLE_PIECES,
   MAN_TASTE_LOOKS,
   MAN_WEEK_LEVELS,
@@ -84,6 +85,7 @@ function styleProfileRows(raw: unknown): Array<[string, string | null]> {
   return [
     ['Age', MAN_AGE_RANGES.find(range => range.value === answers.age_range)?.label ?? null],
     ['City', answers.city ?? null],
+    ['Big occasion', MAN_OCCASION_ANSWERS.find(answer => answer.value === answers.occasion)?.label ?? null],
     ['Week', answers.week ? MAN_WEEK_ROWS.map(row => `${row.label}: ${MAN_WEEK_LEVELS[answers.week?.[row.key] ?? 0]}`).join(' · ') : null],
     ['Work dress code', MAN_DRESS_CODES.find(code => code.value === answers.dress_code)?.label ?? null],
     ['Experimentation', answers.experimentation ? `${answers.experimentation}/10 — ${manScaleStop(MAN_EXPERIMENTATION_STOPS, answers.experimentation).label}` : null],

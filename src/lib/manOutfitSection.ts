@@ -22,13 +22,18 @@ export interface ParsedManOutfit {
 }
 
 const CONTEXT_ALIASES: Array<[RegExp, string]> = [
+  [/\bhaldi\b/i, 'Haldi'],
+  [/\bmehe?ndi\b/i, 'Mehendi'],
+  [/\bsangeet\b/i, 'Sangeet'],
+  [/\bwedding\b|\bceremony\b|\bpheras?\b|\bbaraat\b/i, 'Wedding Ceremony'],
+  [/\breception\b/i, 'Reception'],
   [/\boffice\b|\bformal\b/i, 'Office / Formal'],
   [/\bsmart\s+casual\b/i, 'Smart Casual'],
   [/\bevening\b/i, 'Evening Wear'],
   [/\brelaxed\s+casual\b|\bcasual\b/i, 'Relaxed Casual'],
 ];
 
-const KNOWN_CONTEXTS = new Set(['FORMAL', 'SMART CASUAL', 'EVENING WEAR', 'RELAXED CASUAL']);
+const KNOWN_CONTEXTS = new Set(['FORMAL', 'SMART CASUAL', 'EVENING WEAR', 'RELAXED CASUAL', 'HALDI', 'MEHENDI', 'SANGEET', 'WEDDING CEREMONY', 'RECEPTION']);
 const OUTFIT_HEADER_PATTERN = /(?:\*\*Outfit|OUTFIT)\s+(\d+)\s*[—–-][^\n]*/gi;
 
 export function stripOutfitHex(text: string): string {

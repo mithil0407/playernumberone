@@ -156,15 +156,16 @@ export async function PATCH(
       return NextResponse.json({ error: `Generate and review the current outfit photos before sending. Missing outfits: ${missing.join(', ')}` }, { status: 400 });
     }
     if (candidate?.classification && candidate.sections?.s4_outfits) {
+      // Outfit QA is advice for the stylist, never a reason to refuse a send:
+      // the stylist has reviewed every page. Record the result and carry on.
       const checked = withManReportSection4Qa(candidate);
       update.report_data = checked;
-      if (!manReportOutfitQualityGatePassed(checked) && body.quality_override !== true) {
-        return NextResponse.json({
-          error: 'This v2 outfit portfolio is below the ICONIK 9/10 quality floor. Resolve the outfit QA issues before sending.',
-          requiresQualityOverride: true,
-          quality: checked.qa?.section4?.quality,
-          issues: checked.qa?.section4?.issues.filter(item => item.severity === 'error') ?? [],
-        }, { status: 400 });
+      if (!manReportOutfitQualityGatePassed(checked)) {
+        console.info('[man-report] sending with outfit QA notes', {
+          reportId,
+          override: body.quality_override === true,
+          errors: checked.qa?.section4?.issues.filter(item => item.severity === 'error').map(item => item.code) ?? [],
+        });
       }
     }
   }

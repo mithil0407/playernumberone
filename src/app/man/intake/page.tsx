@@ -37,6 +37,7 @@ import {
     MAN_COLOUR_STOPS,
     MAN_DRESS_CODES,
     MAN_EXPERIMENTATION_STOPS,
+    MAN_OCCASION_ANSWERS,
     MAN_STYLE_PIECES,
     MAN_TASTE_LOOKS,
     MAN_WEEK_LEVELS,
@@ -93,6 +94,7 @@ interface FormState {
     // Section 6 — How you want to dress (stored together as style_profile)
     ageRange: string;
     city: string;
+    occasion: string;
     week: Partial<Record<ManWeekKey, number>>;
     dressCode: string;
     experimentation: number | null;
@@ -451,6 +453,7 @@ function buildStyleProfileAnswers(form: FormState): ManStyleProfileAnswers | nul
         version: 1,
         ...(form.ageRange ? { age_range: form.ageRange as ManStyleProfileAnswers['age_range'] } : {}),
         ...(form.city.trim() ? { city: form.city.trim() } : {}),
+        ...(form.occasion ? { occasion: form.occasion as ManStyleProfileAnswers['occasion'] } : {}),
         ...(Object.keys(form.week).length ? { week: form.week } : {}),
         ...(form.dressCode ? { dress_code: form.dressCode as ManStyleProfileAnswers['dress_code'] } : {}),
         ...(form.experimentation !== null ? { experimentation: form.experimentation } : {}),
@@ -712,6 +715,7 @@ function ManIntakePageInner() {
         freeTextNote: '',
         ageRange: '',
         city: '',
+        occasion: '',
         week: {},
         dressCode: '',
         experimentation: null,
@@ -2163,7 +2167,16 @@ function ManIntakePageInner() {
                             {step === 27 && (
                                 <div>
                                     <SectionLabel label="Section 6 of 6 — How You Want to Dress" />
-                                    <h2 className="iconik-display mb-3" style={{ fontSize: 'clamp(22px, 5vw, 34px)', color: '#2C2622', lineHeight: 1.2 }}>What does a normal week look like?</h2>
+                                    <h2 className="iconik-display mb-3" style={{ fontSize: 'clamp(22px, 5vw, 34px)', color: '#2C2622', lineHeight: 1.2 }}>Any big occasion coming up?</h2>
+                                    <p style={{ fontSize: '13px', color: '#2C2622', opacity: 0.5, marginBottom: '16px' }}>If it&apos;s a wedding, we&apos;ll build your looks around the functions.</p>
+                                    <div className="space-y-3 mb-10">
+                                        {MAN_OCCASION_ANSWERS.map(answer => (
+                                            <RadioCard key={answer.value} selected={form.occasion === answer.value} onClick={() => setForm(p => ({ ...p, occasion: answer.value }))}>
+                                                <span style={{ fontSize: '14px', color: '#2C2622', fontWeight: 400 }}>{answer.label}</span>
+                                            </RadioCard>
+                                        ))}
+                                    </div>
+                                    <h3 className="iconik-display mb-3" style={{ fontSize: 'clamp(18px, 4vw, 24px)', color: '#2C2622' }}>What does a normal week look like?</h3>
                                     <p style={{ fontSize: '13px', color: '#2C2622', opacity: 0.5, marginBottom: '24px' }}>We split your 20 outfits the same way, so you get more looks for the places you actually go.</p>
                                     <div className="space-y-5">
                                         {MAN_WEEK_ROWS.map(row => (
