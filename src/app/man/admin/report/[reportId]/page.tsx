@@ -589,17 +589,7 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
 
   const sendToClient = async () => {
     if (!report || !allPagesApproved(report.section_approvals, slideMeta)) return;
-    if (!qualityGatePassed) {
-      const issueSummary = outfitQaErrors
-        .filter(item => item.code !== 'quality_floor')
-        .slice(0, 6)
-        .map(item => `• ${item.message}`)
-        .join('\n');
-      const confirmed = window.confirm(
-        `Automated outfit QA scored this report ${outfitQuality?.overallScore?.toFixed(1) ?? 'below 9.0'}/10.\n\n${issueSummary || outfitQuality?.failedCriteria?.join('\n') || 'Quality checks need review.'}\n\nYou have approved every report page. Send it anyway?`,
-      );
-      if (!confirmed) return;
-    }
+    // Outfit QA notes are advisory: they stay visible in the header and never interrupt a send.
     // Soft gate only: missing/flagged shopping links warn but never block send.
     if (shoppingSummary) {
       const linkIssues = [
@@ -1695,8 +1685,7 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
               variant={isSent ? 'secondary' : 'dark'}
               icon={<ImageIcon size={14} />}
               loading={generatingImages}
-              disabled={!qualityGatePassed}
-              title={qualityGatePassed ? `Missing: ${missingImageParts.join(', ')}` : 'Outfit quality must pass before images.'}
+              title={qualityGatePassed ? `Missing: ${missingImageParts.join(', ')}` : `Missing: ${missingImageParts.join(', ')}. Outfit QA has notes — check them first.`}
               onClick={() => { void handleGenerateImages(); }}
             >
               {imageButtonLabel === 'Generate Images' ? 'Generate images' : `Fill ${imageExpectedTotal - imageDoneTotal} images`}
