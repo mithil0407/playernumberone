@@ -5,17 +5,17 @@ import Link from 'next/link';
 import { ArrowLeft, Loader2, RefreshCw, Zap } from 'lucide-react';
 
 const S = {
-  bg: '#F4EFE5',
-  card: '#EDE5D2',
-  border: 'rgba(44,38,34,0.1)',
-  rowBorder: 'rgba(44,38,34,0.07)',
-  ink: '#2C2622',
-  muted: 'rgba(44,38,34,0.4)',
-  slate: '#94A6AD',
-  slateDeep: '#7E9098',
-  gold: '#C9A96E',
-  error: '#C4645A',
-  success: '#5A8B6A',
+  bg: '#f5f3ee',
+  card: '#ffffff',
+  border: 'rgba(17,19,21,0.1)',
+  rowBorder: 'rgba(17,19,21,0.07)',
+  ink: '#111315',
+  muted: 'rgba(17,19,21,0.4)',
+  slate: '#2c5282',
+  slateDeep: '#2c5282',
+  gold: '#6a1f2b',
+  error: '#b42318',
+  success: '#2f6b4f',
 };
 
 interface SubscriptionDetail {
@@ -37,7 +37,7 @@ function profileOf(row: SubscriptionDetail | null) {
 
 function DataBlock({ title, value }: { title: string; value: unknown }) {
   return (
-    <div className="rounded-2xl border p-5" style={{ background: S.card, borderColor: S.border }}>
+    <div className="rounded-3xl border p-5" style={{ background: S.card, borderColor: S.border, boxShadow: 'var(--ma-shadow-sm)' }}>
       <div className="iconik-micro mb-3" style={{ color: S.muted }}>{title}</div>
       <pre className="text-xs whitespace-pre-wrap overflow-auto max-h-[420px] font-mono" style={{ color: S.muted }}>
         {typeof value === 'string' ? value : JSON.stringify(value ?? {}, null, 2)}
@@ -132,7 +132,7 @@ export default function StyleEditClientPage({ params }: { params: Promise<{ subs
           <button
             onClick={rebuild}
             disabled={working}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm luxury-body disabled:opacity-50 transition"
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full text-sm luxury-body disabled:opacity-50 transition"
             style={{ background: S.card, color: S.muted, border: `1px solid ${S.border}` }}
           >
             {working ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />} Rebuild Profile
@@ -140,8 +140,7 @@ export default function StyleEditClientPage({ params }: { params: Promise<{ subs
           <button
             onClick={generateIssue}
             disabled={working}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm luxury-body disabled:opacity-50 transition"
-            style={{ background: S.slateDeep, color: S.bg }}
+            className="ma-btn ma-btn--primary"
           >
             <Zap size={14} /> Generate Week
           </button>
@@ -150,7 +149,7 @@ export default function StyleEditClientPage({ params }: { params: Promise<{ subs
 
       {message && <p className="luxury-body text-sm mb-4" style={{ color: S.slate }}>{message}</p>}
 
-      <div className="rounded-2xl border p-5 mb-6" style={{ background: S.card, borderColor: S.border }}>
+      <div className="rounded-3xl border p-5 mb-6" style={{ background: S.card, borderColor: S.border, boxShadow: 'var(--ma-shadow-sm)' }}>
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
           <div>
             <div className="iconik-micro mb-1" style={{ color: S.muted }}>Review Context</div>
@@ -159,7 +158,7 @@ export default function StyleEditClientPage({ params }: { params: Promise<{ subs
             </p>
           </div>
           {latestIssue && (
-            <Link href={`/stylist/admin/edit/issues/${latestIssue.id}`} className="px-4 py-2 rounded-xl text-sm luxury-body transition" style={{ background: S.ink, color: S.bg }}>
+            <Link href={`/stylist/admin/edit/issues/${latestIssue.id}`} className="px-4 py-2 rounded-full text-sm luxury-body transition" style={{ background: S.ink, color: S.bg }}>
               Review Latest Issue
             </Link>
           )}

@@ -1,0 +1,101 @@
+/* Stylist staff screens use the same kit as the Man admin (man-admin.css):
+   warm canvas, white cards, Manrope, one burgundy accent, pill buttons.
+   This file only adds what the stylist screens need on top of it; load it
+   after man-admin.css. */
+
+/* Older stylist screens still carry the editorial type classes. Inside staff
+   chrome they take the kit's type instead; the client report preview keeps
+   its own editorial type untouched. */
+.st-root .luxury-body:not(.iconik-report *) {
+  font-family: inherit;
+  letter-spacing: -0.005em;
+}
+.st-root .iconik-display:not(.iconik-report *) {
+  font-family: inherit;
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  line-height: 1.15;
+}
+.st-root .iconik-micro:not(.iconik-report *) {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+}
+.st-root .iconik-mono:not(.iconik-report *) {
+  font-family: inherit;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Delivery record ───────────────────────────────────────────────────── */
+.st-record {
+  overflow: hidden;
+  border-radius: 24px;
+  background: var(--ma-surface);
+  border: 1px solid rgba(180, 35, 24, 0.28);
+  box-shadow: 0 1px 2px rgba(17, 19, 21, 0.04), 0 10px 30px rgba(180, 35, 24, 0.08);
+}
+.st-record__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  padding: 18px 22px;
+  background: var(--ma-red);
+  color: #fff;
+}
+.st-record__icon {
+  position: relative;
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 999px;
+  background: #fff;
+  color: var(--ma-red);
+}
+.st-record__icon::before {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: 999px;
+  border: 2px solid rgba(255, 255, 255, 0.55);
+  animation: st-ring 1.8s ease-out infinite;
+}
+@keyframes st-ring {
+  from { transform: scale(0.9); opacity: 1; }
+  to { transform: scale(1.35); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .st-record__icon::before { animation: none; }
+}
+.st-record-row { grid-template-columns: minmax(0, 1fr) auto; }
+@media (min-width: 768px) {
+  .st-record-row { grid-template-columns: minmax(0, 1.5fr) 190px minmax(0, 1fr) 16px; }
+}
+
+/* ── Workspace client rows and cards ───────────────────────────────────── */
+.st-client-row { grid-template-columns: minmax(0, 1fr) auto; }
+@media (min-width: 768px) {
+  .st-client-row { grid-template-columns: minmax(0, 1.6fr) 150px 170px 170px 150px; }
+}
+.st-client-card {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 20px;
+  border-radius: 24px;
+  background: var(--ma-surface);
+  border: 1px solid var(--ma-line);
+  box-shadow: var(--ma-shadow-sm);
+}
+.st-client-card[data-urgent='true'] { border-color: rgba(180, 35, 24, 0.35); }
+
+/* Tabs that are real tablists mark the current one with aria-selected. */
+.ma-seg button[role='tab'][aria-selected='true'] {
+  background: var(--ma-surface);
+  color: var(--ma-ink);
+  box-shadow: 0 1px 3px rgba(17, 19, 21, 0.1), 0 0 0 0.5px rgba(17, 19, 21, 0.06);
+}
+.ma-seg button[role='tab'][aria-selected='true'] .ma-seg__count { background: var(--ma-accent); color: #fff; }

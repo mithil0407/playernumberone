@@ -39,6 +39,12 @@ export function isStaleWaiting(item: WorkspaceQueueItem, now = Date.now()) {
   return Number.isFinite(since) && since < now - STALE_INPUT_DAYS * 86_400_000;
 }
 
+/** A report is due this long after the client's inputs are complete. */
+export const REPORT_DUE_DAYS = 4;
+export function reportDueAt(from: string | number) {
+  return new Date(new Date(from).getTime() + REPORT_DUE_DAYS * 86_400_000).toISOString();
+}
+
 /**
  * The date this card is judged by. An open revision brings its own short clock;
  * the consultation's due date is a promise about the first delivery only.
@@ -49,15 +55,58 @@ export function workspaceDue(item: WorkspaceQueueItem) {
 }
 
 /**
- * Once a report is published the client has it, so later work on it — a revision
- * she asked for — is not the original deadline running late and must not paint
- * her card red. The revision's own due date takes over instead.
+ * When the client first got her report: the first time the stylist pressed
+ * Mark delivered. The consultation keeps that first moment; the report's own
+ * timestamp moves each time a revised version is confirmed.
+ */
+export function firstDeliveredAt(item: WorkspaceQueueItem) {
+  return item.deliveredAt ?? item.report?.deliveredAt ?? null;
+}
+
+/**
+ * The report deadline runs from the client's complete inputs until the stylist
+ * presses Mark delivered. While inputs are still missing there is no clock, and
+ * once the first version is delivered, later work on it — a revision she asked
+ * for — brings its own due date instead of painting her card red.
  */
 export function isOverdue(item: WorkspaceQueueItem, now = Date.now()) {
   const due = workspaceDue(item);
   if (!due) return false;
-  if (due.kind === 'report' && (item.bucket === 'delivered' || item.report?.publishedAt)) return false;
+  if (due.kind === 'report' && (item.bucket === 'delivered' || item.bucket === 'needs_inputs' || firstDeliveredAt(item))) return false;
   return Date.parse(due.at) < now;
+}
+
+export const DELIVERY_RECORD_DAYS = 7;
+export interface DeliveryRecordEntry {
+  id: string; stylistId: string | null; clientName: string; dueAt: string; deliveredAt: string | null; lateMs: number;
+}
+export interface DeliveryRecord { days: number; onTime: number; late: DeliveryRecordEntry[]; overdue: DeliveryRecordEntry[] }
+
+/**
+ * How the first version of each report went out over the last week: delivered
+ * on time, delivered late, or still not delivered past its deadline. Revisions
+ * are judged by their own clock and are not part of this record.
+ */
+export function deliveryRecord(items: WorkspaceQueueItem[], now = Date.now()): DeliveryRecord {
+  const since = now - DELIVERY_RECORD_DAYS * 86_400_000;
+  const record: DeliveryRecord = { days: DELIVERY_RECORD_DAYS, onTime: 0, late: [], overdue: [] };
+  for (const item of items) {
+    if (!item.reportDueAt) continue;
+    const due = Date.parse(item.reportDueAt);
+    const deliveredAt = firstDeliveredAt(item);
+    const entry = { id: item.id, stylistId: item.stylistId, clientName: item.clientName, dueAt: item.reportDueAt, deliveredAt };
+    if (deliveredAt) {
+      const delivered = Date.parse(deliveredAt);
+      if (delivered < since || delivered > now) continue;
+      if (delivered <= due) record.onTime += 1;
+      else record.late.push({ ...entry, lateMs: delivered - due });
+    } else if (due < now && !['delivered', 'needs_inputs', 'revision_requested'].includes(item.bucket)) {
+      record.overdue.push({ ...entry, lateMs: now - due });
+    }
+  }
+  record.late.sort((a, b) => b.lateMs - a.lateMs);
+  record.overdue.sort((a, b) => b.lateMs - a.lateMs);
+  return record;
 }
 
 export interface QueueRevision {
@@ -122,6 +171,15 @@ export function workspaceQueueItem(row: QueueRow) {
   };
 }
 export type WorkspaceQueueItem = ReturnType<typeof workspaceQueueItem>;
+
+/** How late a report is, as stylists read it: "2d 4h", "7h", "45m". */
+export function lateLabel(ms: number) {
+  const minutes = Math.max(1, Math.round(ms / 60_000));
+  const days = Math.floor(minutes / 1440);
+  const hours = Math.floor((minutes % 1440) / 60);
+  if (days) return hours ? `${days}d ${hours}h` : `${days}d`;
+  return hours ? `${hours}h` : `${minutes}m`;
+}
 
 export function workspaceNextAction(item: WorkspaceQueueItem) {
   if (item.bucket === 'revision_requested') {

@@ -2,12 +2,11 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { LogOut } from 'lucide-react';
+import { ArrowLeft, LogOut } from 'lucide-react';
 import { useState } from 'react';
-
-const COLORS = {
-  bg: '#F4EFE5', shell: '#EDE5D2', ink: '#2C2622', muted: '#655E57', border: 'rgba(44,38,34,.10)',
-};
+import { Avatar, Pill } from './manAdmin/ui';
+import './manAdmin/man-admin.css';
+import './stylistStaff/stylist-staff.css';
 
 export default function StylistWorkspaceShell({
   children,
@@ -23,7 +22,8 @@ export default function StylistWorkspaceShell({
   const [signingOut, setSigningOut] = useState(false);
   const [logoutError, setLogoutError] = useState('');
   const base = `/stylist/${stylist.slug}`;
-  if (pathname.startsWith(`${base}/reports/`)) return <>{children}</>;
+  // The report studio owns its whole screen.
+  if (pathname.startsWith(`${base}/reports/`)) return <div className="ma-root st-root">{children}</div>;
 
   const logout = async () => {
     if (adminPreview) { router.push('/stylist/admin/workspace'); return; }
@@ -42,19 +42,26 @@ export default function StylistWorkspaceShell({
 
   // The dashboard carries its own tabs, so the shell is only identity and sign-out.
   return (
-    <div className="min-h-screen" style={{ background: COLORS.bg, color: COLORS.ink }}>
-      <header className="sticky top-0 z-20" style={{ background: COLORS.shell, borderBottom: `1px solid ${COLORS.border}` }}>
-        <div className="max-w-[1400px] mx-auto h-14 px-4 md:px-7 flex items-center gap-4">
-          <Link href={`${base}/dashboard`} prefetch={false} className="iconik-display text-[13px] tracking-[.32em]">I C O N I K</Link>
-          {adminPreview && <span className="luxury-body text-[11px] rounded-full px-2.5 py-1" style={{ background: COLORS.bg, color: COLORS.muted }}>Admin preview</span>}
-          <span className="ml-auto luxury-body text-sm truncate">{stylist.name}</span>
-          <button disabled={signingOut} onClick={logout} aria-label={adminPreview ? 'Back to team' : 'Sign out'} className="inline-flex items-center gap-2 luxury-body text-sm disabled:opacity-50" style={{ color: COLORS.muted }}>
-            <LogOut size={15} aria-hidden="true" /><span className="hidden sm:inline">{adminPreview ? 'Back to team' : signingOut ? 'Signing out…' : 'Sign out'}</span>
+    <div className="ma-root st-root">
+      <header className="ma-glass sticky top-0 z-40" style={{ borderBottom: '1px solid var(--ma-line-2)' }}>
+        <div className="mx-auto flex h-14 max-w-[1240px] items-center gap-4 px-4 sm:px-8">
+          <Link href={`${base}/dashboard`} prefetch={false} className="shrink-0" style={{ fontSize: 13, fontWeight: 600, letterSpacing: '0.34em' }}>
+            ICONIK
+            <span className="ml-2 ma-faint" style={{ letterSpacing: '0.12em', fontWeight: 500, fontSize: 11 }}>STUDIO</span>
+          </Link>
+          {adminPreview && <Pill tone="accent">Admin preview</Pill>}
+          <span className="ml-auto flex min-w-0 items-center gap-2.5">
+            <Avatar name={stylist.name} size={30} />
+            <span className="hidden truncate text-[14px] sm:inline" style={{ fontWeight: 500 }}>{stylist.name}</span>
+          </span>
+          <button type="button" disabled={signingOut} onClick={logout} aria-label={adminPreview ? 'Back to team' : 'Sign out'} className="ma-btn ma-btn--ghost ma-btn--sm shrink-0">
+            {adminPreview ? <ArrowLeft size={14} aria-hidden="true" /> : <LogOut size={14} aria-hidden="true" />}
+            <span className="hidden sm:inline">{adminPreview ? 'Back to team' : signingOut ? 'Signing out…' : 'Sign out'}</span>
           </button>
         </div>
-        {logoutError && <p role="alert" className="max-w-[1400px] mx-auto px-4 md:px-7 pb-2 text-xs text-red-800">{logoutError}</p>}
+        {logoutError && <p role="alert" className="mx-auto max-w-[1240px] px-4 pb-2 text-[13px] sm:px-8" style={{ color: 'var(--ma-red)' }}>{logoutError}</p>}
       </header>
-      <main className="px-4 py-6 md:px-7 md:py-8">{children}</main>
+      <main className="mx-auto max-w-[1240px] px-4 py-8 sm:px-8 sm:py-10">{children}</main>
     </div>
   );
 }

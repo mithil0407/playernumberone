@@ -5,16 +5,16 @@ import { useRouter } from 'next/navigation';
 import { ClipboardPaste, ImageIcon, Loader2, Upload, Zap } from 'lucide-react';
 
 const S = {
-  bg: '#F4EFE5',
-  card: '#EDE5D2',
-  border: 'rgba(44,38,34,0.1)',
-  rowBorder: 'rgba(44,38,34,0.07)',
-  ink: '#2C2622',
-  muted: 'rgba(44,38,34,0.45)',
-  slateDeep: '#7E9098',
-  gold: '#C9A96E',
-  error: '#C4645A',
-  success: '#5A8B6A',
+  bg: '#f5f3ee',
+  card: '#ffffff',
+  border: 'rgba(17,19,21,0.1)',
+  rowBorder: 'rgba(17,19,21,0.07)',
+  ink: '#111315',
+  muted: 'rgba(17,19,21,0.45)',
+  slateDeep: '#2c5282',
+  gold: '#6a1f2b',
+  error: '#b42318',
+  success: '#2f6b4f',
 };
 
 const PHOTO_FIELDS = [
@@ -174,7 +174,7 @@ export default function ManualStylistBlueprintPage() {
         <button
           type="button"
           onClick={() => setRawNotes(current => current || SAMPLE_NOTES)}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm luxury-body transition"
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full text-sm luxury-body transition"
           style={{ background: S.card, color: S.muted, border: `1px solid ${S.border}` }}
         >
           <ClipboardPaste size={14} /> Insert Template
@@ -182,7 +182,7 @@ export default function ManualStylistBlueprintPage() {
       </div>
 
       <form onSubmit={submit} className="grid xl:grid-cols-[1fr_360px] gap-6">
-        <div className="rounded-2xl border p-5" style={{ background: S.card, borderColor: S.border }}>
+        <div className="rounded-3xl border p-5" style={{ background: S.card, borderColor: S.border, boxShadow: 'var(--ma-shadow-sm)' }}>
           <div className="flex items-center justify-between gap-3 mb-3">
             <label htmlFor="raw-notes" className="iconik-micro" style={{ color: S.muted }}>Consultation Notes</label>
             <span className="iconik-mono" style={{ fontSize: '10px', color: S.gold }}>{rawNotes.trim().length} chars</span>
@@ -198,7 +198,7 @@ export default function ManualStylistBlueprintPage() {
         </div>
 
         <aside className="space-y-5">
-          <div className="rounded-2xl border p-5 space-y-4" style={{ background: S.card, borderColor: S.border }}>
+          <div className="rounded-3xl border p-5 space-y-4" style={{ background: S.card, borderColor: S.border, boxShadow: 'var(--ma-shadow-sm)' }}>
             <div>
               <div className="iconik-micro mb-2" style={{ color: S.muted }}>Optional Overrides</div>
               <p className="luxury-body text-xs leading-5" style={{ color: S.muted, fontWeight: 300 }}>
@@ -239,7 +239,7 @@ export default function ManualStylistBlueprintPage() {
           <button
             type="submit"
             disabled={submitting}
-            className="w-full flex items-center justify-center gap-2 px-5 py-3.5 rounded-xl text-sm luxury-body disabled:opacity-50 transition"
+            className="w-full flex items-center justify-center gap-2 px-5 py-3.5 rounded-full text-sm luxury-body disabled:opacity-50 transition"
             style={{ background: S.ink, color: S.bg }}
           >
             {submitting ? <Loader2 size={15} className="animate-spin" /> : <Zap size={15} />}

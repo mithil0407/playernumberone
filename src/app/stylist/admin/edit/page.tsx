@@ -5,17 +5,17 @@ import Link from 'next/link';
 import { AlertCircle, CalendarPlus, CheckCircle2, Clock, FileCheck, Loader2, RefreshCw, Search, Sparkles, Users } from 'lucide-react';
 
 const S = {
-  bg: '#F4EFE5',
-  card: '#EDE5D2',
-  border: 'rgba(44,38,34,0.1)',
-  rowBorder: 'rgba(44,38,34,0.07)',
-  ink: '#2C2622',
-  muted: 'rgba(44,38,34,0.4)',
-  slate: '#94A6AD',
-  slateDeep: '#7E9098',
-  gold: '#C9A96E',
-  error: '#C4645A',
-  success: '#5A8B6A',
+  bg: '#f5f3ee',
+  card: '#ffffff',
+  border: 'rgba(17,19,21,0.1)',
+  rowBorder: 'rgba(17,19,21,0.07)',
+  ink: '#111315',
+  muted: 'rgba(17,19,21,0.4)',
+  slate: '#2c5282',
+  slateDeep: '#2c5282',
+  gold: '#6a1f2b',
+  error: '#b42318',
+  success: '#2f6b4f',
 };
 
 interface SubscriptionRow {
@@ -48,8 +48,8 @@ function getWeekStart() {
 
 function Stat({ label, value, icon: Icon, color }: { label: string; value: number; icon: React.ElementType; color: string }) {
   return (
-    <div className="rounded-2xl border p-5 flex items-center gap-4" style={{ background: S.card, borderColor: S.border }}>
-      <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: `${color}18` }}>
+    <div className="rounded-3xl border p-5 flex items-center gap-4" style={{ background: S.card, borderColor: S.border, boxShadow: 'var(--ma-shadow-sm)' }}>
+      <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: `color-mix(in srgb, ${color} 10%, transparent)` }}>
         <Icon size={18} style={{ color }} />
       </div>
       <div>
@@ -130,7 +130,7 @@ export default function StyleEditAdminPage() {
         <div className="flex gap-2">
           <button
             onClick={load}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm luxury-body transition"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-full text-sm luxury-body transition"
             style={{ background: S.card, color: S.muted, border: `1px solid ${S.border}` }}
           >
             <RefreshCw size={14} /> Refresh
@@ -138,8 +138,7 @@ export default function StyleEditAdminPage() {
           <button
             onClick={generateWeek}
             disabled={generating}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm luxury-body disabled:opacity-50 transition"
-            style={{ background: S.slateDeep, color: S.bg }}
+            className="ma-btn ma-btn--primary"
           >
             {generating ? <Loader2 size={14} className="animate-spin" /> : <CalendarPlus size={14} />}
             Generate Week

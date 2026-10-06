@@ -1,7 +1,7 @@
 import StylistWorkspaceDashboard from '@/components/StylistWorkspaceDashboard';
 import { getStylistWorkspaceIdentity, getWorkspaceStylistBySlug, isAdminCookieAuthenticated } from '@/lib/stylistWorkspaceAuth';
 import { loadWorkspaceQueue } from '@/lib/stylistWorkspaceQueue';
-import { workspaceCounts } from '@/lib/stylistWorkspaceQueueModel';
+import { deliveryRecord, workspaceCounts } from '@/lib/stylistWorkspaceQueueModel';
 
 export default async function WorkspaceDashboardContent({ stylistSlug }: { stylistSlug: string }) {
   const admin = await isAdminCookieAuthenticated();
@@ -14,7 +14,7 @@ export default async function WorkspaceDashboardContent({ stylistSlug }: { styli
     const items = await loadWorkspaceQueue(identity.stylistId);
     return <StylistWorkspaceDashboard stylistSlug={stylistSlug} initialResult={{
       stylist: { name: identity.name, slug: identity.slug },
-      snapshotItems: items, items: [], counts: workspaceCounts(items), total: items.length, page: 1, limit: 24,
+      snapshotItems: items, items: [], counts: workspaceCounts(items), deliveryRecord: deliveryRecord(items), total: items.length, page: 1, limit: 24,
     }} />;
   } catch {
     // Keep the interactive retry UI available if the initial database read fails.

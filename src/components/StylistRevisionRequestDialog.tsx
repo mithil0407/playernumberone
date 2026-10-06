@@ -4,7 +4,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { Check, Loader2, X } from 'lucide-react';
 import { MAX_REVISION_REQUEST_CHARS, parseRevisionRequest } from '@/lib/stylistReportRevisions';
 
-const C = { ink: '#2C2622', muted: '#655E57', card: '#EDE5D2', bg: '#F4EFE5', surface: '#FBF8F2', border: 'rgba(44,38,34,.12)', gold: '#9A7538', danger: '#9A4039' };
+// Colours come from the staff kit (man-admin.css); the dialog carries .ma-scope so they resolve anywhere.
+const C = { ink: 'var(--ma-ink)', muted: 'var(--ma-ink-3)', card: 'rgba(17,19,21,.05)', bg: 'var(--ma-surface)', surface: 'var(--ma-surface-2)', border: 'var(--ma-line)', gold: 'var(--ma-accent)', danger: 'var(--ma-red)' };
 
 type Look = { number: number; title: string; occasion: string; revisedInRound: number | null };
 /** Generated titles open with "Outfit 4 - "; the number is already shown beside it. */
@@ -95,14 +96,14 @@ export default function StylistRevisionRequestDialog({
   const count = selected.length;
   const primaryLabel = count ? `Create ${count} revised look${count > 1 ? 's' : ''} and open` : 'Save and open the report';
 
-  return <div role="dialog" aria-modal="true" aria-label={`Revise ${clientName}'s report`} onKeyDown={event => { if (event.key === 'Escape') onClose(); }} className="fixed inset-0 z-[80] flex items-center justify-center p-4" style={{ background: 'rgba(44,38,34,.56)' }}>
-    <div className="w-full max-w-2xl rounded-3xl p-6 md:p-7 max-h-[92vh] overflow-y-auto" style={{ background: C.bg, border: `1px solid ${C.border}`, boxShadow: '0 24px 80px rgba(44,38,34,.24)' }}>
+  return <div role="dialog" aria-modal="true" aria-label={`Revise ${clientName}'s report`} onKeyDown={event => { if (event.key === 'Escape') onClose(); }} className="ma-scope ma-sheet-backdrop" style={{ zIndex: 80 }}>
+    <div className="ma-sheet max-w-2xl p-6 md:p-7 overflow-y-auto" style={{ display: 'block' }}>
       <div className="flex items-start justify-between gap-4">
         <div>
-          <p className="iconik-micro" style={{ color: C.gold }}>REVISE REPORT</p>
-          <h2 className="iconik-display text-2xl mt-1" style={{ color: C.ink }}>Which looks is {clientName} changing?</h2>
+          <p className="ma-eyebrow">Revise report</p>
+          <h2 className="ma-h2 mt-1.5" style={{ fontSize: 20 }}>Which looks is {clientName} changing?</h2>
         </div>
-        <button type="button" onClick={onClose} aria-label="Close" className="rounded-full p-2" style={{ color: C.muted }}><X size={18} /></button>
+        <button type="button" onClick={onClose} aria-label="Close" className="ma-btn ma-btn--ghost ma-btn--sm ma-btn--icon"><X size={16} /></button>
       </div>
       <p className="luxury-body text-sm leading-6 mt-3" style={{ color: C.muted }}>
         Each look you choose gets a new page in the same design as the outfits. Write the outfit and add its image there. {clientName} keeps her current version until you publish the update, and the original looks stay in the report, marked as revised.
@@ -117,8 +118,7 @@ export default function StylistRevisionRequestDialog({
             onChange={event => setText(event.target.value)}
             rows={4}
             placeholder="Paste the WhatsApp message…"
-            className="w-full rounded-xl p-3 text-sm luxury-body outline-none focus:ring-2 focus:ring-[#9A7538] resize-y"
-            style={{ background: C.bg, border: `1px solid ${C.border}`, color: C.ink }}
+            className="ma-textarea"
           />
           {parsed.length > 0 && <ul className="flex flex-col gap-1.5 mt-3">
             {parsed.map(item => {
@@ -153,10 +153,10 @@ export default function StylistRevisionRequestDialog({
                 type="button"
                 onClick={() => toggle(look.number)}
                 aria-pressed={on}
-                className="flex items-start gap-3 rounded-xl px-3 py-2.5 text-left transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#9A7538]"
-                style={{ background: on ? C.ink : C.surface, color: on ? C.bg : C.ink, border: `1px solid ${on ? C.ink : C.border}` }}
+                className="flex items-start gap-3 rounded-xl px-3 py-2.5 text-left transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#6a1f2b]"
+                style={{ background: on ? C.ink : C.surface, color: on ? C.bg : C.ink, border: `1px solid ${on ? C.ink : C.border}`, borderRadius: 14 }}
               >
-                <span className="shrink-0 mt-0.5 w-4 h-4 rounded flex items-center justify-center" style={{ border: `1px solid ${on ? C.bg : 'rgba(44,38,34,.3)'}` }}>{on && <Check size={12} />}</span>
+                <span className="shrink-0 mt-0.5 w-4 h-4 rounded flex items-center justify-center" style={{ border: `1px solid ${on ? C.bg : 'rgba(17,19,21,.3)'}` }}>{on && <Check size={12} />}</span>
                 <span className="min-w-0">
                   <span className="block luxury-body text-sm leading-5 truncate">
                     <span className="tabular-nums" style={{ opacity: 0.65 }}>{String(look.number).padStart(2, '0')}</span> {lookTitle(look)}
@@ -172,10 +172,10 @@ export default function StylistRevisionRequestDialog({
       {error && <p role="alert" className="rounded-xl p-3 mt-4 luxury-body text-sm" style={{ color: C.danger, background: '#F6E3DF' }}>{error}</p>}
 
       <div className="grid sm:grid-cols-2 gap-3 mt-6">
-        <button type="button" onClick={() => void submit(true)} disabled={!canSubmit} className="rounded-xl px-5 py-3.5 luxury-body text-sm flex items-center justify-center gap-2 disabled:opacity-50" style={{ background: C.ink, color: C.bg }}>
+        <button type="button" onClick={() => void submit(true)} disabled={!canSubmit} className="ma-btn ma-btn--dark ma-btn--lg w-full">
           {busy === 'open' ? <Loader2 size={15} className="animate-spin" /> : null} {primaryLabel}
         </button>
-        <button type="button" onClick={() => void submit(false)} disabled={!canSubmit} className="rounded-xl px-5 py-3.5 luxury-body text-sm flex items-center justify-center gap-2 disabled:opacity-50" style={{ background: C.card, color: C.ink }}>
+        <button type="button" onClick={() => void submit(false)} disabled={!canSubmit} className="ma-btn ma-btn--secondary ma-btn--lg w-full">
           {busy === 'save' ? <Loader2 size={15} className="animate-spin" /> : null} Save for later
         </button>
       </div>

@@ -2,7 +2,7 @@
 
 import { Suspense, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Eye, EyeOff, Loader2, ShieldCheck } from 'lucide-react';
+import { Eye, EyeOff, Loader2 } from 'lucide-react';
 
 function LoginContent() {
   const router = useRouter();
@@ -38,31 +38,36 @@ function LoginContent() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4" style={{ background: '#090909' }}>
-      <div className="w-full max-w-sm">
-        <div className="text-center mb-8">
-          <div className="rounded-2xl flex items-center justify-center mx-auto mb-4" style={{ width: 52, height: 52, background: 'linear-gradient(135deg, #c9a96e 0%, #8a6820 100%)' }}>
-            <ShieldCheck size={22} className="text-white" />
-          </div>
-          <p className="text-[10px] font-bold tracking-[0.2em] uppercase mb-1" style={{ color: '#c9a96e' }}>ICONIK Stylist</p>
-          <h1 className="text-3xl font-light tracking-wide" style={{ color: '#f0ebe0' }}>Admin Portal</h1>
+    <div className="flex min-h-screen items-center justify-center px-4">
+      <div className="w-full max-w-[380px]">
+        <div className="mb-8 text-center">
+          <div style={{ fontSize: 14, fontWeight: 600, letterSpacing: '0.34em' }}>ICONIK</div>
+          <h1 className="ma-title mt-5">Stylist <em>admin</em></h1>
+          <p className="ma-faint mt-2 text-[14px]">Sign in to manage stylists, clients and Blueprints.</p>
         </div>
-        <div className="rounded-2xl border p-8" style={{ background: '#111111', borderColor: '#2a2a2a' }}>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <input type="email" value={email} onChange={e => setEmail(e.target.value)} required placeholder="admin@example.com" className="w-full px-4 py-3 rounded-xl text-sm outline-none" style={{ background: '#1a1a1a', border: '1px solid #2a2a2a', color: '#f0ebe0' }} />
-            <div className="relative">
-              <input type={showPw ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)} required placeholder="Password" className="w-full px-4 py-3 pr-10 rounded-xl text-sm outline-none" style={{ background: '#1a1a1a', border: '1px solid #2a2a2a', color: '#f0ebe0' }} />
-              <button type="button" onClick={() => setShowPw(value => !value)} className="absolute right-3 top-1/2 -translate-y-1/2" style={{ color: '#6b5f4a' }}>
+
+        <form onSubmit={handleSubmit} className="ma-card space-y-4 p-7">
+          <label className="block">
+            <span className="ma-label">Email</span>
+            <input type="email" value={email} onChange={e => setEmail(e.target.value)} required autoComplete="username" className="ma-input" />
+          </label>
+          <label className="block">
+            <span className="ma-label">Password</span>
+            <span className="relative block">
+              <input type={showPw ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)} required autoComplete="current-password" className="ma-input" style={{ paddingRight: 44 }} />
+              <button type="button" onClick={() => setShowPw(value => !value)} className="ma-faint absolute right-3.5 top-1/2 -translate-y-1/2" aria-label={showPw ? 'Hide password' : 'Show password'}>
                 {showPw ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
-            </div>
-            {error && <p className="text-sm rounded-xl px-4 py-2.5" style={{ color: '#ef4444', background: '#1a0a0a', border: '1px solid #3a1010' }}>{error}</p>}
-            <button type="submit" disabled={loading} className="w-full py-3 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-60" style={{ background: 'linear-gradient(135deg, #c9a96e 0%, #8a6820 100%)', color: '#fff' }}>
-              {loading && <Loader2 size={16} className="animate-spin" />}
-              {loading ? 'Signing in...' : 'Sign in'}
-            </button>
-          </form>
-        </div>
+            </span>
+          </label>
+
+          {error && <p className="rounded-xl px-4 py-2.5 text-[13px]" style={{ background: 'var(--ma-red-soft)', color: 'var(--ma-red)' }}>{error}</p>}
+
+          <button type="submit" disabled={loading} className="ma-btn ma-btn--primary ma-btn--lg w-full">
+            {loading && <Loader2 size={16} className="animate-spin" />}
+            {loading ? 'Signing in…' : 'Sign in'}
+          </button>
+        </form>
       </div>
     </div>
   );
@@ -70,7 +75,7 @@ function LoginContent() {
 
 export default function StylistAdminLoginPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center" style={{ background: '#090909' }}><Loader2 size={22} className="animate-spin" style={{ color: '#c9a96e' }} /></div>}>
+    <Suspense fallback={<div className="flex min-h-screen items-center justify-center"><Loader2 size={22} className="animate-spin ma-faint" /></div>}>
       <LoginContent />
     </Suspense>
   );

@@ -345,7 +345,7 @@ export default function StyleEditIssueReviewPage({ params }: { params: Promise<{
         </div>
       </div>
 
-      {error && <p className="luxury-body text-sm mb-4 rounded-xl px-4 py-3" style={{ color: S.error, background: `${S.error}10`, border: `1px solid ${S.error}25` }}>{error}</p>}
+      {error && <p className="luxury-body text-sm mb-4 rounded-xl px-4 py-3" style={{ color: S.error, background: `color-mix(in srgb, ${S.error} 7%, transparent)`, border: `1px solid color-mix(in srgb, ${S.error} 16%, transparent)` }}>{error}</p>}
 
       {!draft ? (
         <ReviewCard className="p-12 text-center">
@@ -364,7 +364,7 @@ export default function StyleEditIssueReviewPage({ params }: { params: Promise<{
                   <button
                     key={section.id}
                     onClick={() => leaveJsonEditor(section.id)}
-                    className="w-full flex items-center justify-between rounded-xl px-3 py-2.5 text-sm text-left luxury-body transition"
+                    className="w-full flex items-center justify-between rounded-full px-3 py-2.5 text-sm text-left luxury-body transition"
                     style={{ background: activeSection === section.id && !fullPreview ? S.ink : 'transparent', color: activeSection === section.id && !fullPreview ? S.bg : S.muted, border: `1px solid ${activeSection === section.id && !fullPreview ? S.ink : S.border}` }}
                   >
                     {section.label}
@@ -373,7 +373,7 @@ export default function StyleEditIssueReviewPage({ params }: { params: Promise<{
                 ))}
                 <button
                   onClick={openJsonEditor}
-                  className="w-full flex items-center justify-between rounded-xl px-3 py-2.5 text-sm text-left luxury-body transition"
+                  className="w-full flex items-center justify-between rounded-full px-3 py-2.5 text-sm text-left luxury-body transition"
                   style={{ background: activeSection === 'json' ? S.ink : 'transparent', color: activeSection === 'json' ? S.bg : S.muted, border: `1px solid ${activeSection === 'json' ? S.ink : S.border}` }}
                 >
                   Advanced JSON
@@ -407,7 +407,7 @@ export default function StyleEditIssueReviewPage({ params }: { params: Promise<{
                 <Eye size={14} /> {fullPreview ? 'Focused' : 'Full'}
               </ActionButton>
             </ReviewCard>
-            <div className="rounded-2xl overflow-auto border max-h-[calc(100vh-230px)]" style={{ borderColor: S.border, background: fullPreview ? '#FBF8F4' : S.panel }}>
+            <div className="rounded-2xl overflow-auto border max-h-[calc(100vh-230px)]" style={{ borderColor: S.border, background: fullPreview ? '#faf9f6' : S.panel }}>
               {fullPreview
                 ? <StyleEditIssuePage data={draft} imageUrls={issue.image_urls} />
                 : <div className="p-5"><SectionPreview section={activeSection} data={draft} /></div>

@@ -6,17 +6,17 @@ import { useRouter } from 'next/navigation';
 import { ArrowLeft, ExternalLink, Loader2, Zap } from 'lucide-react';
 
 const S = {
-  bg: '#F4EFE5',
-  card: '#EDE5D2',
-  border: 'rgba(44,38,34,0.1)',
-  rowBorder: 'rgba(44,38,34,0.07)',
-  ink: '#2C2622',
-  muted: 'rgba(44,38,34,0.4)',
-  slate: '#94A6AD',
-  slateDeep: '#7E9098',
-  gold: '#C9A96E',
-  error: '#C4645A',
-  success: '#5A8B6A',
+  bg: '#f5f3ee',
+  card: '#ffffff',
+  border: 'rgba(17,19,21,0.1)',
+  rowBorder: 'rgba(17,19,21,0.07)',
+  ink: '#111315',
+  muted: 'rgba(17,19,21,0.4)',
+  slate: '#2c5282',
+  slateDeep: '#2c5282',
+  gold: '#6a1f2b',
+  error: '#b42318',
+  success: '#2f6b4f',
 };
 
 interface Report {
@@ -77,7 +77,7 @@ function fmt(value: unknown): string {
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-2xl border p-6" style={{ background: S.card, borderColor: S.border }}>
+    <div className="rounded-3xl border p-6" style={{ background: S.card, borderColor: S.border, boxShadow: 'var(--ma-shadow-sm)' }}>
       <div className="iconik-micro mb-5" style={{ color: S.muted }}>{title}</div>
       {children}
     </div>
@@ -162,7 +162,7 @@ export default function StylistSubmissionDetailPage({ params }: { params: Promis
         <p className="luxury-body text-sm mt-1" style={{ color: S.muted, fontWeight: 300 }}>{contactLabel}</p>
       </div>
 
-      <div className="rounded-2xl border p-5 mb-6 flex items-center justify-between gap-4" style={{ background: S.card, borderColor: S.border }}>
+      <div className="rounded-3xl border p-5 mb-6 flex items-center justify-between gap-4" style={{ background: S.card, borderColor: S.border, boxShadow: 'var(--ma-shadow-sm)' }}>
         <div>
           <p className="luxury-body text-sm" style={{ color: S.ink, fontWeight: 500 }}>
             {latest ? latest.status.replace(/_/g, ' ') : 'No report generated yet'}
@@ -174,7 +174,7 @@ export default function StylistSubmissionDetailPage({ params }: { params: Promis
           {latest && (
             <Link
               href={`/stylist/admin/report/${latest.id}`}
-              className="px-4 py-2 rounded-xl text-sm luxury-body transition"
+              className="px-4 py-2 rounded-full text-sm luxury-body transition"
               style={{ background: S.ink, color: S.bg }}
             >
               Open Report
@@ -184,7 +184,7 @@ export default function StylistSubmissionDetailPage({ params }: { params: Promis
             <Link
               href={`/stylist/report/${latest.share_token}`}
               target="_blank"
-              className="px-3 py-2 rounded-xl text-sm"
+              className="px-3 py-2 rounded-full text-sm"
               style={{ background: S.card, color: S.muted, border: `1px solid ${S.border}` }}
             >
               <ExternalLink size={14} />
@@ -194,8 +194,7 @@ export default function StylistSubmissionDetailPage({ params }: { params: Promis
             <button
               onClick={handleGenerate}
               disabled={generating}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm luxury-body disabled:opacity-50 transition"
-              style={{ background: S.slateDeep, color: S.bg }}
+              className="ma-btn ma-btn--primary"
             >
               {generating ? <Loader2 size={14} className="animate-spin" /> : <Zap size={14} />}
               {generating ? 'Starting…' : 'Generate Report'}
@@ -219,7 +218,7 @@ export default function StylistSubmissionDetailPage({ params }: { params: Promis
 
       <div className="grid md:grid-cols-4 gap-4 mb-6">
         {Object.entries(submission.photo_urls ?? {}).map(([key, url]) => (
-          <div key={key} className="rounded-2xl border overflow-hidden" style={{ background: S.card, borderColor: S.border }}>
+          <div key={key} className="rounded-3xl border overflow-hidden" style={{ background: S.card, borderColor: S.border, boxShadow: 'var(--ma-shadow-sm)' }}>
             <p className="iconik-micro px-4 py-3 border-b" style={{ color: S.muted, borderColor: S.rowBorder }}>{key.replace(/_/g, ' ')}</p>
             {url
               ? <img src={url} alt={key} className="w-full h-56 object-cover" />

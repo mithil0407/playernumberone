@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getStylistWorkspaceIdentity, isAdminCookieAuthenticated, getWorkspaceStylistBySlug } from '@/lib/stylistWorkspaceAuth';
 import { loadWorkspaceQueue } from '@/lib/stylistWorkspaceQueue';
-import { positiveInteger, queryWorkspaceItems, workspaceCounts } from '@/lib/stylistWorkspaceQueueModel';
+import { deliveryRecord, positiveInteger, queryWorkspaceItems, workspaceCounts } from '@/lib/stylistWorkspaceQueueModel';
 
 export async function GET(request: NextRequest) {
   const previewSlug = request.nextUrl.searchParams.get('stylistSlug');
@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
       stylist: { name: identity.name, slug: identity.slug },
       // Summaries only: no photo URLs, storage paths, notes or report bodies.
       ...(params.get('snapshot') === '1' ? { snapshotItems: items } : {}),
-      items: visible.slice((page - 1) * limit, page * limit), counts: workspaceCounts(items), total: visible.length, page, limit,
+      items: visible.slice((page - 1) * limit, page * limit), counts: workspaceCounts(items), deliveryRecord: deliveryRecord(items), total: visible.length, page, limit,
     }, { headers: { 'Cache-Control': 'private, no-store' } });
   } catch (error) {
     console.error('[stylist-workspace] queue failed', error);

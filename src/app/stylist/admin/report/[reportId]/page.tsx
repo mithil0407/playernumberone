@@ -1606,19 +1606,22 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
 
   return (
     <div className={`min-h-screen ${isWorkspace ? 'stylist-workspace-report' : ''}`} style={{ background: S.bg, color: S.ink }}>
-      <aside className="fixed left-0 top-0 bottom-0 z-30 w-[310px] border-r flex flex-col" style={{ background: S.card, borderColor: S.border }}>
-        <div className="px-6 py-5 border-b" style={{ borderColor: S.border }}>
-          <div className="iconik-display" style={{ fontSize: '13px', letterSpacing: '0.32em', color: S.ink }}>I C O N I K</div>
-          <div className="iconik-micro mt-1.5" style={{ color: S.muted }}>{isWorkspace ? 'Stylist · Report Review' : 'Admin · Report Review'}</div>
+      <aside className="fixed left-0 top-0 bottom-0 z-30 w-[310px] border-r flex flex-col" style={{ background: S.panel, borderColor: 'var(--ma-line-2)' }}>
+        <div className="px-6 py-5 border-b" style={{ borderColor: 'var(--ma-line-2)' }}>
+          <div style={{ fontSize: 13, fontWeight: 600, letterSpacing: '0.34em', color: S.ink }}>
+            ICONIK
+            <span className="ml-2 ma-faint" style={{ letterSpacing: '0.12em', fontWeight: 500, fontSize: 11 }}>{isWorkspace ? 'STUDIO' : 'STYLIST'}</span>
+          </div>
+          <div className="ma-eyebrow mt-1.5">Report review</div>
         </div>
         <div className="px-4 py-3 border-b space-y-1" style={{ borderColor: S.border }}>
-          <Link href={isWorkspace && workspaceSlug ? `/stylist/${workspaceSlug}/dashboard` : '/stylist/admin/workspace'} className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm luxury-body" style={{ color: S.muted }}>
+          <Link href={isWorkspace && workspaceSlug ? `/stylist/${workspaceSlug}/dashboard` : '/stylist/admin/workspace'} className="flex items-center gap-3 rounded-full px-3 py-2.5 text-sm luxury-body" style={{ color: S.muted }}>
             <LayoutDashboard size={15} /> Blueprints
           </Link>
-          {!isWorkspace && <Link href="/stylist/admin/manual" className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm luxury-body" style={{ color: S.muted }}>
+          {!isWorkspace && <Link href="/stylist/admin/manual" className="flex items-center gap-3 rounded-full px-3 py-2.5 text-sm luxury-body" style={{ color: S.muted }}>
             <FilePlus2 size={15} /> Manual Reports
           </Link>}
-          {!isWorkspace && <Link href="/stylist/admin/edit" className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm luxury-body" style={{ color: S.muted }}>
+          {!isWorkspace && <Link href="/stylist/admin/edit" className="flex items-center gap-3 rounded-full px-3 py-2.5 text-sm luxury-body" style={{ color: S.muted }}>
             <Mail size={15} /> ICONIK Edit
           </Link>}
         </div>
@@ -1644,8 +1647,8 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
               : `Published ${new Date(report.published_at!).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', timeZone: 'Asia/Kolkata' })}. This is what ${clientDisplayName} sees.`}
           </p>}
           {versioned && <div className="mt-4">
-            <div className="flex items-baseline justify-between luxury-body text-xs"><span style={{ color: S.ink }}>{approvedCount} of {totalPageCount} pages approved</span><span style={{ color: '#655E57' }}>{totalPageCount ? Math.round((approvedCount / totalPageCount) * 100) : 0}%</span></div>
-            <div className="mt-2 h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(44,38,34,0.08)' }}><div className="h-full rounded-full transition-all duration-500" style={{ width: `${totalPageCount ? (approvedCount / totalPageCount) * 100 : 0}%`, background: '#426B4E' }} /></div>
+            <div className="flex items-baseline justify-between luxury-body text-xs"><span style={{ color: S.ink }}>{approvedCount} of {totalPageCount} pages approved</span><span style={{ color: '#58595b' }}>{totalPageCount ? Math.round((approvedCount / totalPageCount) * 100) : 0}%</span></div>
+            <div className="mt-2 h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(17,19,21,0.08)' }}><div className="h-full rounded-full transition-all duration-500" style={{ width: `${totalPageCount ? (approvedCount / totalPageCount) * 100 : 0}%`, background: '#2f6b4f' }} /></div>
           </div>}
         </div>
         {versioned && (
@@ -1657,7 +1660,7 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
                 const groupApproved = groupPages.filter(page => report.section_approvals?.[`p${page.page_number}`]).length;
                 return (
                 <div key={group}>
-                  <p className="flex items-center justify-between px-3 mb-1 luxury-body text-[11px] uppercase tracking-[0.12em]" style={{ color: '#655E57' }}><span>{group}</span><span className="tabular-nums tracking-normal">{groupApproved}/{groupPages.length}</span></p>
+                  <p className="flex items-center justify-between px-3 mb-1 luxury-body text-[11px] uppercase tracking-[0.12em]" style={{ color: '#58595b' }}><span>{group}</span><span className="tabular-nums tracking-normal">{groupApproved}/{groupPages.length}</span></p>
                   <div className="space-y-0.5">
                     {groupPages.map(page => {
                       const approved = Boolean(report.section_approvals?.[`p${page.page_number}`]);
@@ -1671,10 +1674,10 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
                             setViewMode('page');
                           }}
                           aria-current={active ? 'page' : undefined}
-                          className="w-full grid grid-cols-[22px_1fr_auto] items-center gap-2 rounded-lg px-3 py-2 text-left transition-colors hover:bg-[rgba(44,38,34,0.05)]"
+                          className="w-full grid grid-cols-[22px_1fr_auto] items-center gap-2 rounded-full px-3 py-2 text-left transition-colors hover:bg-[rgba(17,19,21,0.05)]"
                           style={{
                             background: active ? S.ink : undefined,
-                            color: active ? S.bg : hidden ? '#8A837B' : S.ink,
+                            color: active ? S.bg : hidden ? '#8b8c8e' : S.ink,
                           }}
                         >
                           <span className="luxury-body text-[11px] tabular-nums" style={{ opacity: 0.6 }}>{navNumber(page.page_number)}</span>
@@ -1682,8 +1685,8 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
                           {hidden
                             ? <EyeOff size={14} aria-label="Hidden from client" style={{ opacity: 0.6 }} />
                             : approved
-                              ? <CircleCheck size={15} aria-label="Approved" style={{ color: active ? '#A9D3B4' : '#426B4E' }} />
-                              : <span aria-label="Not approved yet" className="w-3.5 h-3.5 rounded-full border" style={{ borderColor: active ? 'rgba(244,239,229,0.5)' : 'rgba(44,38,34,0.25)' }} />}
+                              ? <CircleCheck size={15} aria-label="Approved" style={{ color: active ? '#a9cdb9' : '#2f6b4f' }} />
+                              : <span aria-label="Not approved yet" className="w-3.5 h-3.5 rounded-full border" style={{ borderColor: active ? 'rgba(244,239,229,0.5)' : 'rgba(17,19,21,0.25)' }} />}
                         </button>
                       );
                     })}
@@ -1706,25 +1709,25 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
           </div>
         )}
         <div className="px-4 py-4 border-t" style={{ borderColor: S.border }}>
-          <button onClick={logout} className="w-full flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm luxury-body" style={{ color: S.muted }}>
+          <button onClick={logout} className="w-full flex items-center gap-2.5 rounded-full px-3 py-2.5 text-sm luxury-body" style={{ color: S.muted }}>
             <LogOut size={14} /> Sign out
           </button>
         </div>
       </aside>
 
       <main className="min-h-screen pl-[310px]">
-        <header className="sticky top-0 z-20 border-b px-4 md:px-8 py-4 backdrop-blur" style={{ background: 'rgba(244,239,229,0.92)', borderColor: S.border }}>
+        <header className="ma-glass sticky top-0 z-20 border-b px-4 md:px-8 py-4" style={{ borderColor: 'var(--ma-line-2)' }}>
           {isWorkspace && <Link href={`/stylist/${workspaceSlug}/dashboard`} className="workspace-mobile-back luxury-body text-sm mb-3" style={{ color: S.muted }}>← Back to report desk</Link>}
           <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4">
             <div>
-              <div className="iconik-micro mb-1" style={{ color: '#655E57' }}>{isWorkspace ? clientDisplayName : 'Women Blueprint Report'}</div>
+              <div className="iconik-micro mb-1" style={{ color: '#58595b' }}>{isWorkspace ? clientDisplayName : 'Women Blueprint Report'}</div>
               <div className="flex flex-wrap items-center gap-3">
                 <h2 className="luxury-body text-lg" style={{ color: S.ink, fontWeight: 500 }}>
                   {viewMode === 'full' ? 'Full report' : activeRevisedOutfit ? `Revised Look ${activeRevisedOutfit.replaces}: ${activePage?.title || 'Untitled'}` : activePage ? `Page ${activePage.page_number}: ${activePage.title || 'Untitled'}` : 'Report'}
                 </h2>
                 {imageCounts && <Pill tone={requiredImagesDone ? 'success' : 'gold'}>Images {Object.values(imageCounts).reduce((sum, group) => sum + group.done, 0)}/{Object.values(imageCounts).reduce((sum, group) => sum + group.total, 0)}</Pill>}
               </div>
-              {isWorkspace && versioned && viewMode === 'page' && <p className="luxury-body text-xs mt-1.5" style={{ color: '#655E57' }}>{activeRevisedOutfit ? `A new version of Look ${activeRevisedOutfit.replaces}. Write the outfit, add its image, then approve.` : activePageIsOutfit ? 'Edit the pieces and wording, upload a matching image, then approve.' : 'Check the advice against the client’s inputs. Click any text to edit it.'}</p>}
+              {isWorkspace && versioned && viewMode === 'page' && <p className="luxury-body text-xs mt-1.5" style={{ color: '#58595b' }}>{activeRevisedOutfit ? `A new version of Look ${activeRevisedOutfit.replaces}. Write the outfit, add its image, then approve.` : activePageIsOutfit ? 'Edit the pieces and wording, upload a matching image, then approve.' : 'Check the advice against the client’s inputs. Click any text to edit it.'}</p>}
               {report.error_message && !showGenerationPanel && <p className="luxury-body text-sm mt-2" style={{ color: S.error }}>{report.error_message}</p>}
               {error && <p className="luxury-body text-sm mt-2" style={{ color: S.error }}>{error}</p>}
               {isLegacyReport && (
@@ -1966,22 +1969,22 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
         />}
 
         {showGenerationPanel && (
-          <section aria-live="polite" className="report-generation-panel mx-4 md:mx-8 mt-5 rounded-2xl border px-5 py-4 flex flex-wrap items-center gap-x-6 gap-y-3 luxury-body" style={{ background: generationStopped ? '#FBF1EE' : S.panel, borderColor: generationStopped ? 'rgba(154,64,57,0.25)' : S.border }}>
+          <section aria-live="polite" className="report-generation-panel mx-4 md:mx-8 mt-5 rounded-2xl border px-5 py-4 flex flex-wrap items-center gap-x-6 gap-y-3 luxury-body" style={{ background: generationStopped ? '#fbeeec' : S.panel, borderColor: generationStopped ? 'rgba(154,64,57,0.25)' : S.border }}>
             <div className="flex items-start gap-3 min-w-0 flex-1 basis-[280px]">
               {generationStopped
-                ? <AlertTriangle size={18} className="mt-0.5 shrink-0" style={{ color: '#9A4039' }} />
-                : <Loader2 size={18} className="mt-0.5 shrink-0 animate-spin" style={{ color: '#655E57' }} />}
+                ? <AlertTriangle size={18} className="mt-0.5 shrink-0" style={{ color: '#b42318' }} />
+                : <Loader2 size={18} className="mt-0.5 shrink-0 animate-spin" style={{ color: '#58595b' }} />}
               <div className="min-w-0">
                 <p className="text-sm font-medium" style={{ color: S.ink }}>{generationTitle}</p>
-                <p className="text-xs mt-1 leading-5" style={{ color: generationStopped ? '#9A4039' : '#655E57' }}>{generationDetail}</p>
-                {resumeNote && <p className="text-xs mt-1" style={{ color: '#3F6A4C' }}>{resumeNote}</p>}
+                <p className="text-xs mt-1 leading-5" style={{ color: generationStopped ? '#b42318' : '#58595b' }}>{generationDetail}</p>
+                {resumeNote && <p className="text-xs mt-1" style={{ color: '#2f6b4f' }}>{resumeNote}</p>}
               </div>
             </div>
             {generationProgress && generationProgress.total > 0 && (
               <div className="w-full sm:w-44">
-                <p className="text-[11px] mb-1.5 tabular-nums" style={{ color: '#655E57' }}>Step {Math.min(generationProgress.done + 1, generationProgress.total)} of {generationProgress.total}</p>
-                <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(44,38,34,0.08)' }}>
-                  <div className="h-full rounded-full transition-all duration-700" style={{ width: `${(generationProgress.done / generationProgress.total) * 100}%`, background: '#426B4E' }} />
+                <p className="text-[11px] mb-1.5 tabular-nums" style={{ color: '#58595b' }}>Step {Math.min(generationProgress.done + 1, generationProgress.total)} of {generationProgress.total}</p>
+                <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(17,19,21,0.08)' }}>
+                  <div className="h-full rounded-full transition-all duration-700" style={{ width: `${(generationProgress.done / generationProgress.total) * 100}%`, background: '#2f6b4f' }} />
                 </div>
               </div>
             )}
@@ -2033,18 +2036,18 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
       </main>
 
       {versioned && (
-        <footer className="report-actionbar fixed bottom-0 left-[310px] right-0 z-30 border-t" style={{ background: 'rgba(251,248,240,0.97)', borderColor: S.border, boxShadow: '0 -8px 30px rgba(44,38,34,0.06)', paddingBottom: 'env(safe-area-inset-bottom)' }}>
-          <div className="h-[3px]" style={{ background: 'rgba(44,38,34,0.06)' }}><div className="h-full transition-all duration-500" style={{ width: `${totalPageCount ? (approvedCount / totalPageCount) * 100 : 0}%`, background: '#426B4E' }} /></div>
+        <footer className="report-actionbar fixed bottom-0 left-[310px] right-0 z-30 border-t" style={{ background: 'rgba(255,255,255,0.86)', backdropFilter: 'saturate(180%) blur(20px)', WebkitBackdropFilter: 'saturate(180%) blur(20px)', borderColor: 'var(--ma-line-2)', boxShadow: '0 -8px 30px rgba(17,19,21,0.06)', paddingBottom: 'env(safe-area-inset-bottom)' }}>
+          <div className="h-[3px]" style={{ background: 'rgba(17,19,21,0.06)' }}><div className="h-full transition-all duration-500" style={{ width: `${totalPageCount ? (approvedCount / totalPageCount) * 100 : 0}%`, background: '#2f6b4f' }} /></div>
           <div className="flex items-center gap-3 px-4 md:px-6 py-3">
             <div className="flex items-center gap-1 min-w-0">
               <ActionButton tone="ghost" size="sm" ariaLabel="Previous page" title="Previous page" disabled={!previousPage} onClick={() => previousPage && goToPage(previousPage.page_number)} className="!px-2 !py-2"><ChevronLeft size={18} /></ActionButton>
               <div className="min-w-0 shrink-0 sm:shrink px-1">
                 <p className="luxury-body text-sm whitespace-nowrap sm:truncate" style={{ color: S.ink }}>
                   <span className="font-medium"><span className="hidden sm:inline">Page </span>{activePageNumber}</span>
-                  <span style={{ color: '#655E57' }}><span className="hidden sm:inline"> of </span><span className="sm:hidden">/</span>{pages.length}</span>
-                  {activePageApproved && <span className="ml-2 inline-flex items-center gap-1 text-xs align-middle" style={{ color: '#3F6A4C' }}><CircleCheck size={13} /> Approved</span>}
+                  <span style={{ color: '#58595b' }}><span className="hidden sm:inline"> of </span><span className="sm:hidden">/</span>{pages.length}</span>
+                  {activePageApproved && <span className="ml-2 inline-flex items-center gap-1 text-xs align-middle" style={{ color: '#2f6b4f' }}><CircleCheck size={13} /> Approved</span>}
                 </p>
-                <p className={`luxury-body text-xs truncate ${saveConflict || saving || hasUnsavedEdits ? '' : 'hidden sm:block'}`} role="status" aria-live="polite" style={{ color: saveConflict ? '#9A4039' : '#655E57' }}>
+                <p className={`luxury-body text-xs truncate ${saveConflict || saving || hasUnsavedEdits ? '' : 'hidden sm:block'}`} role="status" aria-live="polite" style={{ color: saveConflict ? '#b42318' : '#58595b' }}>
                   {saveConflict
                     ? 'A newer revision exists. Reload before editing again.'
                     : saving
@@ -2058,7 +2061,7 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
             </div>
 
             <div className="ml-auto flex items-center gap-2">
-              {(sendDisabledReason || sendWarningReason) && !sending && <span className="hidden lg:inline luxury-body text-xs mr-2 max-w-[260px] truncate" title={sendDisabledReason || sendWarningReason} style={{ color: sendDisabledReason ? '#9A4039' : '#655E57' }}>{sendDisabledReason || sendWarningReason}</span>}
+              {(sendDisabledReason || sendWarningReason) && !sending && <span className="hidden lg:inline luxury-body text-xs mr-2 max-w-[260px] truncate" title={sendDisabledReason || sendWarningReason} style={{ color: sendDisabledReason ? '#b42318' : '#58595b' }}>{sendDisabledReason || sendWarningReason}</span>}
               {(!isWorkspace || hasUnsavedEdits) && (
                 <ActionButton onClick={saveChangedPages} disabled={Boolean(saveDisabledReason)} title={saveDisabledReason || 'Save inline report edits.'} tone="neutral">
                   {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />} {saving ? 'Saving…' : 'Save'}
@@ -2068,14 +2071,14 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
                 <ActionButton tone="neutral" ariaLabel="More approval actions" title="More actions" onClick={() => setMoreActionsOpen(open => !open)} className="!px-3"><MoreHorizontal size={16} /></ActionButton>
                 {moreActionsOpen && <>
                   <button aria-label="Close menu" className="fixed inset-0 z-10 cursor-default" onClick={() => setMoreActionsOpen(false)} />
-                  <div role="menu" className="absolute bottom-full right-0 z-20 mb-2 w-64 rounded-2xl border p-1.5" style={{ background: S.panel, borderColor: S.border, boxShadow: '0 16px 40px rgba(44,38,34,0.16)' }}>
-                    <button role="menuitem" disabled={!activePageApproved || Boolean(currentBusyReason)} onClick={() => { setMoreActionsOpen(false); void toggleCurrentApproval(); }} className="w-full flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-left luxury-body text-sm hover:bg-[rgba(44,38,34,0.05)] disabled:opacity-40 disabled:cursor-not-allowed" style={{ color: S.ink }}>
+                  <div role="menu" className="absolute bottom-full right-0 z-20 mb-2 w-64 rounded-2xl border p-1.5" style={{ background: S.panel, borderColor: S.border, boxShadow: '0 16px 40px rgba(17,19,21,0.16)' }}>
+                    <button role="menuitem" disabled={!activePageApproved || Boolean(currentBusyReason)} onClick={() => { setMoreActionsOpen(false); void toggleCurrentApproval(); }} className="w-full flex items-center gap-2.5 rounded-full px-3 py-2.5 text-left luxury-body text-sm hover:bg-[rgba(17,19,21,0.05)] disabled:opacity-40 disabled:cursor-not-allowed" style={{ color: S.ink }}>
                       <Undo2 size={15} /> Undo approval for this page
                     </button>
                     <button role="menuitem" disabled={allApproved || Boolean(currentBusyReason)} onClick={() => {
                       setMoreActionsOpen(false);
                       if (window.confirm(`Approve all ${totalPageCount - approvedCount} remaining pages without reviewing them one by one?`)) void approveAll();
-                    }} className="w-full flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-left luxury-body text-sm hover:bg-[rgba(44,38,34,0.05)] disabled:opacity-40 disabled:cursor-not-allowed" style={{ color: S.ink }}>
+                    }} className="w-full flex items-center gap-2.5 rounded-full px-3 py-2.5 text-left luxury-body text-sm hover:bg-[rgba(17,19,21,0.05)] disabled:opacity-40 disabled:cursor-not-allowed" style={{ color: S.ink }}>
                       <CheckCheck size={15} /> Approve all remaining pages
                     </button>
                   </div>
@@ -2099,7 +2102,7 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
       )}
 
       {studioPanel && reviewData && (
-        <div role="dialog" aria-label="Report studio editor" onKeyDown={event => { if (event.key === 'Escape') setStudioPanel(null); }} className="studio-drawer fixed right-0 top-0 bottom-0 z-[70] w-full max-w-[470px] overflow-y-auto border-l" style={{ background: S.bg, borderColor: S.border, boxShadow: '-24px 0 70px rgba(44,38,34,.18)' }}>
+        <div role="dialog" aria-label="Report studio editor" onKeyDown={event => { if (event.key === 'Escape') setStudioPanel(null); }} className="studio-drawer fixed right-0 top-0 bottom-0 z-[70] w-full max-w-[470px] overflow-y-auto border-l" style={{ background: S.bg, borderColor: S.border, boxShadow: '-24px 0 70px rgba(17,19,21,.18)' }}>
           <div className="sticky top-0 z-10 flex items-start justify-between gap-4 border-b px-6 py-5" style={{ background: 'rgba(244,239,229,.97)', borderColor: S.border }}>
             <div>
               <div className="iconik-micro" style={{ color: S.gold }}>REPORT STUDIO</div>
@@ -2210,13 +2213,13 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
 
             {studioPanel === 'quality' && (
               <>
-                <div className="rounded-2xl border p-5" style={{ background: qualityIssues.some(issue => issue.level === 'error') ? `${S.error}0D` : `${S.success}0D`, borderColor: qualityIssues.some(issue => issue.level === 'error') ? `${S.error}55` : `${S.success}55` }}>
+                <div className="rounded-2xl border p-5" style={{ background: qualityIssues.some(issue => issue.level === 'error') ? `color-mix(in srgb, ${S.error} 5%, white)` : `color-mix(in srgb, ${S.success} 5%, white)`, borderColor: qualityIssues.some(issue => issue.level === 'error') ? `color-mix(in srgb, ${S.error} 33%, transparent)` : `color-mix(in srgb, ${S.success} 33%, transparent)` }}>
                   <div className="iconik-display text-xl" style={{ color: S.ink }}>{qualityIssues.length ? `${qualityIssues.length} item${qualityIssues.length === 1 ? '' : 's'} to review` : 'Report checks passed'}</div>
                   <p className="luxury-body text-xs mt-2" style={{ color: S.muted }}>Checks cover analysis confirmation, missing pages, empty content, placeholders, outfit structure and duplicate formulas.</p>
                 </div>
                 <div className="space-y-2">
                   {qualityIssues.map((issue, index) => (
-                    <button key={`${issue.page ?? 'report'}-${index}`} onClick={() => { if (issue.page) { setActivePageNumber(issue.page); setViewMode('page'); } }} className="w-full rounded-xl border p-4 text-left" style={{ background: S.card, borderColor: S.border }}>
+                    <button key={`${issue.page ?? 'report'}-${index}`} onClick={() => { if (issue.page) { setActivePageNumber(issue.page); setViewMode('page'); } }} className="w-full rounded-full border p-4 text-left" style={{ background: S.card, borderColor: S.border }}>
                       <div className="flex gap-3">
                         <Pill tone={issue.level === 'error' ? 'error' : 'gold'}>{issue.level}</Pill>
                         <div className="luxury-body text-sm" style={{ color: S.ink }}>{issue.page ? `Page ${issue.page}: ` : ''}{issue.message}</div>
@@ -2231,8 +2234,8 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
       )}
 
       {deliveryPrepared && (
-        <div className="fixed inset-0 z-[80] flex items-center justify-center p-5" style={{ background: 'rgba(44,38,34,.56)' }}>
-          <div className="w-full max-w-lg rounded-3xl p-7 md:p-8" style={{ background: S.bg, border: `1px solid ${S.border}`, boxShadow: '0 24px 80px rgba(44,38,34,.24)' }}>
+        <div className="fixed inset-0 z-[80] flex items-center justify-center p-5" style={{ background: 'rgba(17,19,21,.56)' }}>
+          <div className="w-full max-w-lg rounded-3xl p-7 md:p-8" style={{ background: S.bg, border: `1px solid ${S.border}`, boxShadow: '0 24px 80px rgba(17,19,21,.24)' }}>
             <div className="iconik-micro mb-2" style={{ color: S.gold }}>{(deliveryPrepared.publishedVersion ?? 1) > 1 ? `UPDATE PUBLISHED · VERSION ${deliveryPrepared.publishedVersion}` : 'REPORT PUBLISHED'}</div>
             <h3 className="iconik-display text-3xl" style={{ color: S.ink }}>{(deliveryPrepared.publishedVersion ?? 1) > 1 ? 'Send the update' : 'Deliver on WhatsApp'}</h3>
             <p className="luxury-body text-sm leading-6 mt-3" style={{ color: S.muted }}>
@@ -2244,14 +2247,14 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
               {deliveryPrepared.reportUrl}
             </div>
             <div className="grid sm:grid-cols-2 gap-3 mt-6">
-              <button onClick={() => void openWhatsApp()} className="rounded-xl px-5 py-3.5 luxury-body text-sm flex items-center justify-center gap-2" style={{ background: '#2F7D4A', color: '#fff' }}>
+              <button onClick={() => void openWhatsApp()} className="rounded-full px-5 py-3.5 luxury-body text-sm flex items-center justify-center gap-2" style={{ background: '#2f6b4f', color: '#fff' }}>
                 <Send size={15} /> Open WhatsApp
               </button>
-              <button onClick={() => void confirmWhatsAppDelivery()} disabled={confirmingDelivery} className="rounded-xl px-5 py-3.5 luxury-body text-sm flex items-center justify-center gap-2 disabled:opacity-50" style={{ background: S.ink, color: S.bg }}>
+              <button onClick={() => void confirmWhatsAppDelivery()} disabled={confirmingDelivery} className="rounded-full px-5 py-3.5 luxury-body text-sm flex items-center justify-center gap-2 disabled:opacity-50" style={{ background: S.ink, color: S.bg }}>
                 {confirmingDelivery ? <Loader2 size={15} className="animate-spin" /> : <CheckCheck size={15} />} Mark Delivered
               </button>
             </div>
-            <button onClick={() => setDeliveryPrepared(null)} className="w-full mt-3 rounded-xl px-5 py-3 luxury-body text-sm" style={{ color: S.muted }}>Close and confirm later</button>
+            <button onClick={() => setDeliveryPrepared(null)} className="w-full mt-3 rounded-full px-5 py-3 luxury-body text-sm" style={{ color: S.muted }}>Close and confirm later</button>
           </div>
         </div>
       )}
@@ -2279,9 +2282,10 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
           gap: 8px;
           min-height: 44px;
           padding: 6px;
-          border: 1px solid ${S.border};
-          border-radius: 16px;
-          background: rgba(237, 229, 210, 0.46);
+          border: 1px solid var(--ma-line);
+          border-radius: 22px;
+          background: var(--ma-surface);
+          box-shadow: 0 1px 2px rgba(17, 19, 21, 0.04);
         }
         .admin-toolbar-group-wide {
           flex: 1 1 620px;
@@ -2289,20 +2293,22 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
         }
         .admin-toolbar-label {
           padding: 0 4px;
-          color: ${S.muted};
-          font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
-          font-size: 10px;
-          letter-spacing: 0.12em;
+          color: var(--ma-ink-3);
+          font-size: 11px;
+          font-weight: 600;
+          letter-spacing: 0.1em;
           text-transform: uppercase;
           white-space: nowrap;
         }
         .admin-toolbar-select,
         .admin-outfit-input {
           min-height: 40px;
-          border-radius: 12px;
+          border-radius: 14px;
           padding: 8px 12px;
           font-size: 14px;
           outline: none;
+          background: var(--ma-surface);
+          border: 1px solid var(--ma-line);
         }
         .admin-toolbar-select:disabled,
         .admin-outfit-input:disabled {
