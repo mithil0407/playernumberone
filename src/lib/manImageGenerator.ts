@@ -712,6 +712,12 @@ STUDIO:
 ${ABSOLUTE_NO_TEXT_RULE}`;
 }
 
+/** The look the before/after shows: a groom's wedding look when there is one, otherwise Outfit 1. */
+function heroOutfitNumber(sections: ReportSections): number {
+  const outfits = parseManOutfitsFromSection(sections.s4_outfits ?? '');
+  return outfits.find(outfit => outfit.context === 'Wedding Ceremony')?.number ?? 1;
+}
+
 function outfitSpecForDeliverable(sections: ReportSections, outfitNumber: number): string {
   const outfit = parseOutfitsFromSection(sections.s4_outfits ?? '').find(item => item.index === outfitNumber);
   if (!outfit) return `Use Outfit ${outfitNumber} from the report.`;
@@ -742,7 +748,7 @@ BEFORE — LEFT PANEL:
 AFTER — RIGHT PANEL:
 - Change only the clothing and apply the tiny source-locked grooming tidy-up below while preserving the locked body and pose.
 - Outfit:
-${outfitSpecForDeliverable(sections, 1)}
+${outfitSpecForDeliverable(sections, heroOutfitNumber(sections))}
 ${identityAndGroomingRules}
 
 STUDIO AND CANVAS:
@@ -776,7 +782,7 @@ function buildSocialMediaInspirationPrompt(
   };
   const specs = [
     {
-      outfitNumber: nthInContext('Evening Wear', 0, 11),
+      outfitNumber: outfits.some(outfit => outfit.context === 'Sangeet') ? nthInContext('Sangeet', 0, 11) : nthInContext('Evening Wear', 0, 11),
       scene: 'warm restaurant terrace or rooftop evening setting, flattering ambient light, confident relaxed three-quarter pose',
     },
     {

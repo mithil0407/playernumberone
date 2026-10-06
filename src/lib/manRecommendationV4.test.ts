@@ -193,3 +193,31 @@ test('QA uses the client split, blocks colour drift during generation and only w
   const restored = restoreManSection4SourceColours(drifted, sources);
   assert.equal(findManSection4ColourDrift(restored, sources).length, 0, 'the generator puts the colour back');
 });
+
+test('a groom gets the wedding functions first and a smaller everyday set; QA accepts Indian wedding wear', () => {
+  const groom = buildManRecommendationProfile({ ...intake, dressing_context: 'indian_occasions', free_text_note: 'Tell me which dress suit on my body in my wedding' });
+  assert.equal(groom.occasion_mode, 'groom');
+  const split = computeManContextSplit(groom);
+  assert.equal(split.reduce((sum, [, count]) => sum + count, 0), 20);
+  assert.deepEqual(split.slice(0, 5).map(([context]) => context), ['Haldi', 'Mehendi', 'Sangeet', 'Wedding Ceremony', 'Reception']);
+  assert.equal(buildManRecommendationProfile({ style_profile: { version: 1, occasion: 'attending_wedding' } }).occasion_mode, 'wedding_guest');
+  assert.equal(buildManRecommendationProfile({ ...intake }).occasion_mode, 'everyday');
+
+  const now = new Date('2026-10-06T12:00:00Z');
+  const classification = { ...baseClassification, recommendation_profile: groom } as ClassificationResult;
+  const picks = selectManOutfitLibraryPicks(classification, undefined, now);
+  const wedding = picks.filter(pick => pick.entry.context === 'Wedding Ceremony');
+  assert.equal(wedding.length, 3);
+  assert.ok(wedding.every(pick => /sherwani|achkan|bandhgala/i.test(`${pick.entry.top} ${pick.entry.layer}`)), 'the wedding looks are groom wear');
+
+  const assignments = getManOutfitLibraryAssignments(classification, undefined, now);
+  const library = getManOutfitLibrary();
+  const section = assignments.map(item => {
+    const entry = library.find(look => look.id === item.libraryLookId)!;
+    const top = item.context === 'Wedding Ceremony' ? `${entry.top} in matte raw silk with a mandarin collar` : entry.top;
+    return `OUTFIT ${item.outfitNumber} — ${item.context.toUpperCase()}\nTOP: ${top}\nLAYER: ${entry.layer}\nBOTTOM: ${entry.bottom}\nFOOTWEAR: ${entry.footwear}\nACCESSORY: ${entry.accessories}\nOCCASION ANCHOR: Worn at the ${item.context.toLowerCase()}; the long line keeps his midsection smooth and the colour suits him.`;
+  }).join('\n\n');
+  const qa = validateManReportSection4(section, classification, { enforceV2: true, assignments, colourLock: 'block', climateDate: now });
+  const errors = qa.issues.filter(issue => issue.severity === 'error');
+  assert.deepEqual(errors, [], 'raw silk and band collars are fine in wedding looks');
+});

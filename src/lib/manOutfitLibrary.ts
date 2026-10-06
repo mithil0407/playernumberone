@@ -14,15 +14,13 @@ import {
   computeManContextSplit,
   manComfortBoldness,
   manPieceMatches,
+  isManWeddingContext,
+  type ManOutfitContext,
   type ManOutfitLadderStep,
   type ManRecommendationProfile,
 } from './manRecommendationProfile';
 
-export type ManOutfitLibraryContext =
-  | 'Office / Formal'
-  | 'Smart Casual'
-  | 'Evening Wear'
-  | 'Relaxed Casual';
+export type ManOutfitLibraryContext = ManOutfitContext;
 
 // v3: the Iconik board looks are picked first and the core 100 fill any gap;
 // the fixed suit/tie/resort/old-money quotas are gone.
@@ -84,6 +82,7 @@ export type ManOutfitArchetype =
   | 'daily-old-money'
   | 'urban-travel'
   | 'indian-casual'
+  | 'indian-occasion'
   | ManBoardSilhouette;
 
 export type ManOutfitPatternFamily = 'solid' | 'stripe' | 'check' | 'jacquard' | 'print';
@@ -142,6 +141,11 @@ const HEADER_CONTEXTS: Record<string, ManOutfitLibraryContext> = {
   'SMART CASUAL': 'Smart Casual',
   'EVENING WEAR': 'Evening Wear',
   'RELAXED CASUAL': 'Relaxed Casual',
+  HALDI: 'Haldi',
+  MEHENDI: 'Mehendi',
+  SANGEET: 'Sangeet',
+  'WEDDING CEREMONY': 'Wedding Ceremony',
+  RECEPTION: 'Reception',
 };
 
 const HOT_CLIMATE_RESTRICTED_PATTERN = /\b(turtleneck|roll[-\s]?neck|wool(?:-blend|\s+blend)?|flannel|heavy\s+knit|merino|corduroy|overcoat|puffer|scarf|thick\s+tweed|velvet)\b/i;
@@ -183,6 +187,10 @@ export interface ManReportClimateProfile {
 // Literal paths so Vercel's file tracer bundles both files.
 function readBoardLibraryFile(): string {
   return readFileSync(join(process.cwd(), 'src/lib/ICONIK_Mens_Library_Board.md'), 'utf-8');
+}
+
+function readOccasionLibraryFile(): string {
+  return readFileSync(join(process.cwd(), 'src/lib/ICONIK_Mens_Library_Occasion.md'), 'utf-8');
 }
 
 function readCoreLibraryFile(): string {
@@ -419,6 +427,7 @@ export function getManOutfitLibrary(): ManOutfitLibraryEntry[] {
   if (!cachedLibrary) {
     cachedLibrary = [
       ...parseManOutfitLibrary(readBoardLibraryFile(), 'board'),
+      ...parseManOutfitLibrary(readOccasionLibraryFile(), 'board'),
       ...parseManOutfitLibrary(readCoreLibraryFile(), 'core'),
     ];
   }
@@ -1287,9 +1296,13 @@ SOURCE LOCK — non-negotiable, and it outranks every older rule about colour:
 - Keep the source's STYLING line (tucked, sleeves rolled, worn open, draped) and its accessories. If the source accessory is "None", add one that suits his face shape.
 - Your job is execution: give every garment a real fabric, a fit for his body and one precise styling instruction, so each line reads as a buyable product. That is where the elevation comes from — fabric, texture, proportion and styling — not from new colours.
 - Respect the LADDER line: comfort looks stay wearable, stretch looks stay bold. Do not tone a stretch look down.
-- Never introduce satin, silk, or any shiny fabric. ${waivers.includes('ties') ? 'No ties for this client.' : 'Add a tie only where the source has one.'} ${waivers.includes('suits') ? 'No suits for this client.' : ''}
+- Never introduce satin or any shiny fabric; silk only as matte raw silk or cotton-silk in wedding-function looks. ${waivers.includes('ties') ? 'No ties for this client.' : 'Add a tie only where the source has one.'} ${waivers.includes('suits') ? 'No suits for this client.' : ''}
 
-Occasion split for this client: ${split}. Office looks stay office-appropriate for his workplace; Evening reads night-out; Relaxed follows its sources. ${requiresIndianCasual(classification) ? 'The kurta sources must stay everyday kurtas; a Western shirt renamed Indian does not qualify.' : ''} Current climate mode: ${climate.label} (${climate.mode.toUpperCase()}). ${climate.promptGuidance} Do not mention library look numbers, ladder steps, source references, or adaptation in the visible report.
+Occasion split for this client: ${split}.${classification.recommendation_profile?.occasion_mode === 'groom'
+    ? ' THIS IS HIS OWN WEDDING: the Haldi, Mehendi, Sangeet, Wedding Ceremony and Reception looks dress him as the groom. Name every Indian garment precisely (kurta, churidar, sherwani, achkan, nehru jacket, bandhgala, mojaris, juttis, safa, dupatta) and keep the source silhouette; raw silk, cotton-silk, jacquard, velvet and tonal thread embroidery are welcome, but nothing shiny or sequinned. The anchor sentence names the function and why the look suits his body and colouring.'
+    : classification.recommendation_profile?.occasion_mode === 'wedding_guest'
+      ? ' He is attending weddings: the wedding-function looks dress him as a well-turned-out guest, never outshining the groom. Name every Indian garment precisely and keep the source silhouette; nothing shiny or sequinned.'
+      : ''} Office looks stay office-appropriate for his workplace; Evening reads night-out; Relaxed follows its sources; wedding-function looks follow their sources exactly. ${requiresIndianCasual(classification) ? 'The kurta sources must stay everyday kurtas; a Western shirt renamed Indian does not qualify.' : ''} Current climate mode: ${climate.label} (${climate.mode.toUpperCase()}). ${climate.promptGuidance} Do not mention library look numbers, ladder steps, source references, or adaptation in the visible report.
 
 ## SELECTED REFERENCES
 

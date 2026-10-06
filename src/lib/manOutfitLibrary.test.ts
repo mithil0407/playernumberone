@@ -25,7 +25,9 @@ const classification = {
 
 export function runManOutfitLibraryAssertions() {
   const library = getManOutfitLibrary();
-  const board = library.filter(entry => entry.tier === 'board');
+  // IDs 400+ are the Indian occasion library, which is ranked like the board but counted separately.
+  const board = library.filter(entry => entry.tier === 'board' && entry.id < 400);
+  invariant(library.filter(entry => entry.id >= 400).length === 44, 'parses the 44 occasion looks');
   const core = library.filter(entry => entry.tier === 'core');
   invariant(board.length === 155, 'parses all 155 board looks');
   invariant(core.length === 100, 'parses all 100 core library looks');

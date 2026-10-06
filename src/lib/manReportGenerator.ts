@@ -67,6 +67,37 @@ const COLOUR_LOCKED_SECTION4_CONTROLS = `Mandatory controls:
 - Suits and ties appear only where the source has them.
 - Indian / ethnic wear appears only where a source has it.`;
 
+/** Section 5's three grid groups: the usual office / evening / relaxed, or wedding day / functions / everyday. */
+function comboGridGroupsText(classification: ClassificationResult): string {
+  const mode = classification.recommendation_profile?.occasion_mode ?? 'everyday';
+  if (mode !== 'everyday') {
+    return `### Wedding Day Combinations
+Write exactly three looks, using this exact structure for each, derived from the Wedding Ceremony and Reception outfits:
+#### [Look Name]
+- Outfit summary: [full outfit description]
+- Logic: [why it suits this client]
+- Source: Derived from Outfit #[Wedding Ceremony or Reception outfit number]
+
+### Sangeet and Mehendi Combinations
+Write exactly three looks using the same four-line structure, derived from the Sangeet, Mehendi and Haldi outfits.
+
+### Everyday Relaxed Combinations
+Write exactly three looks using the same four-line structure, derived from his everyday outfits (office, smart casual, evening or relaxed).`;
+  }
+  return `### Office Basic Combinations
+Write exactly three looks, using this exact structure for each:
+#### [Look Name]
+- Outfit summary: [full outfit description]
+- Logic: [why it suits this client]
+- Source: Derived from Outfit #[Office / Formal outfit number]
+
+### Evening Outfit Combinations
+Write exactly three looks using the same four-line structure, derived from Evening Wear outfits.
+
+### Relaxed Casual Combinations
+Write exactly three looks using the same four-line structure, derived from Relaxed Casual outfits.`;
+}
+
 function section4SplitText(classification: ClassificationResult): string {
   const lines = describeManContextSplit(classification);
   return `${classification.recommendation_profile ? 'Output split for this client (follows how often he dresses for each occasion)' : 'Fixed output split'}:\n${lines.map(line => `- ${line}`).join('\n')}`;
@@ -452,18 +483,7 @@ OCCASION ANCHOR: [One short sentence naming where he wears this and what it sign
 Write copy for three custom 1-row x 3-column image grids that will be generated after the 20 outfit images. Each grid should define three related looks that show the client in the same visual system, not generic flat-lays.
 Do not use Markdown tables, pipe-delimited rows, or table separator syntax.
 
-### Office Basic Combinations
-Write exactly three looks, using this exact structure for each:
-#### [Look Name]
-- Outfit summary: [full outfit description]
-- Logic: [why it suits this client]
-- Source: Derived from Outfit #[Office / Formal outfit number]
-
-### Evening Outfit Combinations
-Write exactly three looks using the same four-line structure, derived from Evening Wear outfits.
-
-### Relaxed Casual Combinations
-Write exactly three looks using the same four-line structure, derived from Relaxed Casual outfits.
+{{combo_grid_groups}}
 
 ---
 
@@ -647,11 +667,13 @@ export interface ReportData {
 }
 
 /** First outfit number of an occasion, so the social-post deliverables point at the right looks. */
-function firstOutfitNumberFor(classification: ClassificationResult, context: string, offset = 0): number {
-  let next = 1;
-  for (const [name, count] of getManContextSplit(classification)) {
-    if (name === context) return next + Math.min(offset, Math.max(0, count - 1));
-    next += count;
+function firstOutfitNumberFor(classification: ClassificationResult, context: string | string[], offset = 0): number {
+  for (const wanted of Array.isArray(context) ? context : [context]) {
+    let next = 1;
+    for (const [name, count] of getManContextSplit(classification)) {
+      if (name === wanted) return next + Math.min(offset, Math.max(0, count - 1));
+      next += count;
+    }
   }
   return 1;
 }
@@ -703,12 +725,12 @@ export function buildManBlueprintV2StructuredData(
       colourDrapeVerdict: `${classification.colour.season} works when colour sits at the right depth near the face; the drape comparison shows what to repeat and what to remove.`,
     },
     deliverables: {
-      strongestOutfitNumber: 1,
+      strongestOutfitNumber: firstOutfitNumberFor(classification, ['Wedding Ceremony', 'Office / Formal']),
       linkedinHeadshotSpec: `Professional headshot using ${classification.face.hairstyle_recommendations?.[0] || 'clean grooming'}, ${classification.face.beard_style_recommendations?.[0] || classification.face.facial_hair_recommendations || 'precise facial hair'}, and a best-palette blazer or shirt.`,
       datingProfileShots: [
         {
           title: 'Evening style inspiration',
-          outfitNumber: firstOutfitNumberFor(classification, 'Evening Wear'),
+          outfitNumber: firstOutfitNumberFor(classification, ['Sangeet', 'Evening Wear']),
           scene: 'Warm restaurant or rooftop evening light, relaxed three-quarter pose, direct but natural expression.',
           usage: 'Use as inspiration for a polished evening post with confident, natural energy.',
         },
@@ -1277,6 +1299,7 @@ export async function runReportGeneration(
   const userPrompt = fillTemplate(REPORT_USER_TEMPLATE, {
     section4_split: section4SplitText(classification),
     section4_controls: section4ControlsText(classification),
+    combo_grid_groups: comboGridGroupsText(classification),
     classification_json: JSON.stringify(classification, null, 2),
     free_note:           submission.free_text_note ?? 'Not provided',
     primary_goal:        mapField('primary_goal',   submission.primary_goal),
@@ -1340,6 +1363,7 @@ function buildSectionUserPrompt(
   let prompt = preamble + fillTemplate(_SECTION_BLOCKS[sectionIndex], {
     section4_split: section4SplitText(classification),
     section4_controls: section4ControlsText(classification),
+    combo_grid_groups: comboGridGroupsText(classification),
   });
 
   // Inject the outfit recommendation skill for Section 4 with an actual
@@ -1366,7 +1390,7 @@ ${colourLocked ? `- Keep every source look's colours exactly (see SOURCE LOCK). 
 - No mannequin-default outfit: do not output white shirt + navy/black trouser + black shoe, navy polo + beige chino + white sneaker, black polo + black/grey trouser, white tee + blue denim + white sneaker without an open layer, check shirt + blue denim + sneaker without styling, or navy blazer + white shirt + navy trouser + black shoe unless clearly rescued by at least two visible elevation moves.
 - At least 6 final outfits must use a non-default elevated colour as a primary top or layer outside plain white/navy/black/beige/grey.
 - Use a varied mix of bottoms, tops, layers and shoes, at least 8 colour families, and at most 7 patterned pieces (none if the client rejects patterns).`}
-- No satin, silk, or shiny fabric anywhere, including ties, pocket squares, and linings; ties are grenadine, knitted, or matte woven only.
+- No satin or shiny fabric anywhere, including ties, pocket squares, and linings; silk only as matte raw silk or cotton-silk in Indian wedding-function looks; ties are grenadine, knitted, or matte woven only.
 - CLIMATE REQUIREMENTS and the banned-descriptor list outrank the classification JSON and the skill examples. Never carry classification wording such as "architectural", "wool flannel", or "matte silk" into a garment line when those rules forbid it. In MONSOON, suede/nubuck shoes become smooth leather versions of the same shoe, and merino/wool/flannel become cotton, linen-cotton, or tropical-weight equivalents.
 ${colourLocked ? '' : `- Adjacent visible layers must use different colour families: charcoal/grey/slate/slate grey are one grey family; navy/blue/slate blue/indigo/chambray/teal are one blue family.
 `}- Keep every assigned source look's footwear category and layer/no-layer decision exactly: adapt materials for climate within the category, and replace a climate-unsafe layer with a permitted equivalent instead of removing it.
@@ -1483,7 +1507,7 @@ ${colourLocked
 - Adjacent outfits must not repeat the same or close primary top colour family. Treat white/ecru/ivory/cream/off-white/chalk/bone as one light-neutral family and stone/oatmeal/sand/beige as one pale-earth family. Do not repeat a visible layer colour family in consecutive looks either: charcoal/grey/slate/slate grey are one grey family and navy/blue/slate blue/indigo/chambray/teal are one blue family, so recolour the later layer into a genuinely different family.`}
 - Each QA issue names the offending field and word in brackets. Remove or replace exactly that word in that garment line; banned words in OCCASION ANCHOR are not the problem.
 - No blazer in RELAXED CASUAL.
-- Never introduce satin, silk, or shiny fabrics anywhere, including ties and pocket squares; ties are grenadine, knitted, or matte woven only.
+- Never introduce satin or shiny fabrics anywhere, including ties and pocket squares; silk only as matte raw silk or cotton-silk in Indian wedding-function looks; ties are grenadine, knitted, or matte woven only.
 - Never remove a layer while repairing: replace a climate- or preference-unsafe layer with a permitted equivalent of similar formality. Evening keeps at most 2 no-layer looks.
 - Never change an outfit's footwear category while repairing.
 - Follow CLIMATE REQUIREMENTS exactly. In MONSOON mode, keep the outfit rain-aware: no suede/nubuck, heavy winter fabrics, overcoats, puffers, or scarves; keep each outfit's existing footwear category in its most rain-practical leather or rubber-soled version, and use weather-sensible fabrics.
@@ -1614,14 +1638,7 @@ Never use Markdown tables, pipe-delimited rows, or table separator syntax.
 Required output:
 ## SECTION 5: YOUR COMBINATION GRID GUIDE
 
-### Office Basic Combinations
-Exactly three looks derived from Office / Formal outfits.
-
-### Evening Outfit Combinations
-Exactly three looks derived from Evening Wear outfits.
-
-### Relaxed Casual Combinations
-Exactly three looks derived from Relaxed Casual outfits.
+${comboGridGroupsText(classification)}
 
 Use this exact structure for every look:
 #### [Look Name]

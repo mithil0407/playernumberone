@@ -22,9 +22,10 @@ export type ComboGridGroupNormaliseResult =
   | { ok: false; error: string; groups: ParsedComboGridGroup[] };
 
 const COMBO_GRID_GROUPS: Array<{ kind: ComboGridKind; title: string; headingPattern: RegExp }> = [
-  { kind: 'office', title: 'Office Basic Combinations', headingPattern: /\boffice\b|\bformal\b/i },
-  { kind: 'evening', title: 'Evening Outfit Combinations', headingPattern: /\bevening\b/i },
-  { kind: 'relaxed', title: 'Relaxed Casual Combinations', headingPattern: /\brelaxed\b|\bcasual\b/i },
+  // Wedding reports reuse the three grid slots: wedding day / functions / everyday.
+  { kind: 'office', title: 'Office Basic Combinations', headingPattern: /\boffice\b|\bformal\b|\bwedding\b|\breception\b|\bceremony\b/i },
+  { kind: 'evening', title: 'Evening Outfit Combinations', headingPattern: /\bevening\b|\bsangeet\b|\bmehe?ndi\b|\bhaldi\b|\bfestive\b/i },
+  { kind: 'relaxed', title: 'Relaxed Casual Combinations', headingPattern: /\brelaxed\b|\bcasual\b|\beveryday\b/i },
 ];
 
 const REQUIRED_FIELD_NAMES = ['outfit summary', 'logic', 'source'] as const;
@@ -67,6 +68,12 @@ function groupDetails(kind: ComboGridKind) {
 
 export function comboGridGroupTitle(kind: ComboGridKind): string {
   return groupDetails(kind).title;
+}
+
+/** The group's own heading ("Wedding Day Combinations"), falling back to the default title for its slot. */
+function groupTitle(kind: ComboGridKind, block: string): string {
+  const heading = block.match(/^###\s+(.+)$/m)?.[1];
+  return heading ? cleanInlineText(heading).replace(/^#+\s*/, '') : groupDetails(kind).title;
 }
 
 function kindFromHeading(heading: string): ComboGridKind | null {
@@ -133,7 +140,7 @@ function parseCanonicalGroup(kind: ComboGridKind, block: string): ParsedComboGri
     return null;
   }
 
-  return { kind, title: groupDetails(kind).title, looks };
+  return { kind, title: groupTitle(kind, block), looks };
 }
 
 function parseFlexibleGroup(kind: ComboGridKind, block: string): ParsedComboGridGroup | null {
@@ -161,7 +168,7 @@ function parseFlexibleGroup(kind: ComboGridKind, block: string): ParsedComboGrid
     return null;
   }
 
-  return { kind, title: groupDetails(kind).title, looks };
+  return { kind, title: groupTitle(kind, block), looks };
 }
 
 function splitPipeRow(line: string): string[] | null {
@@ -211,7 +218,7 @@ function parseLegacyTableGroup(kind: ComboGridKind, block: string): ParsedComboG
     return null;
   }
 
-  return { kind, title: groupDetails(kind).title, looks };
+  return { kind, title: groupTitle(kind, block), looks };
 }
 
 export function parseComboGridText(text: string): ParsedComboGridGroup[] {

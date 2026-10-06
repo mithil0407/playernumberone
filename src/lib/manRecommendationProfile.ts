@@ -10,13 +10,26 @@
  * server (picker, QA), so nothing here may touch the filesystem.
  */
 
-export type ManOutfitContext = 'Office / Formal' | 'Smart Casual' | 'Evening Wear' | 'Relaxed Casual';
-export const MAN_OUTFIT_CONTEXTS: ManOutfitContext[] = ['Office / Formal', 'Smart Casual', 'Evening Wear', 'Relaxed Casual'];
+export type ManEverydayContext = 'Office / Formal' | 'Smart Casual' | 'Evening Wear' | 'Relaxed Casual';
+/** Indian wedding functions, used when the client is dressing for a wedding (his own or as a guest). */
+export type ManWeddingContext = 'Haldi' | 'Mehendi' | 'Sangeet' | 'Wedding Ceremony' | 'Reception';
+export type ManOutfitContext = ManEverydayContext | ManWeddingContext;
+export const MAN_OUTFIT_CONTEXTS: ManEverydayContext[] = ['Office / Formal', 'Smart Casual', 'Evening Wear', 'Relaxed Casual'];
+export const MAN_WEDDING_CONTEXTS: ManWeddingContext[] = ['Haldi', 'Mehendi', 'Sangeet', 'Wedding Ceremony', 'Reception'];
+export const MAN_ALL_OUTFIT_CONTEXTS: ManOutfitContext[] = [...MAN_WEDDING_CONTEXTS, ...MAN_OUTFIT_CONTEXTS];
+
+export function isManWeddingContext(context: string): context is ManWeddingContext {
+  return (MAN_WEDDING_CONTEXTS as string[]).includes(context);
+}
+
+/** What the Blueprint is mainly for: everyday dressing, his own wedding, or weddings he is attending. */
+export type ManOccasionMode = 'everyday' | 'groom' | 'wedding_guest';
 
 export type ManWeekKey = 'office' | 'smart' | 'evening' | 'relaxed';
 export type ManDressCode = 'suit_tie' | 'smart_no_tie' | 'business_casual' | 'casual' | 'no_office';
 export type ManTasteVerdict = 'love' | 'try' | 'never';
 export type ManAgeRange = 'under_25' | '25_34' | '35_44' | '45_54' | '55_plus';
+export type ManOccasionAnswer = 'none' | 'own_wedding' | 'attending_wedding';
 export type ManOutfitLadderStep = 'comfort' | 'step-up' | 'stretch';
 
 /** The answers stored in `man_intake_submissions.style_profile`. */
@@ -24,6 +37,8 @@ export interface ManStyleProfileAnswers {
   version: 1;
   age_range?: ManAgeRange;
   city?: string;
+  /** "Any big occasion coming up?" */
+  occasion?: ManOccasionAnswer;
   week?: Partial<Record<ManWeekKey, number>>;
   dress_code?: ManDressCode;
   /** 1 = keep it safe … 10 = push me. */
@@ -45,6 +60,7 @@ export interface ManRecommendationProfile {
   poles: { structure?: string; expression?: string; tone?: string; register?: string };
   style_relationship?: string;
   primary_goal?: string;
+  occasion_mode: ManOccasionMode;
   experimentation: number;
   colour_boldness: number;
   week: Record<ManWeekKey, number>;
@@ -72,6 +88,8 @@ export interface ManRecommendationProfileSource {
   style_relationship?: string | null;
   primary_goal?: string | null;
   dressing_context?: string | null;
+  branch_answer?: string | null;
+  free_text_note?: string | null;
   style_anti_pref_note?: string | null;
   white_test?: string | null;
   style_profile?: unknown;
@@ -95,6 +113,12 @@ export const MAN_WEEK_ROWS: Array<{ key: ManWeekKey; label: string; hint: string
 ];
 
 export const MAN_WEEK_LEVELS = ['Rarely', 'Sometimes', 'Often', 'Most days'] as const;
+
+export const MAN_OCCASION_ANSWERS: Array<{ value: ManOccasionAnswer; label: string }> = [
+  { value: 'none', label: 'Nothing special — just everyday life' },
+  { value: 'own_wedding', label: 'My own wedding' },
+  { value: 'attending_wedding', label: "Weddings I'm attending" },
+];
 
 export const MAN_DRESS_CODES: Array<{ value: ManDressCode; label: string; sub: string }> = [
   { value: 'suit_tie', label: 'Suit and tie', sub: 'Formal office, banking, law, senior client meetings' },
@@ -181,6 +205,7 @@ export const MAN_STYLE_PIECES: Array<{ id: string; label: string; pattern: RegEx
 const WEEK_KEYS: ManWeekKey[] = ['office', 'smart', 'evening', 'relaxed'];
 const DRESS_CODES = new Set<string>(MAN_DRESS_CODES.map(code => code.value));
 const AGE_RANGES = new Set<string>(MAN_AGE_RANGES.map(range => range.value));
+const OCCASION_ANSWERS = new Set<string>(MAN_OCCASION_ANSWERS.map(answer => answer.value));
 const PIECE_IDS = new Set(MAN_STYLE_PIECES.map(piece => piece.id));
 const TASTE_IDS = new Set(MAN_TASTE_LOOKS.map(look => String(look.id)));
 const VERDICTS = new Set<string>(['love', 'try', 'never']);
@@ -232,6 +257,7 @@ export function parseManStyleProfileAnswers(raw: unknown): ManStyleProfileAnswer
     version: 1,
     ...(typeof input.age_range === 'string' && AGE_RANGES.has(input.age_range) ? { age_range: input.age_range as ManAgeRange } : {}),
     ...(cleanText(input.city, 60) ? { city: cleanText(input.city, 60) } : {}),
+    ...(typeof input.occasion === 'string' && OCCASION_ANSWERS.has(input.occasion) ? { occasion: input.occasion as ManOccasionAnswer } : {}),
     ...(Object.keys(week).length ? { week } : {}),
     ...(typeof input.dress_code === 'string' && DRESS_CODES.has(input.dress_code) ? { dress_code: input.dress_code as ManDressCode } : {}),
     ...(clampInt(input.experimentation, 1, 10) !== undefined ? { experimentation: clampInt(input.experimentation, 1, 10) } : {}),
@@ -299,6 +325,25 @@ function deriveColourBoldness(source: ManRecommendationProfileSource, experiment
   return Math.max(2, Math.min(8, Math.round(level)));
 }
 
+const OWN_WEDDING_PATTERN = /\b(?:my|our|own)\s+(?:wedding|shaadi|marriage|engagement|reception|sangeet)\b|\bgroom\b|\bdulha\b|\b(?:i am|i'm|im)\s+getting\s+married\b|\bwedding\s+is\s+(?:on|in|coming)\b/i;
+const WEDDING_PATTERN = /\b(?:wedding|shaadi|sangeet|mehendi|mehndi|haldi|baraat|reception)s?\b/i;
+
+/**
+ * His own wedding wins over everything; weddings he's attending come from the
+ * explicit answer, a wedding-season branch answer, or a wedding mentioned in
+ * his note alongside Indian occasions.
+ */
+export function deriveManOccasionMode(source: ManRecommendationProfileSource, answers?: ManStyleProfileAnswers | null): ManOccasionMode {
+  if (answers?.occasion === 'own_wedding') return 'groom';
+  if (answers?.occasion === 'attending_wedding') return 'wedding_guest';
+  const words = `${source.free_text_note ?? ''} ${source.style_anti_pref_note ?? ''} ${answers?.style_reference ?? ''}`;
+  if (OWN_WEDDING_PATTERN.test(words)) return 'groom';
+  if (answers?.occasion === 'none') return 'everyday';
+  const indianOccasions = splitList(source.dressing_context).includes('indian_occasions');
+  if (source.branch_answer === 'wedding_season' || (indianOccasions && WEDDING_PATTERN.test(words))) return 'wedding_guest';
+  return 'everyday';
+}
+
 export function buildManRecommendationProfile(
   source: ManRecommendationProfileSource,
   lookFeedback?: Record<string, number>,
@@ -324,6 +369,7 @@ export function buildManRecommendationProfile(
     },
     ...(source.style_relationship ? { style_relationship: source.style_relationship } : {}),
     ...(source.primary_goal ? { primary_goal: source.primary_goal } : {}),
+    occasion_mode: deriveManOccasionMode(source, answers),
     experimentation,
     colour_boldness: answers?.colour_boldness ?? deriveColourBoldness(source, experimentation),
     week,
@@ -351,7 +397,7 @@ export const MAN_DEFAULT_CONTEXT_SPLIT: Array<[ManOutfitContext, number]> = [
   ['Relaxed Casual', 5],
 ];
 
-const CONTEXT_WEEK_KEY: Record<ManOutfitContext, ManWeekKey> = {
+const CONTEXT_WEEK_KEY: Record<ManEverydayContext, ManWeekKey> = {
   'Office / Formal': 'office',
   'Smart Casual': 'smart',
   'Evening Wear': 'evening',
@@ -359,7 +405,7 @@ const CONTEXT_WEEK_KEY: Record<ManOutfitContext, ManWeekKey> = {
 };
 
 /** Every occasion keeps enough looks for its page and combination grid. */
-const CONTEXT_MINIMUM: Record<ManOutfitContext, number> = {
+const CONTEXT_MINIMUM: Record<ManEverydayContext, number> = {
   'Office / Formal': 3,
   'Smart Casual': 2,
   'Evening Wear': 3,
@@ -367,13 +413,19 @@ const CONTEXT_MINIMUM: Record<ManOutfitContext, number> = {
 };
 const CONTEXT_MAXIMUM = 8;
 
-/**
- * How the 20 outfits split across occasions. Each occasion gets its minimum,
- * and the rest follow how often he dresses for it (largest remainder).
- */
-export function computeManContextSplit(profile: ManRecommendationProfile | null | undefined, total = 20): Array<[ManOutfitContext, number]> {
-  if (!profile) return MAN_DEFAULT_CONTEXT_SPLIT;
-  const counts = new Map<ManOutfitContext, number>(MAN_OUTFIT_CONTEXTS.map(context => [context, CONTEXT_MINIMUM[context]]));
+/** Wedding functions, in the order they happen. A groom gets more looks per function than a guest. */
+const WEDDING_SPLIT: Record<Exclude<ManOccasionMode, 'everyday'>, Array<[ManWeddingContext, number]>> = {
+  groom: [['Haldi', 2], ['Mehendi', 2], ['Sangeet', 3], ['Wedding Ceremony', 3], ['Reception', 3]],
+  wedding_guest: [['Haldi', 1], ['Mehendi', 2], ['Sangeet', 2], ['Wedding Ceremony', 3], ['Reception', 2]],
+};
+
+/** Shares out `total` everyday looks: each context gets its minimum, the rest follow his week (largest remainder). */
+function allocateEveryday(
+  profile: ManRecommendationProfile,
+  total: number,
+  minimum: Record<ManEverydayContext, number>,
+): Array<[ManEverydayContext, number]> {
+  const counts = new Map<ManEverydayContext, number>(MAN_OUTFIT_CONTEXTS.map(context => [context, minimum[context]]));
   let remaining = total - [...counts.values()].reduce((sum, count) => sum + count, 0);
   const weights = MAN_OUTFIT_CONTEXTS.map(context => ({ context, weight: Math.max(0, profile.week[CONTEXT_WEEK_KEY[context]] ?? 0) }));
   const weightTotal = weights.reduce((sum, item) => sum + item.weight, 0) || 1;
@@ -395,6 +447,22 @@ export function computeManContextSplit(profile: ManRecommendationProfile | null 
     guard += 1;
   }
   return MAN_OUTFIT_CONTEXTS.map(context => [context, counts.get(context) ?? 0]);
+}
+
+/**
+ * How the 20 outfits split across occasions. The categories follow what he is
+ * dressing for: a groom or wedding guest gets the wedding functions first and
+ * a smaller everyday set; everyone else gets the four everyday occasions,
+ * weighted by how often he dresses for each.
+ */
+export function computeManContextSplit(profile: ManRecommendationProfile | null | undefined, total = 20): Array<[ManOutfitContext, number]> {
+  if (!profile) return MAN_DEFAULT_CONTEXT_SPLIT;
+  const mode = profile.occasion_mode ?? 'everyday';
+  if (mode === 'everyday') return allocateEveryday(profile, total, CONTEXT_MINIMUM);
+  const wedding = WEDDING_SPLIT[mode];
+  const everydayTotal = total - wedding.reduce((sum, [, count]) => sum + count, 0);
+  const everyday = allocateEveryday(profile, everydayTotal, { 'Office / Formal': 1, 'Smart Casual': 1, 'Evening Wear': 1, 'Relaxed Casual': 1 });
+  return [...wedding, ...everyday.filter(([, count]) => count > 0)];
 }
 
 /** The boldness (1-5) a client is comfortable at, from the experimentation level. */
@@ -421,7 +489,7 @@ export function buildManOutfitLadder(
 ): ManLadderSlot[] {
   const slots: ManLadderSlot[] = [];
   for (const [context, count] of split) {
-    const stretch = count >= 5 || (count >= 4 && context !== 'Office / Formal') ? 1 : 0;
+    const stretch = count >= 5 || (count >= 3 && isManWeddingContext(context)) || (count >= 4 && context !== 'Office / Formal') ? 1 : 0;
     const stepUp = Math.round(count * 0.35);
     const order: ManOutfitLadderStep[] = [];
     let comfortLeft = count - stretch - stepUp;
@@ -451,6 +519,11 @@ export function describeManRecommendationProfile(profile: ManRecommendationProfi
   const lines = [
     `Experimentation: ${profile.experimentation}/10 (${manScaleStop(MAN_EXPERIMENTATION_STOPS, profile.experimentation).label})${profile.source === 'derived' ? ' — estimated from his style answers' : ''}`,
     `Colour boldness: ${profile.colour_boldness}/10 (${manScaleStop(MAN_COLOUR_STOPS, profile.colour_boldness).label})`,
+    profile.occasion_mode === 'groom'
+      ? 'Occasion: HIS OWN WEDDING — dress him as the groom across Haldi, Mehendi, Sangeet, the wedding ceremony and the reception, plus a smaller everyday wardrobe'
+      : profile.occasion_mode === 'wedding_guest'
+        ? 'Occasion: attending Indian weddings — dress him as a well-turned-out guest across the wedding functions, plus everyday looks'
+        : null,
     `Week: ${MAN_WEEK_ROWS.map(row => `${row.label} ${MAN_WEEK_LEVELS[profile.week[row.key] ?? 0].toLowerCase()}`).join(', ')}`,
     `Workplace dress code: ${MAN_DRESS_CODES.find(code => code.value === profile.dress_code)?.label ?? profile.dress_code}`,
     profile.age_range ? `Age: ${MAN_AGE_RANGES.find(range => range.value === profile.age_range)?.label}` : null,

@@ -10,7 +10,7 @@ import {
   type ManOutfitLibraryAssignment,
 } from './manOutfitLibrary';
 import { findManSection4ColourDrift } from './manOutfitSourceLock';
-import { computeManContextSplit } from './manRecommendationProfile';
+import { computeManContextSplit, isManWeddingContext } from './manRecommendationProfile';
 
 export interface ManReportQaIssue {
   code: string;
@@ -83,6 +83,11 @@ interface ParsedQaOutfit {
 const EXPECTED_CONTEXTS = ['Office / Formal', 'Smart Casual', 'Evening Wear', 'Relaxed Casual'] as const;
 
 const CONTEXT_ALIASES: Array<[RegExp, string]> = [
+  [/\bhaldi\b/i, 'Haldi'],
+  [/\bmehe?ndi\b/i, 'Mehendi'],
+  [/\bsangeet\b/i, 'Sangeet'],
+  [/\bwedding\b|\bceremony\b|\bpheras?\b|\bbaraat\b/i, 'Wedding Ceremony'],
+  [/\breception\b/i, 'Reception'],
   [/\boffice\b|\bformal\b/i, 'Office / Formal'],
   [/\bsmart\s+casual\b/i, 'Smart Casual'],
   [/\bevening\b/i, 'Evening Wear'],
@@ -321,7 +326,7 @@ function addV2PortfolioIssues(outfits: ParsedQaOutfit[], climateMode: ReturnType
   const silhouetteCounts = new Map<string, number>();
   for (const outfit of outfits) silhouetteCounts.set(outfitSilhouetteFamily(outfit), (silhouetteCounts.get(outfitSilhouetteFamily(outfit)) ?? 0) + 1);
   for (const [family, count] of silhouetteCounts) if (count > 3) issues.push(issue('silhouette_global_cap', 'warning', `${family} appears ${count} times; aim for at most 3.`));
-  for (const context of EXPECTED_CONTEXTS) {
+  for (const context of new Set(outfits.map(outfit => outfit.context))) {
     const local = new Map<string, number>();
     for (const outfit of byContext(context)) local.set(outfitSilhouetteFamily(outfit), (local.get(outfitSilhouetteFamily(outfit)) ?? 0) + 1);
     for (const [family, count] of local) if (count > 2) issues.push(issue('silhouette_context_cap', 'warning', `${context} repeats ${family} ${count} times; aim for at most 2.`));
@@ -411,7 +416,7 @@ function evaluatePortfolioQuality(outfits: ParsedQaOutfit[], issues: ManReportQa
     const score = roundScore(categoryFidelity * 0.25 + aspirationNovelty * 0.25 + personalisation * 0.2 + portfolioDiversity * 0.15 + climateWearability * 0.15);
     return { outfitNumber: outfit.number, context: outfit.context, score, categoryFidelity: roundScore(categoryFidelity), aspirationNovelty: roundScore(aspirationNovelty), personalisation: roundScore(personalisation), portfolioDiversity: roundScore(portfolioDiversity), climateWearability: roundScore(climateWearability) };
   });
-  const contextScores = EXPECTED_CONTEXTS.reduce<Record<string, number>>((acc, context) => {
+  const contextScores = [...new Set([...EXPECTED_CONTEXTS, ...outfitScores.map(item => item.context)])].reduce<Record<string, number>>((acc, context) => {
     const scores = outfitScores.filter(item => item.context === context).map(item => item.score);
     acc[context] = scores.length ? roundScore(scores.reduce((sum, score) => sum + score, 0) / scores.length) : 0;
     return acc;
@@ -508,12 +513,15 @@ export function validateManReportSection4(
       issues.push(issue('garment_reality_multi_colour', 'error', `Outfit ${outfit.number} includes a multi-colour or contrast-detail garment${describeHit(multiColour)}.`));
     }
 
-    const shiny = findGarmentTerm(outfit, SHINY_FABRIC_PATTERN);
+    // Raw silk and silk blends are what Indian wedding wear is made of; only sheen is banned there.
+    const weddingLook = isManWeddingContext(outfit.context);
+    const shiny = findGarmentTerm(outfit, weddingLook ? /\b(satin|shiny|high-?gloss|glossy|sequin(?:ned|s)?)\b/i : SHINY_FABRIC_PATTERN);
     if (shiny) {
       issues.push(issue('shiny_fabric', 'error', `Outfit ${outfit.number} includes satin/silk/shiny fabric, which is banned${describeHit(shiny)}.`));
     }
 
-    const bannedCollar = findGarmentTerm(outfit, BANNED_SHIRT_PATTERN);
+    // Kurtas, sherwanis and bandhgalas are built on the band collar.
+    const bannedCollar = weddingLook ? null : findGarmentTerm(outfit, BANNED_SHIRT_PATTERN);
     if (bannedCollar) {
       issues.push(issue('banned_collar', 'error', `Outfit ${outfit.number} includes a band/mandarin collar, which is banned${describeHit(bannedCollar)}.`));
     }
