@@ -67,6 +67,25 @@ const COLOUR_LOCKED_SECTION4_CONTROLS = `Mandatory controls:
 - Suits and ties appear only where the source has them.
 - Indian / ethnic wear appears only where a source has it.`;
 
+/**
+ * Every section must speak to what he is actually dressing for. Without this,
+ * a groom asking about his Indian wedding was written up for a Western suit.
+ */
+function occasionDirective(classification: ClassificationResult): string {
+  const mode = classification.recommendation_profile?.occasion_mode;
+  if (mode === 'groom') {
+    return `OCCASION — READ FIRST: this client is dressing for HIS OWN INDIAN WEDDING. Write as his stylist for the wedding functions (Haldi, Mehendi, Sangeet, the wedding ceremony and the reception) first, everyday dressing second. Recommend Indian wedding wear by name — sherwani, achkan, bandhgala, kurta with nehru jacket, churidar, mojaris or juttis, safa, dupatta — cut for his body. A Western suit or tuxedo belongs only to the reception, never to the wedding ceremony.
+
+`;
+  }
+  if (mode === 'wedding_guest') {
+    return `OCCASION — READ FIRST: this client is dressing for Indian weddings he is attending. Prioritise well-cut Indian occasion wear for the functions (kurta sets, nehru jackets, bandhgalas, indo-western), then everyday dressing. He should look sharp without outshining the groom.
+
+`;
+  }
+  return '';
+}
+
 /** Section 5's three grid groups: the usual office / evening / relaxed, or wedding day / functions / everyday. */
 function comboGridGroupsText(classification: ClassificationResult): string {
   const mode = classification.recommendation_profile?.occasion_mode ?? 'everyday';
@@ -1360,7 +1379,7 @@ function buildSectionUserPrompt(
     style_blocker:       mapField('style_blocker', submission.style_blocker),
   });
 
-  let prompt = preamble + fillTemplate(_SECTION_BLOCKS[sectionIndex], {
+  let prompt = preamble + occasionDirective(classification) + fillTemplate(_SECTION_BLOCKS[sectionIndex], {
     section4_split: section4SplitText(classification),
     section4_controls: section4ControlsText(classification),
     combo_grid_groups: comboGridGroupsText(classification),
@@ -1419,8 +1438,15 @@ export async function runSection3(classification: ClassificationResult, submissi
   return callGeminiText(REPORT_SYSTEM_PROMPT, buildSectionUserPrompt(3, classification, submission));
 }
 
-export async function runSection0(classification: ClassificationResult, submission: ManIntakeSubmission): Promise<string> {
-  return callGeminiText(REPORT_SYSTEM_PROMPT, buildSectionUserPrompt(0, classification, submission));
+/** His written outfits, so summary sections recommend what the outfit pages actually show. */
+function withOutfitContext(prompt: string, section4?: string): string {
+  if (!section4?.trim()) return prompt;
+  const garments = section4.split('\n').filter(line => /^\s*(OUTFIT \d+|TOP:|LAYER:|BOTTOM:|FOOTWEAR:)/i.test(line)).join('\n');
+  return `${prompt}\n\n--- HIS OUTFITS (already written for this report; every recommendation must agree with them) ---\n${garments}\n--- END OUTFITS ---`;
+}
+
+export async function runSection0(classification: ClassificationResult, submission: ManIntakeSubmission, section4?: string): Promise<string> {
+  return callGeminiText(REPORT_SYSTEM_PROMPT, withOutfitContext(buildSectionUserPrompt(0, classification, submission), section4));
 }
 
 /** Safety net: strip any planning/meta text the model may output before the actual outfits.
@@ -1665,14 +1691,14 @@ export async function runSection5(classification: ClassificationResult, submissi
   throw new Error(`Combination Grid text is invalid after repair: ${secondPass.error}`);
 }
 
-export async function runSection6Shopping(classification: ClassificationResult, submission: ManIntakeSubmission): Promise<string> {
-  return callGeminiText(REPORT_SYSTEM_PROMPT, buildSectionUserPrompt(6, classification, submission));
+export async function runSection6Shopping(classification: ClassificationResult, submission: ManIntakeSubmission, section4?: string): Promise<string> {
+  return callGeminiText(REPORT_SYSTEM_PROMPT, withOutfitContext(buildSectionUserPrompt(6, classification, submission), section4));
 }
 
 export async function runSection7GroomingSkin(classification: ClassificationResult, submission: ManIntakeSubmission): Promise<string> {
   return callGeminiText(REPORT_SYSTEM_PROMPT, buildSectionUserPrompt(7, classification, submission));
 }
 
-export async function runSection6(classification: ClassificationResult, submission: ManIntakeSubmission): Promise<string> {
-  return callGeminiText(REPORT_SYSTEM_PROMPT, buildSectionUserPrompt(8, classification, submission));
+export async function runSection6(classification: ClassificationResult, submission: ManIntakeSubmission, section4?: string): Promise<string> {
+  return callGeminiText(REPORT_SYSTEM_PROMPT, withOutfitContext(buildSectionUserPrompt(8, classification, submission), section4));
 }

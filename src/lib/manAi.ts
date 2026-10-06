@@ -19,6 +19,8 @@ import {
 //     cooldown ends, so a batch doesn't burn minutes timing out).
 //
 // MAN_AI_PROVIDER=gemini forces Gemini everywhere (e.g. to compare outputs).
+// MAN_AI_PROVIDER=codex never falls back: a failed Codex call ("model at
+// capacity") is retried on Codex a few times, then the error is thrown.
 // Other products (women, Globe, Edit, WhatsApp) never import this module.
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -70,6 +72,18 @@ async function withGeminiFallback<T>(
   viaGemini: () => Promise<T>,
 ): Promise<T> {
   if (manAiEngine() !== 'codex') return viaGemini();
+  if (process.env.MAN_AI_PROVIDER?.trim().toLowerCase() === 'codex') {
+    for (let attempt = 1; ; attempt += 1) {
+      try {
+        return await viaCodex();
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        if (attempt >= 5) throw err;
+        console.error(`[manAi] ${label} failed on Codex (attempt ${attempt}/5), retrying on Codex: ${message.slice(0, 200)}`);
+        await new Promise(resolve => setTimeout(resolve, 20_000 * attempt));
+      }
+    }
+  }
   try {
     return await viaCodex();
   } catch (err) {

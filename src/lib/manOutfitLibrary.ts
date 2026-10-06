@@ -911,6 +911,24 @@ function feedbackWeight(entry: ManOutfitLibraryEntry, profile: ManRecommendation
   return Math.max(-3, Math.min(3, net)) * 0.05;
 }
 
+/**
+ * Weight carried on the belly: favour long lines and open layers, steer away
+ * from clingy no-layer polos and tees, shorts and tucked-in shirts with nothing over them.
+ */
+function bellyFit(entry: ManOutfitLibraryEntry, classification: ClassificationResult): number {
+  const body = `${classification.body.silhouette_type} ${classification.body.fat_storage_zone} ${classification.body.minimise_zone}`.toLowerCase();
+  if (!/oval|round|belly|midsection|abdomen/.test(body)) return 0;
+  const noLayer = /^(none|no layer)\b/i.test(entry.layer.trim());
+  const top = entry.top.toLowerCase();
+  let fit = 0;
+  if (/\bshorts\b/i.test(entry.bottom)) fit -= 0.3;
+  if (noLayer && /\b(polo|t-shirt|tee|sweatshirt)\b/.test(top)) fit -= 0.25;
+  if (/horizontal stripes|breton/.test(top)) fit -= 0.2;
+  if (!noLayer && /worn open|open front|overshirt|blazer|jacket|sherwani|achkan|nehru|kurta/i.test(entry.layer)) fit += 0.1;
+  if (/kurta|bandhgala|sherwani|achkan/.test(top)) fit += 0.05;
+  return fit;
+}
+
 function neverPieceConflict(entry: ManOutfitLibraryEntry, profile: ManRecommendationProfile): boolean {
   const text = manLookPieceText(entry);
   return profile.never_pieces.some(piece => !['suit', 'tie', 'patterns'].includes(piece) && manPieceMatches(piece, text));
@@ -1025,6 +1043,7 @@ function selectTasteLedPicks(
           + 0.35 * ladderFit
           + 0.22 * manLookPaletteFit(entry, colouring)
           + 0.08 * bodyCompatibilityScore(entry, classification)
+          + bellyFit(entry, classification)
           + tasteAffinity(entry, taste)
           + tryPieceBonus(entry, profile, current)
           + colourBoldnessFit(entry, profile)
