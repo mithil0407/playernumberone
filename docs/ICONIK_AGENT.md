@@ -209,3 +209,57 @@ free agent knows only what it sees and is told.
 2. Set `WHATSAPP_BUSINESS_NUMBER` (the ICONIK WhatsApp number, digits) so invite
    links work, then `ICONIK_AGENT_FREE_ENABLED=1`. Redeploy.
 3. Create the first wave of codes on `/agent/admin` and send them out.
+
+## Occasion looks (Diwali 2026): bringing existing Man clients in
+
+Every man with a delivered Blueprint is told a Diwali look is ready for him.
+**Nothing is designed or drawn until he asks to see it**, so image credits are
+only spent on men who engage.
+
+**Flow**
+1. `/agent/admin/looks` → **List Blueprint clients** (free): one row per delivered
+   Blueprint, latest report per phone; men with no intake photos, no contact or
+   who stopped messages are left out. Anyone can be left out by hand.
+2. **Invite**, with **Check send** (dry run) first; up to 40 per send, 9am–9pm IST:
+   - **1 · Email** (free): "Rohan, your Diwali look is ready 🪔" with one button that
+     opens WhatsApp with "Show me my Diwali look 🪔" typed, so he starts the chat.
+   - **2 · WhatsApp to those who didn't reply** (a day or two later): the text-only
+     template below with a "Show me my look" button, only to men who haven't replied;
+     free reply buttons instead when his chat is already open.
+3. **He asks to see it** (taps the button or sends the email's text):
+   `revealOccasionLook` says "Give me a minute, dressing you up for Diwali 🪔",
+   designs the look from his report (`designLook`), draws him in it
+   (`generateManEditOutfitImage`) and sends it with **Love it 😍 / Show me another**.
+   This is the only point where credits are spent. If his first message was
+   something else, the agent answers it right after the picture.
+4. For 21 days (until the day after Diwali) the prompt carries the look
+   (`occasionLookSection`): "Love it" → ask for pincode + shirt size in one line, then
+   search and present checked products; "Show me another" → a new picture straight
+   away; family mentioned → one natural offer to plan her outfit too (pairing
+   invite, free Colour Card). Replies are recorded on the row (`response`).
+
+Code: `agentOccasionLooks.ts` (pure: campaign copy, payloads, prompt section; tested
+in `agentOccasionLooks.test.ts`), `agentOccasionLookStore.ts` (list, invite, reveal,
+response tracking), `api/agent/admin/looks`, `app/agent/admin/looks`. Add a later
+occasion to `OCCASION_CAMPAIGNS`.
+
+**Setup**
+1. Run `supabase/migrations/add_agent_occasion_looks.sql`.
+2. Both channels lead to WhatsApp, so the agent must serve every Blueprint client:
+   `ICONIK_AGENT_ENABLED=1` and `ICONIK_AGENT_ALLOWED_PHONES` including `*` (or the free
+   tier on). Sending is refused otherwise.
+3. `WHATSAPP_BUSINESS_NUMBER` (the email button's wa.me link) and `GMAIL_USER` /
+   `GMAIL_APP_PASSWORD`.
+4. For step 2 only, submit the template in WhatsApp Manager → Message templates:
+   - **Name:** `iconik_diwali_look_invite_v1` · **Category:** Marketing · **Language:** English (`en`)
+   - **Header:** none
+   - **Body:**
+     ```text
+     Hi {{1}}, Diwali's on the 8th 🪔 I've put together a look for you, built on your Blueprint: your colours, your fit.
+
+     Want to see it?
+     ```
+     Sample: `{{1}}` = `Rohan`
+   - **Button:** Quick reply `Show me my look`
+   If Meta changes the name or language, set `WHATSAPP_OCCASION_LOOK_TEMPLATE` /
+   `WHATSAPP_OCCASION_LOOK_LANGUAGE`.
