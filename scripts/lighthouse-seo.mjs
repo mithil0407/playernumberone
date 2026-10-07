@@ -73,4 +73,7 @@ async function worker() {
   }
 }
 await Promise.all(Array.from({ length: concurrency }, worker));
+// A resume can end with only reused results after the last fresh audit.
+// Persist those as well so the final summary contains the entire sitemap.
+await writeFile(path.join(output, 'summary.json'), JSON.stringify(results.sort((a, b) => a.path.localeCompare(b.path)), null, 2));
 if (results.some(result => result.exitCode !== 0 || result.runtimeError || result.error || result.score !== 1 || result.redirectedTo || result.runWarnings?.length)) process.exitCode = 1;
