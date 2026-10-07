@@ -300,6 +300,7 @@ export default function AgentDashboard({ data, fxRate }: { data: AgentAnalytics;
             {SECTIONS.map(({ id, label, icon: Icon }) => <button key={id} type="button" aria-pressed={section === id} onClick={() => navigateSection(id)}><Icon size={14} strokeWidth={1.8} /><span>{label}</span></button>)}
           </nav>
           <div className="aa-header__actions">
+            <Link href="/agent/admin/looks" className="ma-btn ma-btn--secondary ma-btn--sm">Diwali looks</Link>
             <Link href="/man/admin/dashboard" className="ma-btn ma-btn--ghost ma-btn--sm aa-man-link">Man admin <ArrowUpRight size={13} /></Link>
             <Button variant="ghost" size="sm" iconOnly icon={<LogOut size={15} />} loading={signingOut} aria-label="Sign out" title="Sign out" onClick={() => void signOut()} />
           </div>

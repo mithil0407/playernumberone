@@ -77,6 +77,8 @@ import {
   type MemoryNode,
 } from '@/lib/agentMemoryTree';
 import { buildAgentInstructions } from '@/lib/agentPrompt';
+import { forwardableOccasionInvite, lookResponseFromText, occasionCampaign, parseLookButtonPayload } from '@/lib/agentOccasionLooks';
+import { activeOccasionLookFor, noteOccasionLookResponse, revealOccasionLook } from '@/lib/agentOccasionLookStore';
 import { searchProducts, type ProductCandidate } from '@/lib/agentProductSearch';
 import {
   attachInboundImage,
@@ -290,6 +292,7 @@ export async function handleAgentInbound(message: WhatsappInboundMessage) {
   // attached once it has downloaded.
   const hasPhoto = message.type === 'image' && Boolean(message.mediaId);
   const metadata: Record<string, unknown> = { whatsapp_timestamp: message.timestamp ?? null };
+  if (message.payload) metadata.button_payload = message.payload;
   const stored = await insertInboundMessage({
     clientId: client.id,
     kind: message.type === 'image' && !hasPhoto ? 'unsupported' : message.type,
@@ -361,10 +364,28 @@ export async function handleAgentInbound(message: WhatsappInboundMessage) {
       .then(image => attachInboundImage(stored.id, image, metadata, `${message.text} [the photo did not come through]`.trim()))
     : Promise.resolve();
 
+  // Answers to an occasion look (a button tap or the email's typed text) are tracked.
+  const lookNoted = noteOccasionLookResponse(servedClient, message)
+    .catch(error => console.warn('[agent] could not note the look response:', error));
+
   try {
-    await Promise.all([pause, acknowledged, photoAttached]);
+    await Promise.all([pause, acknowledged, photoAttached, lookNoted]);
     const latest = await latestInboundMessage(client.id);
     if (latest && latest.id !== stored.id) return 'deferred_to_newer_message' as const;
+    // He was told an occasion look is ready: draw it now that he's here. If all he
+    // said was "show me", the picture is the whole answer.
+    const reveal = await revealOccasionLook(client, message, () => typing.bump()).catch(error => {
+      console.error('[agent] occasion look reveal failed:', error);
+      return 'failed' as const;
+    });
+    const askedToSee = parseLookButtonPayload(message.payload)?.action === 'show'
+      || lookResponseFromText(message.text, null) === 'show'
+      || /^show me my .{0,30}look/i.test(message.text.trim());
+    if (reveal === 'revealed' && askedToSee) {
+      const pending = await unansweredInboundMessages(client.id);
+      await markMessagesAnswered(pending.map(item => item.id), stored.id);
+      return 'occasion_look' as const;
+    }
     return await runAgentTurn(client, { typing, inboundId: stored.id });
   } finally {
     await typing.stop();
@@ -390,6 +411,8 @@ interface TurnState {
   runCharged: boolean;
   /** Friends who joined with their invite link (free tier): 3 unlock the Face Analysis. */
   friendsJoined: number;
+  /** The occasion of the look we sent them (e.g. "Diwali"), while it's active. */
+  occasion: string | null;
   toolLog: Array<{ name: string; ok: boolean; summary: string }>;
 }
 
@@ -832,7 +855,11 @@ async function runTool(state: TurnState, call: ResponseFunctionToolCall): Promis
         : String(args.intro ?? '').trim().slice(0, 200) || 'Here you go — forward this to a friend 👇 the link is for them.';
       await sendText(state, intro, { type: 'invite_intro' });
       const season = typeof state.client.lite_profile?.season === 'string' ? state.client.lite_profile.season : null;
-      await sendText(state, forwardableInvite({ code: invite.code, link: invite.link, inviterName: state.passport.firstName, season }), { type: 'invite', code: invite.code });
+      // A Blueprint man inviting his wife or family for the occasion: so their outfits go together.
+      const forwardable = state.client.tier === 'blueprint' && state.occasion
+        ? forwardableOccasionInvite({ code: invite.code, link: invite.link, inviterName: state.passport.firstName, occasion: state.occasion })
+        : forwardableInvite({ code: invite.code, link: invite.link, inviterName: state.passport.firstName, season });
+      await sendText(state, forwardable, { type: 'invite', code: invite.code });
       state.interimSent += 2;
       state.typing.bump();
       return `Sent their invite (${invite.code}); ${invite.remaining} friend${invite.remaining === 1 ? '' : 's'} can still join with it. Don't repeat the link in your reply.`;
@@ -1137,21 +1164,27 @@ async function runAgentTurnInner(client: AgentClient, options: TurnOptions) {
     interimSent: 0,
     runCharged: false,
     friendsJoined: 0,
+    occasion: null,
     toolLog: [],
   };
 
   try {
     await ensureMemoryTree(client.id);
-    const [passport, nodes, thread, events, firstConversation, lookActivity] = await Promise.all([
+    const [passport, nodes, thread, events, firstConversation, lookActivity, occasionLook] = await Promise.all([
       loadStylePassport(client),
       loadMemoryNodes(client.id),
       loadThread(client.id, 40),
       listClientEvents(client.id),
       isFirstConversation(client.id),
       lookActivitySummary(client.id),
+      activeOccasionLookFor(client).catch(error => {
+        console.warn('[agent] occasion look lookup failed:', error);
+        return null;
+      }),
     ]);
     state.passport = passport;
     state.nodes = nodes;
+    state.occasion = occasionCampaign(occasionLook?.campaign)?.occasion ?? null;
 
     const freeTier = client.tier === 'free';
     if (freeTier) await ensureMonthlyGrant(client);
@@ -1183,6 +1216,7 @@ async function runAgentTurnInner(client: AgentClient, options: TurnOptions) {
       friendsJoined: joined,
       photoChecksLeft: checks?.left ?? null,
       blueprintUrl: new URL(client.line === 'man' ? '/man' : '/', process.env.NEXT_PUBLIC_SITE_URL || 'https://www.iconik.pro').toString(),
+      occasionLook,
     });
 
     const pendingIds = new Set(pending.map(message => message.id));

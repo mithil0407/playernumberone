@@ -447,3 +447,67 @@ export async function sendManEditIssueEmail(data: {
     return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
   }
 }
+
+// An occasion look (Diwali…) is ready: a short, personal note with one button
+// that opens WhatsApp with the request typed, so he starts the chat. Nothing is
+// drawn until he does.
+export interface OccasionLookEmailData {
+  email: string;
+  subject: string;
+  /** Paragraphs separated by blank lines. */
+  message: string;
+  buttonLabel: string;
+  showLink: string;
+}
+
+export function occasionLookEmailHtml(data: OccasionLookEmailData) {
+  const paragraphs = data.message.split(/\n\s*\n/).map(part => htmlEscape(part.trim())).filter(Boolean);
+  return `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>${htmlEscape(data.subject)}</title>
+</head>
+<body style="margin:0;padding:0;background:#f5f3ef;font-family:Georgia,'Times New Roman',serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="background:#f5f3ef;padding:28px 12px;">
+    <tr>
+      <td align="center">
+        <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="max-width:480px;background:#ffffff;border:1px solid #e8e4dc;">
+          <tr>
+            <td style="padding:30px 28px 6px;">
+              ${paragraphs.map(text => `<p style="margin:0 0 16px;font-size:16px;line-height:1.65;color:#141414;">${text}</p>`).join('\n              ')}
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:6px 28px 30px;" align="center">
+              <a href="${htmlEscape(data.showLink)}" style="display:block;background:#141414;color:#ffffff;text-decoration:none;padding:16px 20px;font-size:15px;letter-spacing:0.04em;">${htmlEscape(data.buttonLabel)}</a>
+              <p style="margin:12px 0 0;font-size:12px;line-height:1.6;color:#6b6b6b;">Opens WhatsApp with the message ready, just press send.</p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+}
+
+export async function sendOccasionLookEmail(data: OccasionLookEmailData): Promise<{ success: boolean; error?: string }> {
+  try {
+    const transporter = getTransporter();
+    const from = process.env.GMAIL_USER!;
+    await transporter.sendMail({
+      from: `"ICONIK" <${from}>`,
+      to: data.email,
+      subject: data.subject,
+      text: `${data.message}\n\n${data.buttonLabel}: ${data.showLink}\n\nICONIK`,
+      html: occasionLookEmailHtml(data),
+    });
+    return { success: true };
+  } catch (error) {
+    console.error('Error sending occasion look email:', error);
+    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+  }
+}

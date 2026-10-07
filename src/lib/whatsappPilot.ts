@@ -14,6 +14,8 @@ export interface WhatsappInboundMessage {
   text: string;
   mediaId?: string;
   mimeType?: string;
+  /** The id behind a tapped button (a template quick reply's payload or a reply button's id). */
+  payload?: string;
 }
 
 export interface WhatsappDeliveryStatus {
@@ -111,7 +113,17 @@ function parseInboundMessage(raw: AnyRecord): WhatsappInboundMessage | null {
     if (!text) {
       return { id, from, timestamp, type: 'unsupported', text: '[Empty WhatsApp interactive reply]' };
     }
-    return { id, from, timestamp, type: 'interactive', text };
+    return { id, from, timestamp, type: 'interactive', text, payload: cleanString(reply.id) || undefined };
+  }
+
+  // A quick-reply button on a template message.
+  if (rawType === 'button') {
+    const button = asRecord(raw.button);
+    const text = cleanString(button.text) || cleanString(button.payload);
+    if (!text) {
+      return { id, from, timestamp, type: 'unsupported', text: '[Empty WhatsApp button reply]' };
+    }
+    return { id, from, timestamp, type: 'interactive', text, payload: cleanString(button.payload) || undefined };
   }
 
   return {

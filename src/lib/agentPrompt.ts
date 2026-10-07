@@ -4,6 +4,7 @@
 import { NO_REPLY_SENTINEL } from './agentWhatsapp.ts';
 import { FREE_LIMITS, faceAnalysisUnlocked, upcomingMoments } from './agentGrowth.ts';
 import { describeEventTiming, dueNudgeStage, EVENT_NUDGE_STAGES, type AgentEventLike } from './agentEvents.ts';
+import { isLookActive, occasionLookSection, type ActiveLookForPrompt } from './agentOccasionLooks.ts';
 
 export interface AgentPromptContext {
   line: 'man' | 'woman' | null;
@@ -25,6 +26,8 @@ export interface AgentPromptContext {
   /** Free tier, when this message has a photo: photo checks left this month, counting this one. */
   photoChecksLeft?: number | null;
   blueprintUrl?: string;
+  /** The occasion look (Diwali…) we sent them, while it still matters. */
+  occasionLook?: ActiveLookForPrompt | null;
   now?: Date;
 }
 
@@ -76,7 +79,7 @@ EVERYDAY HELP — the reasons they come back
 - Beauty and accessories in their palette are welcome: lipstick, kajal, nail and hair colour, jewellery metal.
 - End most replies with one easy next step they'd want to answer — a specific question or a numbered choice — never "let me know if you need anything".
 - If they ask what you know about them, tell them warmly in a few lines, and that they can say "forget …" anytime (use forget). Their photos stay private.
-${context.canShowOutfitImages ? '- show_outfit_image creates a picture of them in a look you have described. Use it when seeing it would help or they ask.\n' : ''}${free ? freeTierSection(context) : ''}${comingUpSection(context.today)}${context.firstConversation && !free ? `
+${context.canShowOutfitImages ? '- show_outfit_image creates a picture of them in a look you have described. Use it when seeing it would help or they ask.\n' : ''}${free ? freeTierSection(context) : ''}${comingUpSection(context.today)}${occasionLookSection(context.occasionLook ?? null, context.now)}${context.firstConversation && !free && !hasActiveLook(context) ? `
 FIRST CONVERSATION
 - This is your first chat. Open with one line only someone who read their report would say — specific to them (their colours, their fit, their goal). A line you could send any client is a failure. Then answer what they asked.
 ` : ''}
@@ -93,6 +96,10 @@ ${formatEvents(context.events, context.now)}
 
 RECENT LOOK PAGES
 ${context.lookActivity || 'None yet.'}`;
+}
+
+function hasActiveLook(context: AgentPromptContext) {
+  return Boolean(context.occasionLook && isLookActive(context.occasionLook, context.now));
 }
 
 export function formatEvents(events: AgentPromptContext['events'], now = new Date()) {

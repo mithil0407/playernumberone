@@ -124,7 +124,7 @@ async function latestReportFor(
   };
 }
 
-async function nameFromCustomers(email: string | null) {
+export async function nameFromCustomers(email: string | null) {
   if (!email) return null;
   const { data } = await supabaseAdmin
     .from('customers')
@@ -198,6 +198,26 @@ export async function resolveAgentClientByPhone(
   return created as AgentClient;
 }
 
+/** The compact facts from an ICONIK Man report that the agent treats as source of truth. */
+export function manPassportProfile(reportData: unknown) {
+  const classification = asRecord(asRecord(reportData).classification);
+  return {
+    client: pick(classification.client, ['primary_goal', 'height_category', 'location_region']),
+    body: pick(classification.body, [
+      'silhouette_type', 'fit_directive', 'highlight_zone', 'minimise_zone', 'avoid_cuts', 'height_adjustment', 'silhouette_rules',
+    ]),
+    colour: pick(classification.colour, [
+      'season', 'undertone', 'skin_tone_depth', 'primary_palette', 'neutral_base_colours', 'accent_colours',
+      'colours_to_avoid', 'pattern_guidance', 'fabric_tone_guidance',
+    ]),
+    style: pick(classification.style_brief, [
+      'primary_brief', 'aesthetic_direction', 'tribes', 'register', 'expression', 'structure_level',
+      'key_aspiration', 'style_blocker', 'anti_preferences',
+    ]),
+    face: pick(classification.face, ['face_shape', 'eyewear_shapes']),
+  };
+}
+
 export async function loadStylePassport(client: AgentClient): Promise<StylePassport> {
   if (client.tier === 'free' || !client.source_table || !client.source_report_id) {
     return {
@@ -226,21 +246,7 @@ export async function loadStylePassport(client: AgentClient): Promise<StylePassp
       tier: 'blueprint',
       firstName: client.first_name,
       reportUrl: shareToken ? new URL(`/man/report/${shareToken}`, site).toString() : null,
-      profile: {
-        client: pick(classification.client, ['primary_goal', 'height_category', 'location_region']),
-        body: pick(classification.body, [
-          'silhouette_type', 'fit_directive', 'highlight_zone', 'minimise_zone', 'avoid_cuts', 'height_adjustment', 'silhouette_rules',
-        ]),
-        colour: pick(classification.colour, [
-          'season', 'undertone', 'skin_tone_depth', 'primary_palette', 'neutral_base_colours', 'accent_colours',
-          'colours_to_avoid', 'pattern_guidance', 'fabric_tone_guidance',
-        ]),
-        style: pick(classification.style_brief, [
-          'primary_brief', 'aesthetic_direction', 'tribes', 'register', 'expression', 'structure_level',
-          'key_aspiration', 'style_blocker', 'anti_preferences',
-        ]),
-        face: pick(classification.face, ['face_shape', 'eyewear_shapes']),
-      },
+      profile: manPassportProfile(reportData),
     };
   }
 

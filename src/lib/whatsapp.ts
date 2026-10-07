@@ -5,6 +5,12 @@ import {
   buildWhatsappTypingPayload,
 } from './agentWhatsapp.ts';
 import {
+  buildLookButtonsPayload,
+  buildOccasionTemplatePayload,
+  renderInviteMessage,
+  type OccasionCampaign,
+} from './agentOccasionLooks.ts';
+import {
   buildWhatsappPilotImagePayload,
   buildWhatsappPilotTextPayload,
   buildWhatsappReadReceiptPayload,
@@ -229,6 +235,37 @@ async function uploadWhatsAppImage(imageUrl: string, pngBytes?: Buffer) {
     throw new Error(body.error?.error_data?.details || body.error?.message || `HTTP ${response.status}`);
   }
   return body.id;
+}
+
+/**
+ * Tells him his occasion look is ready, with a "Show me my look" button: free
+ * reply buttons inside the 24h window, the approved Meta template outside it.
+ */
+export async function sendWhatsAppLookInvite(input: {
+  to: string;
+  campaign: OccasionCampaign;
+  lookId: string;
+  firstName: string | null;
+  inWindow: boolean;
+}) {
+  const payload = input.inWindow
+    ? buildLookButtonsPayload({
+      to: input.to,
+      lookId: input.lookId,
+      body: renderInviteMessage(input.campaign, input.firstName),
+      actions: ['show'],
+    })
+    : buildOccasionTemplatePayload({
+      ...input,
+      templateName: process.env.WHATSAPP_OCCASION_LOOK_TEMPLATE?.trim() || undefined,
+      language: process.env.WHATSAPP_OCCASION_LOOK_LANGUAGE?.trim() || WOMEN_CONSULTATION_WHATSAPP_LANGUAGE,
+    });
+  return sendWhatsappPayload(payload);
+}
+
+/** Reply buttons on a look (inside the 24h window), optionally with his picture on top. */
+export async function sendWhatsAppLookButtons(input: Parameters<typeof buildLookButtonsPayload>[0]) {
+  return sendWhatsappPayload(buildLookButtonsPayload(input));
 }
 
 export async function markWhatsAppMessageRead(messageId: string) {
