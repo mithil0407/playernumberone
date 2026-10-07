@@ -122,7 +122,7 @@ function TestimonialVideoCard({ src, poster, quote, name, rating, number, faceBl
           disablePictureInPicture
           disableRemotePlayback
           playsInline
-          preload="metadata"
+          preload="none"
           poster={poster}
           aria-label={`ICONIK client testimonial video ${number}`}
           onClick={togglePlayback}
@@ -179,7 +179,7 @@ function TestimonialVideoCard({ src, poster, quote, name, rating, number, faceBl
         </div>
       </div>
       <figcaption className="root-video-caption p-6 md:p-7">
-        <div className="mb-4 flex gap-1" aria-label={`${rating} out of 5 stars`}>
+        <div className="mb-4 flex gap-1" role="img" aria-label={`${rating} out of 5 stars`}>
           {[1, 2, 3, 4, 5].map((star) => (
             <Star
               key={star}
@@ -370,12 +370,13 @@ export default function LandingPageContent({
       </nav>
       )}
 
+      <main id="main-content">
       {/* ── SECTION 1: Hero ─────────────────────────────────────────────── */}
       <section className={`root-hero-section ${compactHero ? 'root-hero-compact' : ''} pt-24 pb-16 px-4 md:px-6`} style={{ background: 'linear-gradient(180deg, #F8F3E9 0%, #F1E9D8 100%)' }}>
         <div className="root-hero-inner max-w-5xl mx-auto text-center">
 
           {!isOffer2699 && (
-            <div className="iconik-micro mb-6 opacity-55" style={{ color: '#2C2622' }}>
+            <div className="iconik-micro mb-6 opacity-70" style={{ color: '#2C2622' }}>
               {CLIENT_PROOF.totalClients.toLocaleString('en-IN')}+ CLIENTS · {CLIENT_PROOF.countriesServed}+ COUNTRIES · {BLUEPRINT_OFFER.weeklyClientCapacity} PLACES EACH WEEK
             </div>
           )}
@@ -416,7 +417,7 @@ export default function LandingPageContent({
           {isOffer2699 && (
             <div className="mt-4">
               <div className="root-hero-bonus inline-flex items-center gap-2 rounded-full px-4 py-2" style={{ background: 'rgba(154,125,74,0.12)', color: '#2C2622' }}>
-                <Sparkles className="h-3.5 w-3.5 shrink-0" style={{ color: '#9a7d4a' }} />
+                <Sparkles className="h-3.5 w-3.5 shrink-0" style={{ color: '#806337' }} />
                 <span style={{ fontSize: '13px', fontWeight: 600 }}>Hairstyle &amp; makeup guide included free</span>
               </div>
             </div>
@@ -442,7 +443,7 @@ export default function LandingPageContent({
             </>
           ) : (
             <div className="root-hero-trust mt-4 flex items-center justify-center gap-2 flex-wrap">
-              <CheckCircle className="h-3.5 w-3.5" style={{ color: '#9a7d4a' }} />
+              <CheckCircle className="h-3.5 w-3.5" style={{ color: '#806337' }} />
               <span className="iconik-mono" style={{ fontSize: '10px', color: '#2C2622', opacity: 0.6 }}>
                 {`Secure checkout · ${BLUEPRINT_OFFER.deliveryWorkingDays} working-day delivery · In-scope revisions included`}
               </span>
@@ -552,7 +553,7 @@ export default function LandingPageContent({
             <div className="root-video-track -mx-4 flex snap-x snap-mandatory items-start gap-4 overflow-x-auto px-4 pb-2 md:mx-0 md:grid md:grid-cols-2 md:gap-10 md:overflow-visible md:px-0 lg:grid-cols-3 lg:gap-8">
               <TestimonialVideoCard
                 src="/testimonialvideo2.mp4"
-                poster="/testimonialvideo2-poster.jpg"
+                poster="/testimonialvideo2-poster.webp"
                 name="Tina"
                 rating={5}
                 number={1}
@@ -560,7 +561,7 @@ export default function LandingPageContent({
               />
               <TestimonialVideoCard
                 src="/testimonialvideo1.mp4"
-                poster="/testimonialvideo1-poster.jpg"
+                poster="/testimonialvideo1-poster.webp"
                 name="Priya"
                 rating={5}
                 number={2}
@@ -569,7 +570,7 @@ export default function LandingPageContent({
               />
               <TestimonialVideoCard
                 src="/testimonialvideo3.mp4"
-                poster="/testimonialvideo3-poster.jpg"
+                poster="/testimonialvideo3-poster.webp"
                 name="Gayathri"
                 rating={4}
                 number={3}
@@ -585,7 +586,7 @@ export default function LandingPageContent({
         <section className="root-process-section px-4 py-20 md:px-6 md:py-24" style={{ background: '#F8F3E9' }}>
           <div className="mx-auto max-w-5xl">
             <div className="mx-auto mb-12 max-w-2xl text-center">
-              <div className="iconik-micro mb-4 opacity-45" style={{ color: '#2C2622' }}>How It Works</div>
+              <div className="iconik-micro mb-4 opacity-70" style={{ color: '#2C2622' }}>How It Works</div>
               <h2 className="iconik-display" style={{ fontSize: 'clamp(32px, 6vw, 56px)', color: '#2C2622', lineHeight: 1.08 }}>
                 A real conversation comes first.
               </h2>
@@ -597,7 +598,7 @@ export default function LandingPageContent({
             <div className="grid gap-5 md:grid-cols-3">
               {offerProcess.map((step) => (
                 <div key={step.number} className="rounded-2xl p-7 md:p-8" style={{ background: '#EDE5D2', border: '1px solid rgba(44,38,34,0.08)' }}>
-                  <div className="iconik-mono mb-8" style={{ color: '#9a7d4a', fontSize: '10px', letterSpacing: '0.3em', fontWeight: 700 }}>{step.number}</div>
+                  <div className="iconik-mono mb-8" style={{ color: '#806337', fontSize: '10px', letterSpacing: '0.3em', fontWeight: 700 }}>{step.number}</div>
                   <h3 className="iconik-display mb-3" style={{ color: '#2C2622', fontSize: '22px', lineHeight: 1.2 }}>{step.title}</h3>
                   <p style={{ color: '#2C2622', fontSize: '14px', lineHeight: 1.75, opacity: 0.65 }}>{step.description}</p>
                 </div>
@@ -621,7 +622,7 @@ export default function LandingPageContent({
                 <div className="iconik-display flex items-center justify-center gap-1.5" style={{ fontSize: 'clamp(28px, 5vw, 48px)', color: '#2C2622' }}>
                   {s.num}
                 </div>
-                <div className="iconik-micro mt-2 opacity-50" style={{ color: '#2C2622' }}>{s.label}</div>
+                <div className="iconik-micro mt-2 opacity-70" style={{ color: '#2C2622' }}>{s.label}</div>
               </div>
             ))}
           </div>
@@ -632,7 +633,7 @@ export default function LandingPageContent({
       <section id="features" className="root-report-section py-24 px-4 md:px-6" style={{ background: 'linear-gradient(180deg, #F8F3E9 0%, #F1E9D8 100%)' }}>
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-10">
-            <div className="iconik-micro mb-3 opacity-45" style={{ color: '#2C2622' }}>Your Deliverable</div>
+            <div className="iconik-micro mb-3 opacity-70" style={{ color: '#2C2622' }}>Your Deliverable</div>
             <div className="iconik-display" style={{ fontSize: 'clamp(28px, 5vw, 52px)', color: '#2C2622' }}>{isOffer2699 ? 'See What You Will Get' : 'What Your Blueprint Actually Looks Like'}</div>
           </div>
 
@@ -646,7 +647,7 @@ export default function LandingPageContent({
               </div>
               <div className="flex-1 flex justify-center">
                 <div className="rounded-full px-5 py-1.5" style={{ background: 'rgba(255,255,255,0.7)' }}>
-                  <span className="iconik-mono opacity-40" style={{ fontSize: '10px', color: '#2C2622' }}>iconik.pro/your-blueprint</span>
+                  <span className="iconik-mono opacity-70" style={{ fontSize: '10px', color: '#2C2622' }}>iconik.pro/your-blueprint</span>
                 </div>
               </div>
             </div>
@@ -659,22 +660,22 @@ export default function LandingPageContent({
                   <div className="w-7 h-7 bg-[#2C2622] flex items-center justify-center">
                     <Sparkles className="text-[#9a7d4a]" size={14} />
                   </div>
-                  <span className="iconik-mono" style={{ fontSize: '10px', color: '#2C2622', letterSpacing: '0.4em', fontWeight: 700 }}>Iconik <span style={{ color: '#9a7d4a' }}>Blueprint</span></span>
+                  <span className="iconik-mono" style={{ fontSize: '10px', color: '#2C2622', letterSpacing: '0.4em', fontWeight: 700 }}>Iconik <span style={{ color: '#806337' }}>Blueprint</span></span>
                 </div>
-                <span className="iconik-mono opacity-25" style={{ fontSize: '9px', color: '#2C2622' }}>Sample</span>
+                <span className="iconik-mono opacity-70" style={{ fontSize: '9px', color: '#2C2622' }}>Sample</span>
               </div>
 
               {/* Report header */}
               <div className="px-6 md:px-10 py-10" style={{ borderBottom: '1px solid rgba(44,38,34,0.06)', background: '#fff' }}>
-                <div className="flex items-center gap-3 mb-3" style={{ color: '#9a7d4a' }}>
+                <div className="flex items-center gap-3 mb-3" style={{ color: '#806337' }}>
                   <CheckCircle className="w-4 h-4" />
                   <span className="iconik-mono" style={{ fontSize: '9px', letterSpacing: '0.4em', fontWeight: 700 }}>CHECKED BY YOUR STYLIST</span>
                 </div>
                 <div className="iconik-display-it" style={{ fontSize: 'clamp(32px, 6vw, 56px)', color: '#2C2622', lineHeight: 1 }}>The Lookbook</div>
                 <div className="flex flex-wrap gap-3 mt-4">
-                  <span className="iconik-mono px-4 py-2" style={{ background: '#2C2622', color: '#9a7d4a', fontSize: '9px', letterSpacing: '0.2em', fontWeight: 700 }}>Hourglass Profile</span>
-                  <span className="iconik-mono px-4 py-2" style={{ background: '#faf9f6', border: '1px solid rgba(44,38,34,0.08)', color: '#2C2622', opacity: 0.45, fontSize: '9px', letterSpacing: '0.2em', fontWeight: 700 }}>Oval Face</span>
-                  <span className="iconik-mono px-4 py-2" style={{ background: '#faf9f6', border: '1px solid rgba(44,38,34,0.08)', color: '#2C2622', opacity: 0.45, fontSize: '9px', letterSpacing: '0.2em', fontWeight: 700 }}>{BLUEPRINT_OFFER.outfitFormulas} Outfits</span>
+                  <span className="root-report-dark-tag iconik-mono px-4 py-2" style={{ background: '#2C2622', color: '#806337', fontSize: '9px', letterSpacing: '0.2em', fontWeight: 700 }}>Hourglass Profile</span>
+                  <span className="iconik-mono px-4 py-2" style={{ background: '#faf9f6', border: '1px solid rgba(44,38,34,0.08)', color: '#2C2622', opacity: 0.7, fontSize: '9px', letterSpacing: '0.2em', fontWeight: 700 }}>Oval Face</span>
+                  <span className="iconik-mono px-4 py-2" style={{ background: '#faf9f6', border: '1px solid rgba(44,38,34,0.08)', color: '#2C2622', opacity: 0.7, fontSize: '9px', letterSpacing: '0.2em', fontWeight: 700 }}>{BLUEPRINT_OFFER.outfitFormulas} Outfits</span>
                 </div>
               </div>
 
@@ -682,7 +683,7 @@ export default function LandingPageContent({
               <div style={{ background: '#fff', borderBottom: '1px solid rgba(44,38,34,0.06)' }}>
                 <div className="px-6 md:px-10 py-5 flex items-center gap-3" style={{ borderBottom: '1px solid rgba(44,38,34,0.06)' }}>
                   <div className="h-px flex-1" style={{ background: 'rgba(44,38,34,0.08)' }} />
-                  <span className="iconik-mono" style={{ fontSize: '9px', color: '#9a7d4a', letterSpacing: '0.5em', fontWeight: 700 }}>SECTION 01 — YOUR BODY SHAPE</span>
+                  <span className="iconik-mono" style={{ fontSize: '9px', color: '#806337', letterSpacing: '0.5em', fontWeight: 700 }}>SECTION 01 — YOUR BODY SHAPE</span>
                   <div className="h-px flex-1" style={{ background: 'rgba(44,38,34,0.08)' }} />
                 </div>
                 <div className="flex flex-col md:flex-row">
@@ -691,8 +692,8 @@ export default function LandingPageContent({
                   </div>
                   <div className="flex-1 p-6 md:p-10">
                     <div className="flex items-center gap-4 mb-6">
-                      <span className="iconik-mono px-4 py-2" style={{ background: '#2C2622', color: '#9a7d4a', fontSize: '9px', letterSpacing: '0.2em', fontWeight: 700 }}>Hourglass</span>
-                      <span style={{ fontSize: '12px', color: '#2C2622', opacity: 0.4 }}>Your body shape</span>
+                      <span className="root-report-dark-tag iconik-mono px-4 py-2" style={{ background: '#2C2622', color: '#806337', fontSize: '9px', letterSpacing: '0.2em', fontWeight: 700 }}>Hourglass</span>
+                      <span style={{ fontSize: '12px', color: '#2C2622', opacity: 0.7 }}>Your body shape</span>
                     </div>
                     <div className="grid grid-cols-2 gap-4 mb-8">
                       {[
@@ -702,14 +703,14 @@ export default function LandingPageContent({
                         { label: 'Height Look', value: 'Looks tall for her height' },
                       ].map((row) => (
                         <div key={row.label}>
-                          <span className="iconik-mono block mb-0.5" style={{ fontSize: '8px', color: '#9a7d4a', letterSpacing: '0.2em', fontWeight: 700 }}>{row.label}</span>
+                          <span className="iconik-mono block mb-0.5" style={{ fontSize: '8px', color: '#806337', letterSpacing: '0.2em', fontWeight: 700 }}>{row.label}</span>
                           <span style={{ fontSize: '12px', color: '#2C2622', fontWeight: 300 }}>{row.value}</span>
                         </div>
                       ))}
                     </div>
                     <div className="pl-5 py-1" style={{ borderLeft: '2px solid rgba(154,125,74,0.2)' }}>
-                      <p className="iconik-mono mb-2" style={{ fontSize: '9px', color: '#9a7d4a', letterSpacing: '0.3em', fontWeight: 700, fontStyle: 'italic' }}>Stylist&apos;s Tip</p>
-                      <p style={{ fontSize: '12px', color: '#2C2622', opacity: 0.55, fontStyle: 'italic', lineHeight: 1.7, fontWeight: 300 }}>&ldquo;Show your waist. Skip boxy, shapeless clothes. Belts, wrap styles and fitted waists work best for you.&rdquo;</p>
+                      <p className="iconik-mono mb-2" style={{ fontSize: '9px', color: '#806337', letterSpacing: '0.3em', fontWeight: 700, fontStyle: 'italic' }}>Stylist&apos;s Tip</p>
+                      <p style={{ fontSize: '12px', color: '#2C2622', opacity: 0.7, fontStyle: 'italic', lineHeight: 1.7, fontWeight: 300 }}>&ldquo;Show your waist. Skip boxy, shapeless clothes. Belts, wrap styles and fitted waists work best for you.&rdquo;</p>
                     </div>
                   </div>
                 </div>
@@ -719,7 +720,7 @@ export default function LandingPageContent({
               <div style={{ background: '#faf9f6', borderBottom: '1px solid rgba(44,38,34,0.06)' }}>
                 <div className="px-6 md:px-10 py-5 flex items-center gap-3" style={{ borderBottom: '1px solid rgba(44,38,34,0.08)' }}>
                   <div className="h-px flex-1" style={{ background: 'rgba(44,38,34,0.08)' }} />
-                  <span className="iconik-mono" style={{ fontSize: '9px', color: '#9a7d4a', letterSpacing: '0.5em', fontWeight: 700 }}>SECTION 02 — YOUR FACE SHAPE</span>
+                  <span className="iconik-mono" style={{ fontSize: '9px', color: '#806337', letterSpacing: '0.5em', fontWeight: 700 }}>SECTION 02 — YOUR FACE SHAPE</span>
                   <div className="h-px flex-1" style={{ background: 'rgba(44,38,34,0.08)' }} />
                 </div>
                 <div className="flex flex-col md:flex-row" style={{ background: '#fff' }}>
@@ -728,11 +729,11 @@ export default function LandingPageContent({
                   </div>
                   <div className="flex-1 p-6 md:p-10">
                     <div className="flex items-center gap-4 mb-6">
-                      <span className="iconik-mono px-4 py-2" style={{ background: '#2C2622', color: '#9a7d4a', fontSize: '9px', letterSpacing: '0.2em', fontWeight: 700 }}>Oval Face</span>
+                      <span className="root-report-dark-tag iconik-mono px-4 py-2" style={{ background: '#2C2622', color: '#806337', fontSize: '9px', letterSpacing: '0.2em', fontWeight: 700 }}>Oval Face</span>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div>
-                        <p className="iconik-mono mb-4" style={{ fontSize: '9px', color: '#2C2622', opacity: 0.35, letterSpacing: '0.3em', fontWeight: 700 }}>Recommended For You</p>
+                        <p className="iconik-mono mb-4" style={{ fontSize: '9px', color: '#2C2622', opacity: 0.7, letterSpacing: '0.3em', fontWeight: 700 }}>Recommended For You</p>
                         <div className="space-y-3">
                           {[
                             { label: 'Necklines', value: 'V-neck, scoop, off-shoulder — all work' },
@@ -741,19 +742,19 @@ export default function LandingPageContent({
                             { label: 'Eyewear', value: 'Square, cat-eye, aviator frames' },
                           ].map((item) => (
                             <div key={item.label}>
-                              <span className="iconik-mono block mb-0.5" style={{ fontSize: '8px', color: '#9a7d4a', letterSpacing: '0.2em', fontWeight: 700 }}>{item.label}</span>
+                              <span className="iconik-mono block mb-0.5" style={{ fontSize: '8px', color: '#806337', letterSpacing: '0.2em', fontWeight: 700 }}>{item.label}</span>
                               <span style={{ fontSize: '12px', color: '#2C2622', fontWeight: 300 }}>{item.value}</span>
                             </div>
                           ))}
                         </div>
                       </div>
                       <div>
-                        <p className="iconik-mono mb-4" style={{ fontSize: '9px', color: '#2C2622', opacity: 0.35, letterSpacing: '0.3em', fontWeight: 700 }}>Avoid</p>
+                        <p className="iconik-mono mb-4" style={{ fontSize: '9px', color: '#2C2622', opacity: 0.7, letterSpacing: '0.3em', fontWeight: 700 }}>Avoid</p>
                         <div className="space-y-2">
                           {['Overly round or circular earrings', 'Heavy turtlenecks that shorten neck', 'Round wire-frame glasses'].map((item) => (
                             <div key={item} className="flex items-start gap-2">
                               <div className="w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0 bg-red-300" />
-                              <span style={{ fontSize: '12px', color: '#2C2622', opacity: 0.55, fontWeight: 300 }}>{item}</span>
+                              <span style={{ fontSize: '12px', color: '#2C2622', opacity: 0.7, fontWeight: 300 }}>{item}</span>
                             </div>
                           ))}
                         </div>
@@ -767,16 +768,16 @@ export default function LandingPageContent({
               <div style={{ background: '#fff', borderBottom: '1px solid rgba(44,38,34,0.06)' }}>
                 <div className="px-6 md:px-10 py-5 flex items-center gap-3" style={{ borderBottom: '1px solid rgba(44,38,34,0.06)' }}>
                   <div className="h-px flex-1" style={{ background: 'rgba(44,38,34,0.08)' }} />
-                  <span className="iconik-mono" style={{ fontSize: '9px', color: '#9a7d4a', letterSpacing: '0.5em', fontWeight: 700 }}>SECTION 03 — YOUR COLOURS</span>
+                  <span className="iconik-mono" style={{ fontSize: '9px', color: '#806337', letterSpacing: '0.5em', fontWeight: 700 }}>SECTION 03 — YOUR COLOURS</span>
                   <div className="h-px flex-1" style={{ background: 'rgba(44,38,34,0.08)' }} />
                 </div>
                 <div className="p-6 md:p-10">
                   <div className="flex items-center gap-4 mb-8">
-                    <span className="iconik-mono px-4 py-2" style={{ background: '#2C2622', color: '#9a7d4a', fontSize: '9px', letterSpacing: '0.2em', fontWeight: 700 }}>Warm Undertone · Medium Depth</span>
+                    <span className="root-report-dark-tag iconik-mono px-4 py-2" style={{ background: '#2C2622', color: '#806337', fontSize: '9px', letterSpacing: '0.2em', fontWeight: 700 }}>Warm Undertone · Medium Depth</span>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                     <div>
-                      <p className="iconik-mono mb-5" style={{ fontSize: '9px', color: '#2C2622', opacity: 0.35, letterSpacing: '0.3em', fontWeight: 700 }}>Your 10 Colours</p>
+                      <p className="iconik-mono mb-5" style={{ fontSize: '9px', color: '#2C2622', opacity: 0.7, letterSpacing: '0.3em', fontWeight: 700 }}>Your 10 Colours</p>
                       <div className="grid grid-cols-5 gap-2 mb-3">
                         {['#C4956A','#8B6914','#D4A853','#7C4A1E','#E8C99A','#5C3D2E','#F0E0C8','#9E6B3F','#3D2B1F','#B8860B'].map((hex) => (
                           <div key={hex} className="aspect-square rounded-lg shadow-sm" style={{ background: hex, border: '1px solid rgba(44,38,34,0.06)' }} />
@@ -784,7 +785,7 @@ export default function LandingPageContent({
                       </div>
                     </div>
                     <div>
-                      <p className="iconik-mono mb-5" style={{ fontSize: '9px', color: '#2C2622', opacity: 0.35, letterSpacing: '0.3em', fontWeight: 700 }}>Skip These 4</p>
+                      <p className="iconik-mono mb-5" style={{ fontSize: '9px', color: '#2C2622', opacity: 0.7, letterSpacing: '0.3em', fontWeight: 700 }}>Skip These 4</p>
                       <div className="grid grid-cols-4 gap-2 mb-3">
                         {['#E8E8F0','#C8D8E8','#F0E8F8','#D0E8D0'].map((hex) => (
                           <div key={hex} className="aspect-square rounded-lg relative shadow-sm" style={{ background: hex, border: '2px solid rgba(239,68,68,0.3)' }}>
@@ -803,7 +804,7 @@ export default function LandingPageContent({
               {/* Section 04: Outfit teaser */}
               <div className="px-6 md:px-10 py-5 flex items-center gap-3" style={{ borderBottom: '1px solid rgba(44,38,34,0.06)', background: '#faf9f6' }}>
                 <div className="h-px flex-1" style={{ background: 'rgba(44,38,34,0.08)' }} />
-                <span className="iconik-mono" style={{ fontSize: '9px', color: '#9a7d4a', letterSpacing: '0.5em', fontWeight: 700 }}>SECTION 04 — YOUR {BLUEPRINT_OFFER.outfitFormulas} OUTFITS</span>
+                <span className="iconik-mono" style={{ fontSize: '9px', color: '#806337', letterSpacing: '0.5em', fontWeight: 700 }}>SECTION 04 — YOUR {BLUEPRINT_OFFER.outfitFormulas} OUTFITS</span>
                 <div className="h-px flex-1" style={{ background: 'rgba(44,38,34,0.08)' }} />
               </div>
               {[
@@ -841,24 +842,24 @@ export default function LandingPageContent({
                     </div>
                     <div className="flex-1 p-6 md:p-10">
                       <div className="flex items-center gap-3 mb-3">
-                        <span className="iconik-mono" style={{ fontSize: '9px', color: '#9a7d4a', letterSpacing: '0.4em', fontWeight: 700 }}>{look.category} Look</span>
+                        <span className="iconik-mono" style={{ fontSize: '9px', color: '#806337', letterSpacing: '0.4em', fontWeight: 700 }}>{look.category} Look</span>
                       </div>
                       <div className="iconik-display-it mb-5" style={{ fontSize: 'clamp(22px, 3vw, 30px)', color: '#2C2622' }}>{look.title}</div>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
-                          <p className="iconik-mono mb-4" style={{ fontSize: '9px', color: '#2C2622', opacity: 0.35, letterSpacing: '0.3em', fontWeight: 700 }}>The Outfit</p>
+                          <p className="iconik-mono mb-4" style={{ fontSize: '9px', color: '#2C2622', opacity: 0.7, letterSpacing: '0.3em', fontWeight: 700 }}>The Outfit</p>
                           <div className="space-y-3">
                             {look.items.map((item) => (
                               <div key={item.label}>
-                                <span className="iconik-mono block mb-0.5" style={{ fontSize: '8px', color: '#9a7d4a', letterSpacing: '0.2em', fontWeight: 700 }}>{item.label}</span>
+                                <span className="iconik-mono block mb-0.5" style={{ fontSize: '8px', color: '#806337', letterSpacing: '0.2em', fontWeight: 700 }}>{item.label}</span>
                                 <span style={{ fontSize: '12px', color: '#2C2622', fontWeight: 300 }}>{item.value}</span>
                               </div>
                             ))}
                           </div>
                         </div>
                         <div className="pl-5 py-1 self-start" style={{ borderLeft: '2px solid rgba(154,125,74,0.2)' }}>
-                          <p className="iconik-mono mb-2" style={{ fontSize: '9px', color: '#9a7d4a', letterSpacing: '0.3em', fontWeight: 700, fontStyle: 'italic' }}>Why It Works</p>
-                          <p style={{ fontSize: '12px', color: '#2C2622', opacity: 0.5, fontStyle: 'italic', lineHeight: 1.7, fontWeight: 300 }}>&ldquo;{look.rationale}&rdquo;</p>
+                          <p className="iconik-mono mb-2" style={{ fontSize: '9px', color: '#806337', letterSpacing: '0.3em', fontWeight: 700, fontStyle: 'italic' }}>Why It Works</p>
+                          <p style={{ fontSize: '12px', color: '#2C2622', opacity: 0.7, fontStyle: 'italic', lineHeight: 1.7, fontWeight: 300 }}>&ldquo;{look.rationale}&rdquo;</p>
                         </div>
                       </div>
                     </div>
@@ -867,14 +868,14 @@ export default function LandingPageContent({
               ))}
 
               <div className="px-6 md:px-10 py-10 text-center" style={{ background: '#fff' }}>
-                <span className="iconik-mono opacity-25" style={{ fontSize: '9px', color: '#2C2622', letterSpacing: '0.5em', fontWeight: 700 }}>+ {BLUEPRINT_OFFER.outfitFormulas - 2} More Outfits in Your Blueprint</span>
+                <span className="iconik-mono opacity-70" style={{ fontSize: '9px', color: '#2C2622', letterSpacing: '0.5em', fontWeight: 700 }}>+ {BLUEPRINT_OFFER.outfitFormulas - 2} More Outfits in Your Blueprint</span>
               </div>
             </div>
 
             {/* Bottom fade */}
             <div className="absolute bottom-0 left-0 right-0 h-20 pointer-events-none rounded-b-2xl" style={{ background: 'linear-gradient(to top, #faf9f6, transparent)' }} />
             <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-2">
-              <span className="iconik-mono opacity-45" style={{ fontSize: '9px', color: '#2C2622', letterSpacing: '0.3em' }}>Sample Blueprint Preview</span>
+              <span className="iconik-mono opacity-70" style={{ fontSize: '9px', color: '#2C2622', letterSpacing: '0.3em' }}>Sample Blueprint Preview</span>
             </div>
           </div>
         </div>
@@ -884,7 +885,7 @@ export default function LandingPageContent({
       <section id="inside" className="root-inclusions-section py-24 px-4 md:px-6" style={{ background: '#EDE5D2' }}>
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-14">
-            <div className="iconik-micro mb-4 opacity-45" style={{ color: '#2C2622' }}>Everything Inside</div>
+            <div className="iconik-micro mb-4 opacity-70" style={{ color: '#2C2622' }}>Everything Inside</div>
             <h2 className="iconik-display" style={{ fontSize: 'clamp(32px, 6vw, 60px)', color: '#2C2622' }}>
               {isOffer2699 ? 'Everything in Your Personal Style Blueprint' : 'The 6 Sections of Your Blueprint'}
             </h2>
@@ -917,7 +918,7 @@ export default function LandingPageContent({
         <section id="free-bonuses" className="root-bonus-section px-4 py-20 md:px-6 md:py-24" style={{ background: '#F8F3E9' }}>
           <div className="mx-auto max-w-5xl">
             <div className="mx-auto mb-12 max-w-2xl text-center">
-              <div className="iconik-micro mb-4 opacity-45" style={{ color: '#2C2622' }}>Free With Your Blueprint</div>
+              <div className="iconik-micro mb-4 opacity-70" style={{ color: '#2C2622' }}>Free With Your Blueprint</div>
               <h2 className="iconik-display" style={{ fontSize: 'clamp(32px, 6vw, 56px)', color: '#2C2622', lineHeight: 1.08 }}>
                 Your hair and makeup guides are free.
               </h2>
@@ -938,7 +939,7 @@ export default function LandingPageContent({
                 </figure>
               ))}
             </div>
-            <p className="mt-4 text-center" style={{ fontSize: '11px', color: '#2C2622', opacity: 0.45 }}>Sample pages shown on an illustrative model. Yours are made for your face and skin.</p>
+            <p className="mt-4 text-center" style={{ fontSize: '11px', color: '#2C2622', opacity: 0.7 }}>Sample pages shown on an illustrative model. Yours are made for your face and skin.</p>
           </div>
         </section>
       )}
@@ -947,7 +948,7 @@ export default function LandingPageContent({
         <section id="comparison" className="root-comparison-section px-4 py-20 md:px-6 md:py-24" style={{ background: '#F8F3E9' }}>
           <div className="mx-auto max-w-5xl">
             <div className="mx-auto mb-12 max-w-3xl text-center">
-              <div className="iconik-micro mb-4 opacity-45" style={{ color: '#2C2622' }}>Why ICONIK Is Different</div>
+              <div className="iconik-micro mb-4 opacity-70" style={{ color: '#2C2622' }}>Why ICONIK Is Different</div>
               <h2 className="iconik-display" style={{ fontSize: 'clamp(32px, 6vw, 58px)', color: '#2C2622', lineHeight: 1.08 }}>
                 A real stylist changes everything.
               </h2>
@@ -987,7 +988,7 @@ export default function LandingPageContent({
             <p className="mx-auto mt-8 max-w-3xl text-center iconik-display-it" style={{ color: '#2C2622', fontSize: 'clamp(18px, 3vw, 24px)', lineHeight: 1.55 }}>
               Instant reports are instant because nobody is looking at you. Yours takes five working days because a stylist does.
             </p>
-            <p className="mx-auto mt-4 max-w-2xl text-center" style={{ color: '#2C2622', fontSize: '12px', lineHeight: 1.7, opacity: 0.5 }}>
+            <p className="mx-auto mt-4 max-w-2xl text-center" style={{ color: '#2C2622', fontSize: '12px', lineHeight: 1.7, opacity: 0.7 }}>
               If your Blueprint does not match what you told your stylist on the call, we change it for free.
             </p>
           </div>
@@ -998,9 +999,9 @@ export default function LandingPageContent({
       <section id="testimonials" className="root-client-section py-24 px-4 md:px-6" style={{ background: '#EDE5D2' }}>
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-14">
-            <div className="iconik-micro mb-4 opacity-45" style={{ color: '#2C2622' }}>Client Stories</div>
+            <div className="iconik-micro mb-4 opacity-70" style={{ color: '#2C2622' }}>Client Stories</div>
             <div className="iconik-display mb-3" style={{ fontSize: 'clamp(32px, 6vw, 60px)', color: '#2C2622' }}>{topic === 'sleeves' || topic === 'modest' ? 'What changed for our clients' : 'What changed for three ICONIK clients'}</div>
-            <p style={{ fontSize: '15px', color: '#2C2622', opacity: 0.55 }}>Their concerns were different. The advice had to fit their bodies, comfort and real lives.</p>
+            <p style={{ fontSize: '15px', color: '#2C2622', opacity: 0.7 }}>Their concerns were different. The advice had to fit their bodies, comfort and real lives.</p>
           </div>
           <div className={`grid gap-8 ${topic === 'sleeves' || topic === 'modest' ? 'md:grid-cols-2 max-w-3xl mx-auto' : 'md:grid-cols-3'}`}>
             {[
@@ -1024,12 +1025,12 @@ export default function LandingPageContent({
                     { label: 'Finding', val: c.finding.join(' · ') },
                   ].map((row) => (
                     <div key={row.label} className="root-client-detail grid gap-x-3" style={{ gridTemplateColumns: '70px 1fr' }}>
-                      <span className="iconik-mono pt-0.5" style={{ fontSize: '10px', color: '#2C2622', opacity: 0.35, letterSpacing: '0.2em', fontWeight: 700 }}>{row.label}</span>
+                      <span className="iconik-mono pt-0.5" style={{ fontSize: '10px', color: '#2C2622', opacity: 0.7, letterSpacing: '0.2em', fontWeight: 700 }}>{row.label}</span>
                       <span style={{ fontSize: '13px', color: '#2C2622', opacity: 0.75, lineHeight: 1.6 }}>{row.val}</span>
                     </div>
                   ))}
                   <div className="root-client-detail root-client-changes grid gap-x-3" style={{ gridTemplateColumns: '70px 1fr' }}>
-                    <span className="iconik-mono pt-0.5" style={{ fontSize: '10px', color: '#2C2622', opacity: 0.35, letterSpacing: '0.2em', fontWeight: 700 }}>Changed</span>
+                    <span className="iconik-mono pt-0.5" style={{ fontSize: '10px', color: '#2C2622', opacity: 0.7, letterSpacing: '0.2em', fontWeight: 700 }}>Changed</span>
                     <div className="space-y-1">
                       {c.changed.map((ch) => (
                         <div key={ch} className="flex items-start gap-2">
@@ -1043,7 +1044,7 @@ export default function LandingPageContent({
                   <div>
                     <div className="root-client-quote iconik-display-it mb-3" style={{ fontSize: '14px', color: '#2C2622', opacity: 0.7, lineHeight: 1.6 }}>&ldquo;{c.quote}&rdquo;</div>
                     <div className="flex gap-1">
-                      {[...Array(c.stars)].map((_, i) => <Star key={i} className="h-3 w-3 fill-current" style={{ color: '#9a7d4a' }} />)}
+                      {[...Array(c.stars)].map((_, i) => <Star key={i} className="h-3 w-3 fill-current" style={{ color: '#806337' }} />)}
                     </div>
                   </div>
                 </div>
@@ -1062,7 +1063,7 @@ export default function LandingPageContent({
               : 'A styling session can end when the call does. Your ICONIK Blueprint remains as a practical reference for getting dressed, shopping, hair, eyewear and colour decisions.'}
           </p>
           <div className="rounded-2xl p-10 mb-10 me-glass-light">
-            <div className="iconik-micro mb-3 opacity-55" style={{ color: '#F4EFE5' }}>{isOffer2699 ? 'ICONIK Personal Style Blueprint' : 'ICONIK Style Consultation'}</div>
+            <div className="iconik-micro mb-3 opacity-70" style={{ color: '#F4EFE5' }}>{isOffer2699 ? 'ICONIK Personal Style Blueprint' : 'ICONIK Style Consultation'}</div>
             <div className="iconik-display mb-3" style={{ fontSize: 'clamp(40px, 8vw, 72px)', color: '#F4EFE5' }}>{formattedBasePrice}</div>
             <p style={{ fontSize: '16px', color: '#F4EFE5', opacity: 0.7, lineHeight: 1.8 }}>{isOffer2699 ? 'One-time payment. Yours to keep.' : 'Yours forever. Built on your specific frame, face, and colour profile.'}</p>
             {isOffer2699 && (
@@ -1106,14 +1107,14 @@ export default function LandingPageContent({
         <div className="max-w-3xl mx-auto">
           <div className="text-center mb-14">
             <div className="iconik-display mb-3" style={{ fontSize: 'clamp(28px, 5vw, 48px)', color: '#2C2622' }}>Frequently Asked Questions</div>
-            <p style={{ fontSize: '15px', color: '#2C2622', opacity: 0.55, maxWidth: '380px', margin: '0 auto' }}>{isOffer2699 ? 'Quick answers before you book.' : 'Everything you need to know about our consultations.'}</p>
+            <p style={{ fontSize: '15px', color: '#2C2622', opacity: 0.7, maxWidth: '380px', margin: '0 auto' }}>{isOffer2699 ? 'Quick answers before you book.' : 'Everything you need to know about our consultations.'}</p>
           </div>
           <div className="space-y-0">
             {faqs.map((faq, i) => (
               <div key={i} className="py-5" style={{ borderBottom: '1px solid rgba(44,38,34,0.08)' }}>
                 <button type="button" className="flex w-full cursor-pointer justify-between items-center gap-4 text-left" aria-expanded={openFaq === i} onClick={() => setOpenFaq(openFaq === i ? null : i)}>
                   <span className="iconik-display" style={{ fontSize: '17px', color: '#2C2622', lineHeight: 1.4 }}>{faq.question}</span>
-                  <span aria-hidden="true" className="iconik-mono flex-shrink-0 opacity-35" style={{ fontSize: '18px', color: '#2C2622' }}>{openFaq === i ? '−' : '+'}</span>
+                  <span aria-hidden="true" className="iconik-mono flex-shrink-0 opacity-70" style={{ fontSize: '18px', color: '#2C2622' }}>{openFaq === i ? '−' : '+'}</span>
                 </button>
                 {openFaq === i && (
                   <p style={{ fontSize: '14px', color: '#2C2622', opacity: 0.65, lineHeight: 1.8, marginTop: '12px' }}>{faq.answer}</p>
@@ -1131,7 +1132,7 @@ export default function LandingPageContent({
             {topicContent ? (
               topicContent.finalHeadline
             ) : (
-              <>Ready to Discover Your <span className="iconik-display-it opacity-55">Signature Style?</span></>
+              <>Ready to Discover Your <span className="iconik-display-it opacity-70">Signature Style?</span></>
             )}
           </div>
           <p style={{ fontSize: '17px', color: '#F4EFE5', opacity: 0.75, marginTop: '16px', marginBottom: '40px', lineHeight: 1.85 }}>
@@ -1149,7 +1150,7 @@ export default function LandingPageContent({
             <span className="iconik-display-it" style={{ fontSize: '18px', color: '#F4EFE5' }}>{isOffer2699 ? 'Get My Personal Style Blueprint →' : 'Start Your Transformation →'}</span>
           </Link>
           <div className="flex items-center justify-center gap-3 flex-wrap" style={{ marginTop: '16px' }}>
-            <span className="iconik-mono opacity-50" style={{ fontSize: '11px', color: '#F4EFE5' }}>
+            <span className="iconik-mono opacity-70" style={{ fontSize: '11px', color: '#F4EFE5' }}>
               {isOffer2699
                 ? `${CLIENT_PROOF.womenStyled.toLocaleString('en-IN')}+ women styled · Free changes until it matches · Ready in ${BLUEPRINT_OFFER.deliveryWorkingDays} working days`
                 : `${CLIENT_PROOF.totalClients.toLocaleString('en-IN')}+ clients · ${CLIENT_PROOF.countriesServed}+ countries · ${BLUEPRINT_OFFER.deliveryWorkingDays} working-day delivery`}
@@ -1168,6 +1169,7 @@ export default function LandingPageContent({
         />
       )}
 
+      </main>
       {/* ── Footer ─────────────────────────────────────────────────────────── */}
       <footer className="py-12 px-6" style={{ background: '#EDE5D2', borderTop: '1px solid rgba(44,38,34,0.08)' }}>
         <div className="max-w-5xl mx-auto">
@@ -1228,7 +1230,7 @@ export default function LandingPageContent({
             {isOffer2699 ? (
               <div style={{ fontSize: '10px', color: '#54705d', fontWeight: 600 }}>+ Free hair &amp; makeup</div>
             ) : (
-              <div className="line-through" style={{ fontSize: '10px', color: '#2C2622', opacity: 0.35 }}>{formattedOriginalPrice}</div>
+              <div className="line-through" style={{ fontSize: '10px', color: '#2C2622', opacity: 0.7 }}>{formattedOriginalPrice}</div>
             )}
           </div>
           <Link

@@ -1,11 +1,14 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { ArrowRight, Check, Clock3, ImageIcon, ShieldCheck, Sparkles } from 'lucide-react';
+import { buildMetadata } from '@/lib/seo';
 
-export const metadata: Metadata = {
+export const metadata: Metadata = buildMetadata({
   title: 'ICONIK Instant Style Report — 10 Personal Outfits for ₹999',
   description: 'Turn your ICONIK Style Scan into a stylist-reviewed report with ten visual outfit formulas, your palette, geometry and shopping rules.',
-};
+  path: '/instant-report',
+  locale: 'en_IN',
+});
 
 export default async function InstantReportSalesPage({ searchParams }: { searchParams: Promise<{ scan?: string }> }) {
   const { scan = '' } = await searchParams;
@@ -35,4 +38,3 @@ export default async function InstantReportSalesPage({ searchParams }: { searchP
     </main>
   </div>;
 }
-

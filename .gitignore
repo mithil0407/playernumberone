@@ -46,3 +46,9 @@ next-env.d.ts
 
 # Private customer report repair artifacts
 /tmp/man-report-audit/
+
+# Local SEO audit build and raw Lighthouse artifacts
+/.next-seo-audit/
+/.next-seo-cache/
+/reports/seo-*/lighthouse-live/
+/reports/seo-*/lighthouse*.report.*

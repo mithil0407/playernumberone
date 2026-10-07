@@ -64,6 +64,7 @@ const newsreader = Newsreader({
 });
 
 const jetbrainsMono = JetBrains_Mono({
+  preload: false,
   subsets: ["latin"],
   display: 'swap',
   variable: '--font-jetbrains-mono',

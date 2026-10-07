@@ -16,11 +16,11 @@ const path = "/free-colour-analysis-quiz";
 const faqs = [
   {
     q: "Is the free colour analysis quiz a full professional colour analysis?",
-    a: "No. The free quiz is a quick mirror-based screening that helps you notice whether colours are making your face look brighter, duller, warmer, or cooler. A full Iconik Style Blueprint includes human review, undertone analysis, and a personalised palette.",
+    a: "No. The free colour analysis uses a daylight selfie and eight quick questions to offer initial undertone and palette guidance. Lighting can affect the result. A full Iconik Style Blueprint includes a stylist consultation, human review, and a personalised palette.",
   },
   {
     q: "Do I need to upload a photo for the free quiz?",
-    a: "No. The Color Mirror quiz is designed as a no-upload, no-account starting point. You compare colour effects in real time and then decide whether you want a complete Blueprint.",
+    a: "Yes. The free colour analysis starts with one daylight selfie so you can explore colours against your actual face. Read our privacy policy before uploading your photo.",
   },
   {
     q: "What should I read after taking the quiz?",
@@ -31,7 +31,7 @@ const faqs = [
 export const metadata: Metadata = buildMetadata({
   title: "Free Colour Analysis Quiz for Indian Skin Tones",
   description:
-    "Take Iconik's free colour analysis quiz. A no-upload Color Mirror test that helps Indian women identify which colours brighten or drain the face.",
+    "Try Iconik's free colour analysis for Indian skin tones. Upload one daylight selfie and answer eight quick questions to explore your undertone and palette.",
   path,
   keywords: [
     "free colour analysis quiz",
@@ -49,10 +49,10 @@ export default function FreeColourAnalysisQuizPage() {
     articleNode({
       title: "Free Colour Analysis Quiz for Indian Skin Tones",
       description:
-        "A free no-upload Color Mirror quiz that helps Indian women identify colours that brighten or drain the face.",
+        "Free selfie-based colour analysis for Indian skin tones, with eight questions and initial undertone and palette guidance.",
       path,
       datePublished: "2026-06-04",
-      dateModified: "2026-06-04",
+      dateModified: "2026-10-07",
     }),
     serviceNode({
       name: "Iconik Free Colour Analysis Quiz",
@@ -87,7 +87,7 @@ export default function FreeColourAnalysisQuizPage() {
             What is the best free colour analysis quiz for Indian skin tones?
           </h2>
           <p className="mb-4 text-gray-600 leading-relaxed">
-            The best free colour analysis quiz for Indian skin tones is one that tests how colour behaves against your actual face, not one that forces you into a Western seasonal category. Iconik&apos;s Color Mirror is a no-upload starting point that helps you notice which colours brighten, dull, warm, or cool your complexion.
+            Iconik&apos;s free colour analysis starts with a daylight selfie and eight quick questions. Explore your undertone, the shades that make you glow, and colours to skip against your own photo. Treat the result as a starting point: lighting and camera settings can affect how your skin appears.
           </p>
           <p className="mb-6 text-gray-600 leading-relaxed">
             For a complete answer, use the quiz as a first screen and then read the full Indian colour-analysis guide. The guide explains undertones, melanin depth, and why generic colour advice often fails Indian women.
@@ -100,6 +100,16 @@ export default function FreeColourAnalysisQuizPage() {
               Find Your Undertone
             </Link>
           </div>
+        </div>
+      </section>
+      <section className="bg-[#F8F3E9] px-4 py-16 md:px-6" aria-labelledby="colour-quiz-faq">
+        <div className="mx-auto max-w-3xl">
+          <h2 id="colour-quiz-faq" className="mb-6 text-3xl font-bold text-gray-900">Free colour analysis questions</h2>
+          {faqs.map(faq => <div key={faq.q} className="mb-6">
+            <h3 className="mb-2 text-lg font-semibold text-gray-900">{faq.q}</h3>
+            <p className="leading-relaxed text-gray-700">{faq.a}</p>
+          </div>)}
+          <Link href="/privacy-policy" className="text-gray-900 underline">Read our privacy policy</Link>
         </div>
       </section>
     </>

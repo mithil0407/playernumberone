@@ -117,6 +117,11 @@ export const comparisonLinks: SeoLink[] = [
 
 export const toolLinks: SeoLink[] = [
   {
+    href: "/style-scan",
+    title: "Free Colour Analysis",
+    description: "Find your undertone and explore colours against your own daylight selfie.",
+  },
+  {
     href: "/free-colour-analysis-quiz",
     title: "Free Colour Analysis Quiz",
     description: "The current Color Mirror quiz for fast undertone and colour-season discovery.",
@@ -373,6 +378,15 @@ export const retiredCityPaths = [
 
 export const footerExploreGroups = [
   {
+    title: "Ongoing Styling",
+    links: [
+      { href: "/monthly/indian", title: "Monthly Styling in India", description: "Ongoing outfit guidance and stylist support for Indian women." },
+      { href: "/monthly", title: "International Monthly Styling", description: "Compare ongoing styling plans for international clients." },
+      { href: "/iconik-club/join", title: "Iconik Club", description: "Explore monthly outfit drops and your private Style Vault." },
+      { href: "/instant-report", title: "Instant Style Report", description: "Explore the stylist-reviewed ten-outfit report." },
+    ],
+  },
+  {
     title: "Start Here",
     links: [
       {
@@ -473,6 +487,8 @@ export const coreCommercialPaths = [
   "/capsule-wardrobe-service-india",
   "/personal-shopper-vs-personal-stylist-india",
   "/free-colour-analysis-quiz",
+  "/style-scan",
+  "/instant-report",
   "/tools",
   "/terms",
   "/privacy-policy",
@@ -605,6 +621,19 @@ export const redirectSeoPages: SeoPageInventoryEntry[] = [
 ];
 
 export const noindexSeoPages: SeoPageInventoryEntry[] = [
+  { path: "/agent/admin", status: "noindex" },
+  { path: "/checkout-recovery/unsubscribe", status: "noindex" },
+  { path: "/colour-scan/unsubscribe", status: "noindex" },
+  { path: "/l", status: "noindex" },
+  { path: "/man/edit", status: "noindex" },
+  { path: "/stylist/login", status: "noindex" },
+  { path: "/style-scan/result", status: "noindex" },
+  { path: "/instant-report/checkout", status: "noindex" },
+  { path: "/instant-report/refine", status: "noindex" },
+  { path: "/instant-report/report", status: "noindex" },
+  { path: "/blueprint-preview", status: "noindex" },
+  { path: "/personal-stylist-preview", status: "noindex" },
+  { path: "/stylist/edit", status: "noindex" },
   { path: "/checkout", status: "noindex" },
   { path: "/checkout/basic-success", status: "noindex" },
   { path: "/checkout/success", status: "noindex" },
