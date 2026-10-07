@@ -2,19 +2,8 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { AlertCircle, CheckCircle2, Clock, FileCheck, RefreshCw, Search, Sparkles, Users } from 'lucide-react';
-
-const S = {
-  bg: '#F4EFE5',
-  card: '#EDE5D2',
-  border: 'rgba(44,38,34,0.1)',
-  ink: '#2C2622',
-  muted: 'rgba(44,38,34,0.4)',
-  slate: '#94A6AD',
-  slateDeep: '#7E9098',
-  gold: '#C9A96E',
-  rowHover: 'rgba(44,38,34,0.03)',
-};
+import { ArrowRight, RefreshCw, Search } from 'lucide-react';
+import { Avatar, Button, Pill, Segmented, type PillTone } from '@/components/manAdmin/ui';
 
 interface LatestReport {
   id: string;
@@ -56,35 +45,14 @@ function stageName(stage: string | null) {
 }
 
 function ReportBadge({ report }: { report: LatestReport | null }) {
-  if (!report) return (
-    <span className="rounded-full px-2.5 py-1 iconik-mono capitalize" style={{ fontSize: '10px', background: S.card, color: S.muted }}>
-      No Report
-    </span>
-  );
-  const label = report.status === 'generating' ? stageName(report.progress_stage) : report.status.replace(/_/g, ' ');
-  const color = report.status === 'error' ? '#C4645A'
-    : report.status === 'sent' ? '#5A8B6A'
-      : report.status === 'generating' ? S.gold
-        : S.slate;
-  return (
-    <span className="rounded-full px-2.5 py-1 iconik-mono capitalize" style={{ fontSize: '10px', background: `${color}18`, color }}>
-      {label}
-    </span>
-  );
-}
-
-function StatCard({ label, value, icon: Icon, color }: { label: string; value: number; icon: React.ElementType; color: string }) {
-  return (
-    <div className="rounded-2xl border p-5 flex items-center gap-4" style={{ background: S.card, borderColor: S.border }}>
-      <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: `${color}18` }}>
-        <Icon size={18} style={{ color }} />
-      </div>
-      <div>
-        <p className="iconik-display" style={{ fontSize: '26px', color: S.ink }}>{value}</p>
-        <p className="iconik-micro" style={{ color: S.muted }}>{label}</p>
-      </div>
-    </div>
-  );
+  if (!report) return <Pill dot>Not started</Pill>;
+  if (report.status === 'generating') return <Pill tone="blue" live>{stageName(report.progress_stage).replace('…', '')}</Pill>;
+  const tone: PillTone = report.status === 'error' ? 'red'
+    : report.status === 'sent' || report.status === 'approved' ? 'green'
+      : report.status === 'draft_ready' || report.status === 'in_review' ? 'accent'
+        : 'neutral';
+  const label = report.status === 'draft_ready' ? 'Ready to review' : report.status === 'error' ? 'Failed' : report.status.replace(/_/g, ' ');
+  return <Pill tone={tone} dot>{label.charAt(0).toUpperCase() + label.slice(1)}</Pill>;
 }
 
 export default function StylistSubmissionsDashboard() {
@@ -109,130 +77,92 @@ export default function StylistSubmissionsDashboard() {
 
   useEffect(() => { void fetchSubmissions(); }, [fetchSubmissions]);
 
-  const stats = {
-    total,
-    needsGeneration: submissions.filter(item => !item.latest_report).length,
-    generating: submissions.filter(item => item.latest_report?.status === 'generating').length,
-    approved: submissions.filter(item => item.latest_report?.status === 'approved').length,
-    sent: submissions.filter(item => item.latest_report?.status === 'sent').length,
-    review: submissions.filter(item => ['draft_ready', 'in_review'].includes(item.latest_report?.status ?? '')).length,
-    errors: submissions.filter(item => item.latest_report?.status === 'error').length,
-  };
-
   const clientLabel = (item: Submission) => item.full_name || item.customer_email || item.customer_phone || 'Manual client';
+  const waiting = submissions.filter(item => ['draft_ready', 'in_review'].includes(item.latest_report?.status ?? '')).length;
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-7">
+      <div className="mb-7 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <div className="iconik-micro mb-2" style={{ color: S.muted }}>ICONIK Stylist</div>
-          <h1 className="iconik-display" style={{ fontSize: '28px', color: S.ink }}>Blueprint Submissions</h1>
+          <div className="ma-eyebrow mb-2">ICONIK Stylist</div>
+          <h1 className="ma-title">Blueprint <em>submissions</em></h1>
+          <p className="ma-muted mt-2 text-[15px]">
+            {loading && !submissions.length ? ' ' : <>{total} completed intakes{waiting ? <> · <span style={{ color: 'var(--ma-accent)', fontWeight: 600 }}>{waiting} to review</span></> : null}</>}
+          </p>
         </div>
-        <button
-          onClick={fetchSubmissions}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm luxury-body transition"
-          style={{ background: S.card, color: S.muted, border: `1px solid ${S.border}` }}
-        >
-          <RefreshCw size={14} /> Refresh
-        </button>
+        <div className="flex items-center gap-2">
+          <label className="relative block w-full sm:w-72">
+            <Search size={15} className="ma-faint pointer-events-none absolute left-4 top-1/2 -translate-y-1/2" />
+            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search email…" className="ma-input" style={{ borderRadius: 999, paddingLeft: 40 }} />
+          </label>
+          <Button iconOnly icon={<RefreshCw size={15} className={loading ? 'animate-spin' : undefined} />} onClick={() => void fetchSubmissions()} aria-label="Refresh" title="Refresh" />
+        </div>
       </div>
 
-      <div className="grid grid-cols-2 xl:grid-cols-7 gap-4 mb-7">
-        <StatCard label="Completed intakes" value={stats.total} icon={Users} color={S.gold} />
-        <StatCard label="Needs generation" value={stats.needsGeneration} icon={Sparkles} color={S.slateDeep} />
-        <StatCard label="Generating" value={stats.generating} icon={RefreshCw} color={S.gold} />
-        <StatCard label="Needs review" value={stats.review} icon={Clock} color={S.slate} />
-        <StatCard label="Approved" value={stats.approved} icon={CheckCircle2} color="#5A8B6A" />
-        <StatCard label="Sent" value={stats.sent} icon={FileCheck} color="#5A8B6A" />
-        <StatCard label="Errors" value={stats.errors} icon={AlertCircle} color="#C4645A" />
-      </div>
-
-      <div className="flex flex-col sm:flex-row gap-3 mb-5">
-        <div className="relative flex-1 max-w-xs">
-          <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2" style={{ color: S.muted }} />
-          <input
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            placeholder="Search email…"
-            className="w-full pl-10 pr-4 py-2.5 rounded-xl text-sm outline-none luxury-body"
-            style={{ background: S.card, border: `1px solid ${S.border}`, color: S.ink }}
-          />
-        </div>
-        <select
+      <div className="mb-4">
+        <Segmented<string>
           value={statusFilter}
-          onChange={e => setStatusFilter(e.target.value)}
-          className="px-4 py-2.5 rounded-xl text-sm outline-none luxury-body"
-          style={{ background: S.card, border: `1px solid ${S.border}`, color: S.ink }}
-        >
-          <option value="">All review buckets</option>
-          <option value="none">Needs Generation</option>
-          <option value="generating">Generating</option>
-          <option value="draft_ready">Needs Review - Draft Ready</option>
-          <option value="in_review">Needs Review - In Review</option>
-          <option value="approved">Approved</option>
-          <option value="sent">Sent</option>
-          <option value="error">Error</option>
-        </select>
+          onChange={setStatusFilter}
+          options={[
+            { value: '', label: 'All' },
+            { value: 'none', label: 'To generate' },
+            { value: 'generating', label: 'Generating' },
+            { value: 'draft_ready', label: 'Draft ready' },
+            { value: 'in_review', label: 'In review' },
+            { value: 'approved', label: 'Approved' },
+            { value: 'sent', label: 'Sent' },
+            { value: 'error', label: 'Failed' },
+          ]}
+        />
       </div>
 
-      <div className="rounded-2xl border overflow-hidden" style={{ background: S.bg, borderColor: S.border }}>
-        <table className="w-full">
-          <thead style={{ background: S.card }}>
-            <tr>
-              {['Client', 'Country', 'Moodboard', 'Completed', 'Report', 'Actions'].map(head => (
-                <th key={head} className="text-left px-4 py-3 iconik-micro" style={{ color: S.muted }}>{head}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {loading ? (
-              <tr>
-                <td colSpan={6} className="px-4 py-10 text-center luxury-body text-sm" style={{ color: S.muted }}>Loading…</td>
-              </tr>
-            ) : submissions.map(item => (
-              <tr key={item.id} className="border-t" style={{ borderColor: S.border }}>
-                <td className="px-4 py-4">
-                  <Link
-                    href={`/stylist/admin/dashboard/${item.id}`}
-                    className="luxury-body hover:underline"
-                    style={{ color: S.ink, fontWeight: 500 }}
-                  >
-                    {clientLabel(item)}
+      <div className="ma-card overflow-hidden">
+        {loading && submissions.length === 0 ? (
+          Array.from({ length: 6 }).map((_, index) => (
+            <div key={index} className="ma-row" style={{ gridTemplateColumns: '1fr' }}>
+              <div className="flex items-center gap-3">
+                <div className="ma-skeleton h-[38px] w-[38px] rounded-full" />
+                <div className="flex-1 space-y-2"><div className="ma-skeleton h-3.5 w-48" /><div className="ma-skeleton h-3 w-32" /></div>
+              </div>
+            </div>
+          ))
+        ) : submissions.length === 0 ? (
+          <div className="px-6 py-16 text-center">
+            <div className="ma-h2">Nothing here</div>
+            <p className="ma-muted mt-1 text-sm">{search ? 'No client matches that search.' : 'No submissions in this list right now.'}</p>
+          </div>
+        ) : (
+          <div style={{ opacity: loading ? 0.6 : 1, transition: 'opacity 0.15s' }}>
+            {submissions.map(item => {
+              const intakeHref = `/stylist/admin/dashboard/${item.id}`;
+              const reportHref = item.latest_report ? `/stylist/admin/report/${item.latest_report.id}` : null;
+              const reviewable = ['draft_ready', 'in_review', 'approved'].includes(item.latest_report?.status ?? '');
+              return (
+                <div key={item.id} className="ma-row ma-client-row">
+                  <Link href={reportHref ?? intakeHref} className="flex min-w-0 items-center gap-3">
+                    <Avatar name={clientLabel(item)} />
+                    <div className="min-w-0">
+                      <div className="truncate text-[15px]" style={{ fontWeight: 600 }}>{clientLabel(item)}</div>
+                      <div className="ma-faint truncate text-[13px]">{item.customer_email || item.customer_phone || (item.intake_source === 'manual_admin' ? 'Manual entry' : 'No email')}</div>
+                    </div>
                   </Link>
-                  <p className="luxury-body text-xs mt-0.5" style={{ color: S.muted, fontWeight: 300 }}>
-                    {item.customer_email || item.customer_phone || (item.intake_source === 'manual_admin' ? 'Manual entry' : 'No email')}
-                  </p>
-                </td>
-                <td className="px-4 py-4 luxury-body text-sm" style={{ color: S.muted }}>{item.country || '—'}</td>
-                <td className="px-4 py-4 luxury-body text-sm" style={{ color: S.muted }}>{item.selected_moodboard_label || '—'}</td>
-                <td className="px-4 py-4 iconik-mono" style={{ fontSize: '11px', color: S.muted }}>
-                  {item.completed_at ? new Date(item.completed_at).toLocaleDateString() : '—'}
-                </td>
-                <td className="px-4 py-4"><ReportBadge report={item.latest_report} /></td>
-                <td className="px-4 py-4">
-                  <div className="flex flex-wrap gap-2">
-                    <Link
-                      href={`/stylist/admin/dashboard/${item.id}`}
-                      className="px-3 py-1.5 rounded-lg text-xs luxury-body transition"
-                      style={{ background: S.card, color: S.muted, border: `1px solid ${S.border}` }}
-                    >
-                      Intake
-                    </Link>
-                    {item.latest_report && (
-                      <Link
-                        href={`/stylist/admin/report/${item.latest_report.id}`}
-                        className="px-3 py-1.5 rounded-lg text-xs luxury-body transition"
-                        style={{ background: S.ink, color: S.bg }}
-                      >
-                        Open Report
-                      </Link>
-                    )}
+                  <div className="hidden min-w-0 md:block">
+                    <div className="truncate text-[13px]" style={{ fontWeight: 500 }}>{item.selected_moodboard_label || '—'}</div>
+                    <div className="ma-faint truncate text-[13px]">{item.country || '—'}</div>
                   </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                  <div className="ma-faint ma-num hidden text-[13px] md:block">{item.completed_at ? new Date(item.completed_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : '—'}</div>
+                  <div className="hidden sm:block"><ReportBadge report={item.latest_report} /></div>
+                  <div className="flex items-center justify-end gap-1.5">
+                    {reportHref
+                      ? <Link href={reportHref} className={`ma-btn ma-btn--sm ${reviewable ? 'ma-btn--dark' : 'ma-btn--secondary'}`}>{reviewable ? <>Review <ArrowRight size={13} /></> : 'Open'}</Link>
+                      : <Link href={intakeHref} className="ma-btn ma-btn--secondary ma-btn--sm">Intake</Link>}
+                    {reportHref && <Link href={intakeHref} className="ma-btn ma-btn--ghost ma-btn--sm">Intake</Link>}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );

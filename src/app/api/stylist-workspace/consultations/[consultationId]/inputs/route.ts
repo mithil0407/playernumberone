@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import sharp from 'sharp';
 import { supabaseAdmin } from '@/lib/supabase';
 import { clearWorkspaceQueueCache } from '@/lib/stylistWorkspaceQueue';
+import { reportDueAt } from '@/lib/stylistWorkspaceQueueModel';
 import { getConsultationWorkspaceAccess, logStylistReportActivity } from '@/lib/stylistWorkspaceAuth';
 import {
   CONSULTATION_UPLOAD_BUCKET,
@@ -87,6 +88,7 @@ export async function POST(
     );
     const nextPhotoPaths = { ...oldPhotoPaths };
     const nextMeasurements = parseMeasurements(form.get('measurements'), record(existing?.measurements));
+    const wasReady = consultationReadiness({ upload: existing ? { photo_paths: oldPhotoPaths, measurements: record(existing.measurements) } : null }).ready;
     const uploadedPaths: string[] = [];
     const replacedPaths: string[] = [];
     const uploadedTypes: PhotoType[] = [];
@@ -138,10 +140,14 @@ export async function POST(
     if (!source) throw new Error('Consultation not found after saving inputs');
     const readiness = consultationReadiness(source);
     const now = new Date().toISOString();
+    // The report clock starts when the client's inputs are complete. Filling in
+    // what she left out starts it here; correcting inputs that were already
+    // complete must not push the deadline back.
+    const becameReady = readiness.ready && !wasReady;
     await supabaseAdmin
       .from('consultations')
       .update(readiness.ready
-        ? { images_received_at: now, updated_at: now }
+        ? { ...(becameReady ? { images_received_at: now, report_due_at: reportDueAt(now) } : {}), updated_at: now }
         : { ...(source.consultation.status !== 'delivered' ? { status: 'waiting_images' } : {}), updated_at: now })
       .eq('id', consultationId)
       .eq('stylist_id', identity.stylistId);

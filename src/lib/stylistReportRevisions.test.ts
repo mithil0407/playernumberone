@@ -88,8 +88,11 @@ test('editing a delivered report for a revision never marks its card overdue', (
   // A report that has never been published is still held to its due date.
   const late = queueItem({ status: 'in_review', published_at: null, delivered_at: null, published_revision: null, published_version: 0 });
   assert.equal(isOverdue(late, now), true);
-  // And so is a consultation that has no report yet.
-  assert.equal(isOverdue(queueItem(null, { status: 'review' }), now), true);
+  // And so is a consultation that has no report yet, once her inputs are in.
+  const inputs = { submitted_at: '2026-09-09T10:00:00.000Z', photo_paths: { headshot: 'h.jpg', full_body_front: 'f.jpg', full_body_side: 's.jpg' }, measurements: { shoulders: 38, bust: 91, waist: 72, hips: 98 } };
+  assert.equal(isOverdue(queueItem(null, { status: 'review', consultation_upload_links: inputs }), now), true);
+  // Without them no clock is running yet.
+  assert.equal(isOverdue(queueItem(null, { status: 'review' }), now), false);
 });
 
 test('an edit leaves the delivered copy published, so the client link stays live', () => {

@@ -5,7 +5,8 @@ import { AlertTriangle, ArrowRight, Check, Loader2, MessageSquareQuote } from 'l
 import { isRevisionOverdue, revisionProgress, type StylistReportRevision } from '@/lib/stylistReportRevisions';
 import { isRevisedOutfitPageNumber } from '@/lib/stylistRevisedOutfits';
 
-const S = { ink: '#2C2622', muted: '#655E57', card: '#EDE5D2', bg: '#FBF8F2', border: 'rgba(44,38,34,.12)', gold: '#9A7538', danger: '#9A4039', done: '#3F6A4C' };
+// Colours come from the staff kit (man-admin.css) so the panel matches the studio around it.
+const S = { ink: 'var(--ma-ink)', muted: 'var(--ma-ink-3)', card: 'var(--ma-surface-2)', bg: 'var(--ma-surface)', border: 'var(--ma-line)', gold: 'var(--ma-amber)', danger: 'var(--ma-red)', done: 'var(--ma-green)' };
 
 function dueLabel(revision: StylistReportRevision) {
   if (!revision.due_at) return null;
@@ -51,9 +52,9 @@ export default function StylistRevisionPanel({
     finally { setSaving(''); }
   };
 
-  return <section aria-label="Revision requested" className="mx-4 md:mx-8 mt-5 rounded-2xl border px-5 py-4" style={{ background: S.bg, borderColor: 'rgba(154,64,57,0.22)' }}>
+  return <section aria-label="Revision requested" className="ma-scope mx-4 md:mx-8 mt-5 rounded-3xl border px-5 py-4" style={{ background: S.bg, borderColor: 'rgba(138,90,11,0.28)', boxShadow: 'var(--ma-shadow-sm)' }}>
     <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-      <p className="iconik-micro" style={{ color: S.gold }}>REVISION REQUESTED</p>
+      <span className="ma-pill ma-pill--amber"><span className="ma-pill__dot" />Revision requested</span>
       {dueLabel(revision)}
       <p className="luxury-body text-xs ml-auto tabular-nums" style={{ color: done === total ? S.done : S.muted }}>{done} of {total} done</p>
     </div>
@@ -73,14 +74,14 @@ export default function StylistRevisionPanel({
             aria-pressed={item.done}
             aria-label={item.done ? `Mark "${item.label}" as still to do` : `Mark "${item.label}" as done`}
             className="shrink-0 w-5 h-5 rounded-md flex items-center justify-center"
-            style={{ background: item.done ? S.done : 'transparent', border: `1px solid ${item.done ? S.done : 'rgba(44,38,34,0.3)'}`, color: '#fff' }}
+            style={{ background: item.done ? S.done : 'transparent', border: `1px solid ${item.done ? S.done : 'rgba(17,19,21,0.3)'}`, color: '#fff' }}
           >
             {saving === item.id ? <Loader2 size={12} className="animate-spin" style={{ color: item.done ? '#fff' : S.muted }} /> : item.done ? <Check size={13} /> : null}
           </button>
           <span className="flex-1 luxury-body text-sm leading-5" style={{ color: item.done ? S.muted : S.ink, textDecoration: item.done ? 'line-through' : undefined }}>
             {item.label}
           </span>
-          {page && <button type="button" onClick={() => onGoToPage(page)} className="shrink-0 inline-flex items-center gap-1 luxury-body text-xs font-medium" style={{ color: S.ink }}>
+          {page && <button type="button" onClick={() => onGoToPage(page)} className="ma-btn ma-btn--secondary ma-btn--sm shrink-0">
             {isRevisedOutfitPageNumber(page) ? `New Look ${item.outfit_number ?? ''}`.trim() : item.outfit_number ? `Look ${item.outfit_number}` : `Page ${page}`} <ArrowRight size={13} />
           </button>}
         </li>;

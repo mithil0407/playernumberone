@@ -3,8 +3,10 @@
 import { FormEvent, Suspense, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Eye, EyeOff, Loader2, Sparkles } from 'lucide-react';
+import { Eye, EyeOff, Loader2 } from 'lucide-react';
 import { stylistWorkspaceDestination } from '@/lib/stylistWorkspaceNavigation';
+import '@/components/manAdmin/man-admin.css';
+import '@/components/stylistStaff/stylist-staff.css';
 
 function LoginForm() {
   const router = useRouter();
@@ -52,40 +54,45 @@ function LoginForm() {
     }
   };
 
+  const chosen = stylists.find(person => person.slug === slug)?.name;
   return (
-    <div className="min-h-screen flex items-center justify-center px-5" style={{ background: '#F4EFE5', color: '#2C2622' }}>
-      <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <div className="w-14 h-14 mx-auto rounded-2xl flex items-center justify-center mb-5" style={{ background: '#2C2622', color: '#F4EFE5' }}><Sparkles size={22} /></div>
-          <p className="iconik-micro mb-2" style={{ color: '#C9A96E' }}>ICONIK · INDIA CONSULTATIONS</p>
-          <h1 className="iconik-display text-4xl">{stylists.find(person => person.slug === slug)?.name ? `Welcome, ${stylists.find(person => person.slug === slug)!.name}` : 'Your report studio'}</h1>
-          <p className="luxury-body text-sm mt-3" style={{ color: 'rgba(44,38,34,.52)' }}>Choose your name and enter your existing stylist PIN.</p>
+    <div className="ma-root st-root flex items-center justify-center px-4 py-10">
+      <div className="w-full max-w-[380px]">
+        <div className="mb-8 text-center">
+          <div style={{ fontSize: 14, fontWeight: 600, letterSpacing: '0.34em' }}>ICONIK</div>
+          <h1 className="ma-title mt-5">{chosen ? <>Welcome, <em>{chosen}</em></> : <>Stylist <em>studio</em></>}</h1>
+          <p className="ma-faint mt-2 text-[14px]">Choose your name and enter your stylist PIN.</p>
         </div>
-        <form onSubmit={submit} className="rounded-3xl p-7 md:p-9" style={{ background: '#EDE5D2', border: '1px solid rgba(44,38,34,.10)' }}>
-          <label className="block luxury-body text-sm mb-5">Your name
-            <select required aria-label="Your name" value={slug} onChange={event => { setSlug(event.target.value); setPin(''); setError(''); }} disabled={rosterLoading}
-              className="block w-full mt-2 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-[#9A7538]" style={{ background: '#F4EFE5', border: '1px solid rgba(44,38,34,.12)' }}>
+        <form onSubmit={submit} className="ma-card space-y-4 p-7">
+          <label className="block">
+            <span className="ma-label">Your name</span>
+            <select required aria-label="Your name" value={slug} onChange={event => { setSlug(event.target.value); setPin(''); setError(''); }} disabled={rosterLoading} className="ma-select">
               <option value="">{rosterLoading ? 'Loading your team…' : 'Choose your name'}</option>
               {stylists.map(person => <option key={person.slug} value={person.slug}>{person.name}</option>)}
             </select>
           </label>
-          {!rosterLoading && !stylists.length && <button type="button" onClick={() => setRosterRetry(value => value + 1)} className="underline text-sm mb-4">Reload stylist list</button>}
-          <label htmlFor="stylist-pin" className="iconik-micro" style={{ color: 'rgba(44,38,34,.48)' }}>Stylist PIN</label>
-          <div className="relative mt-3">
-            <input id="stylist-pin" autoComplete="current-password" inputMode="numeric" pattern="[0-9]*" minLength={4} maxLength={12} required value={pin} onChange={event => setPin(event.target.value.replace(/\D/g, ''))}
-              type={showPin ? 'text' : 'password'} placeholder="••••" className="w-full rounded-2xl px-5 py-4 pr-12 text-xl tracking-[.3em] outline-none"
-              style={{ background: '#F4EFE5', border: '1px solid rgba(44,38,34,.12)' }} />
-            <button type="button" aria-label={showPin ? 'Hide PIN' : 'Show PIN'} onClick={() => setShowPin(value => !value)} className="absolute right-4 top-1/2 -translate-y-1/2" style={{ color: 'rgba(44,38,34,.45)' }}>
-              {showPin ? <EyeOff size={18} /> : <Eye size={18} />}
-            </button>
-          </div>
-          {error && <p role="alert" className="mt-4 rounded-xl px-4 py-3 text-sm luxury-body" style={{ color: '#A8433B', background: 'rgba(196,100,90,.10)' }}>{error}</p>}
-          <button disabled={loading || rosterLoading || !stylists.some(person => person.slug === slug)} className="mt-5 w-full rounded-2xl py-4 flex items-center justify-center gap-2 luxury-body text-sm disabled:opacity-50" style={{ background: '#2C2622', color: '#F4EFE5' }}>
-            {loading && <Loader2 size={16} className="animate-spin" />} {loading ? 'Opening workspace…' : 'Open workspace'}
+          {!rosterLoading && !stylists.length && <button type="button" onClick={() => setRosterRetry(value => value + 1)} className="ma-btn ma-btn--ghost ma-btn--sm">Reload stylist list</button>}
+          <label htmlFor="stylist-pin" className="block">
+            <span className="ma-label">Stylist PIN</span>
+            <span className="relative block">
+              <input id="stylist-pin" autoComplete="current-password" inputMode="numeric" pattern="[0-9]*" minLength={4} maxLength={12} required value={pin} onChange={event => setPin(event.target.value.replace(/\D/g, ''))}
+                type={showPin ? 'text' : 'password'} placeholder="••••" className="ma-input"
+                style={{ height: 52, paddingRight: 44, fontSize: 20, letterSpacing: '0.3em' }} />
+              <button type="button" aria-label={showPin ? 'Hide PIN' : 'Show PIN'} onClick={() => setShowPin(value => !value)} className="ma-faint absolute right-3.5 top-1/2 -translate-y-1/2">
+                {showPin ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
+            </span>
+          </label>
+          {error && <p role="alert" className="rounded-xl px-4 py-2.5 text-[13px]" style={{ background: 'var(--ma-red-soft)', color: 'var(--ma-red)' }}>{error}</p>}
+          <button type="submit" disabled={loading || rosterLoading || !stylists.some(person => person.slug === slug)} className="ma-btn ma-btn--primary ma-btn--lg w-full">
+            {loading && <Loader2 size={16} className="animate-spin" />}
+            {loading ? 'Opening workspace…' : 'Open workspace'}
           </button>
         </form>
-        <div className="text-center mt-5"><Link href="/stylist/admin/workspace" className="luxury-body text-sm underline" style={{ color: '#746D65' }}>Admin: all stylists & clients</Link></div>
-        <p className="text-center iconik-micro mt-6" style={{ color: 'rgba(44,38,34,.32)' }}>Private stylist access · Your assigned clients · Your private workspace</p>
+        <div className="mt-6 text-center">
+          <Link href="/stylist/admin/workspace" className="ma-btn ma-btn--ghost ma-btn--sm">Admin: all stylists &amp; clients</Link>
+        </div>
+        <p className="ma-eyebrow mt-4 text-center">Private stylist access</p>
       </div>
     </div>
   );

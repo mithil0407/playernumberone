@@ -5,10 +5,10 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
   ArrowLeft, Check, ChevronRight, Clock3, ImageIcon, Loader2, RefreshCw,
-  Ruler, Save, Sparkles, UploadCloud,
+  Save, Sparkles, UploadCloud,
 } from 'lucide-react';
-
-const C = { ink: '#2C2622', muted: 'rgba(44,38,34,.48)', card: '#EDE5D2', bg: '#F4EFE5', border: 'rgba(44,38,34,.10)', gold: '#C9A96E', slate: '#7E9098', success: '#5A8B6A', error: '#C4645A' };
+import { Avatar, Button, Pill } from '@/components/manAdmin/ui';
+import StylistManualDeliveryDialog from '@/components/StylistManualDeliveryDialog';
 type Json = Record<string, unknown>;
 type PhotoKey = 'headshot' | 'full_body_front' | 'full_body_side' | 'one_outfit';
 type MeasurementKey = 'shoulders' | 'bust' | 'chest' | 'waist' | 'hips';
@@ -31,12 +31,15 @@ function display(value: unknown): string {
   return String(value).replace(/_/g, ' ');
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
-  return <section className="rounded-3xl p-5 md:p-6" style={{ background: C.card, border: `1px solid ${C.border}` }}><p className="iconik-micro mb-5" style={{ color: C.muted }}>{title}</p>{children}</section>;
+function Section({ title, hint, children }: { title: string; hint?: string; children: React.ReactNode }) {
+  return <section className="ma-card p-5 md:p-6">
+    <div className="mb-4"><h2 className="ma-h2">{title}</h2>{hint && <p className="ma-faint mt-1 text-[13px]">{hint}</p>}</div>
+    {children}
+  </section>;
 }
 
 function Field({ label, value }: { label: string; value: unknown }) {
-  return <div className="py-3 grid sm:grid-cols-[150px_1fr] gap-2" style={{ borderTop: `1px solid ${C.border}` }}><p className="iconik-micro" style={{ color: C.muted }}>{label}</p><p className="luxury-body text-sm whitespace-pre-line leading-6">{display(value)}</p></div>;
+  return <div className="grid gap-1 py-3 sm:grid-cols-[150px_1fr] sm:gap-3" style={{ borderTop: '1px solid var(--ma-line-2)' }}><p className="ma-faint text-[13px]" style={{ fontWeight: 500 }}>{label}</p><p className="whitespace-pre-line text-[14px] leading-6">{display(value)}</p></div>;
 }
 
 export default function ConsultationWorkspacePage({ params, adminMode = false }: { params: Promise<{ stylistSlug?: string; consultationId: string }>; adminMode?: boolean }) {
@@ -51,6 +54,7 @@ export default function ConsultationWorkspacePage({ params, adminMode = false }:
   const [notes, setNotes] = useState('');
   const [measurementUnit, setMeasurementUnit] = useState<'cm' | 'in'>('cm');
   const [measurementValues, setMeasurementValues] = useState<Record<MeasurementKey, string>>({ shoulders: '', bust: '', chest: '', waist: '', hips: '' });
+  const [manualOpen, setManualOpen] = useState(false);
   const [selectedPhotos, setSelectedPhotos] = useState<Partial<Record<PhotoKey, File>>>({});
 
   const load = useCallback(async (preserveNotes = false) => {
@@ -150,126 +154,148 @@ export default function ConsultationWorkspacePage({ params, adminMode = false }:
     ['headshot', 'Headshot'], ['full_body_front', 'Full body · front'], ['full_body_side', 'Full body · side'], ['one_outfit', 'One outfit · optional'],
   ] as const, []);
 
-  if (loading) return <div className="h-[70vh] flex items-center justify-center"><Loader2 className="animate-spin" style={{ color: C.slate }} /></div>;
-  if (!detail) return <div className="rounded-2xl p-5" style={{ color: C.error }}>{error || 'Consultation not found'}</div>;
+  if (loading) return <div className="flex h-[70vh] items-center justify-center"><Loader2 className="ma-faint animate-spin" /></div>;
+  if (!detail) return <div className="rounded-2xl px-4 py-3 text-[14px]" style={{ color: 'var(--ma-red)', background: 'var(--ma-red-soft)' }}>{error || 'Consultation not found'}</div>;
   const consultation = detail.source.consultation;
+  const delivered = latest?.status === 'delivered' || latest?.status === 'sent';
+  const alreadyDelivered = consultation.status === 'delivered' || Boolean(consultation.delivered_at);
+  const canRecordManual = !alreadyDelivered && !detail.reports.some(report => report.status === 'generating');
 
   return (
-    <div className="max-w-[1450px] mx-auto">
-      <Link href={backUrl} className="inline-flex items-center gap-2 text-sm luxury-body mb-6" style={{ color: C.muted }}><ArrowLeft size={14} /> Back to report desk</Link>
-      <div className="flex flex-col xl:flex-row xl:items-start justify-between gap-5 mb-7">
-        <div>
-          <p className="iconik-micro mb-2" style={{ color: C.gold }}>{adminMode ? 'ADMIN · CONSULTATION WORKSPACE' : 'CONSULTATION WORKSPACE'}</p>
-          <h1 className="iconik-display text-3xl md:text-4xl">{consultation.client_name}</h1>
-          <div className="flex flex-wrap gap-x-5 gap-y-2 mt-3 luxury-body text-sm" style={{ color: C.muted }}><span>{consultation.client_phone}</span>{consultation.consultation_date && <span>Meeting {new Date(consultation.consultation_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</span>}{consultation.report_due_at && <span>Due {new Date(consultation.report_due_at).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })}</span>}</div>
+    <div>
+      <Link href={backUrl} className="ma-btn ma-btn--ghost ma-btn--sm mb-5" style={{ marginLeft: -12 }}><ArrowLeft size={14} /> Back to report desk</Link>
+      <div className="mb-8 flex flex-col justify-between gap-5 xl:flex-row xl:items-end">
+        <div className="flex min-w-0 items-center gap-4">
+          <Avatar name={consultation.client_name || 'Client'} src={detail.photoUrls.headshot} size={56} />
+          <div className="min-w-0">
+            <div className="ma-eyebrow mb-1.5">{adminMode ? 'Admin · Client' : 'Client'}</div>
+            <h1 className="ma-title truncate">{consultation.client_name}</h1>
+            <div className="ma-muted mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[14px]"><span>{consultation.client_phone}</span>{consultation.consultation_date && <span>Meeting {new Date(consultation.consultation_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</span>}{consultation.report_due_at && <span>Due {new Date(consultation.report_due_at).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })}</span>}</div>
+          </div>
         </div>
         <div className="flex flex-wrap gap-2">
-          {latest ? <Link href={reportUrl(latest.id)} className="inline-flex items-center gap-2 rounded-xl px-5 py-3 text-sm luxury-body" style={{ background: C.ink, color: C.bg }}>Continue report <ChevronRight size={15} /></Link>
-            : <button disabled={!detail.source.consultation.stylist_id || !detail.readiness.ready || Boolean(working)} onClick={() => void generate()} className="inline-flex items-center gap-2 rounded-xl px-5 py-3 text-sm luxury-body disabled:opacity-40" style={{ background: C.ink, color: C.bg }}>{working === 'generate' ? <Loader2 size={15} className="animate-spin" /> : <Sparkles size={15} />} Create report</button>}
+          {latest ? <Link href={reportUrl(latest.id)} className="ma-btn ma-btn--dark">Continue report <ChevronRight size={15} /></Link>
+            : <Button variant="primary" disabled={!detail.source.consultation.stylist_id || !detail.readiness.ready || Boolean(working)} loading={working === 'generate'} icon={<Sparkles size={15} />} onClick={() => void generate()}>Create report</Button>}
         </div>
       </div>
 
-      {!consultation.stylist_id && <p className="rounded-xl p-4 mb-5 luxury-body text-sm" style={{ background: C.card }}>This client is unassigned. You can review their form and photos here; assign a stylist in your consultation system before generating a report.</p>}
-      {error && <div className="rounded-2xl p-4 mb-5 luxury-body text-sm" style={{ background: 'rgba(196,100,90,.10)', color: C.error }}>{error}</div>}
-      <div className="grid xl:grid-cols-[1fr_360px] gap-6 items-start">
+      {!consultation.stylist_id && <p className="mb-5 rounded-2xl px-4 py-3 text-[14px]" style={{ background: 'var(--ma-amber-soft)', color: 'var(--ma-amber)' }}>This client is unassigned. You can review their form and photos here; assign a stylist in your consultation system before generating a report.</p>}
+      {error && <div role="alert" className="mb-5 rounded-2xl px-4 py-3 text-[14px]" style={{ background: 'var(--ma-red-soft)', color: 'var(--ma-red)' }}>{error}</div>}
+      <div className="grid items-start gap-6 xl:grid-cols-[1fr_360px]">
         <div className="space-y-5">
-          {latest && <div className="rounded-2xl p-5 border flex flex-wrap gap-4 items-center" style={{ borderColor: C.border, background: C.ink, color: C.bg }}><div className="mr-auto"><p className="iconik-display text-xl">{latest.status === 'delivered' || latest.status === 'sent' ? 'Your report has been delivered' : 'Your report is in progress'}</p><p className="luxury-body text-xs mt-2 opacity-70">Review the advice, edit outfits, and upload images in the report editor.</p></div><Link href={reportUrl(latest.id)} className="luxury-body text-sm rounded-xl px-4 py-3" style={{ background: C.bg, color: C.ink }}>Continue report →</Link></div>}
-          <Section title="01 · Client inputs">
-            <div className="grid lg:grid-cols-[.85fr_1.15fr] gap-7">
+          {latest && <div className="ma-card flex flex-wrap items-center gap-4 p-5" style={{ background: 'var(--ma-ink)', color: '#fff', borderColor: 'transparent' }}>
+            <div className="mr-auto">
+              <p className="text-[17px]" style={{ fontWeight: 600, letterSpacing: '-0.015em' }}>{delivered ? 'Your report has been delivered' : 'Your report is in progress'}</p>
+              <p className="mt-1 text-[13px]" style={{ opacity: 0.7 }}>Review the advice, edit outfits, and upload images in the report editor.</p>
+            </div>
+            <Link href={reportUrl(latest.id)} className="ma-btn ma-btn--secondary ma-btn--sm">Continue report <ChevronRight size={14} /></Link>
+          </div>}
+          <Section title="Client inputs" hint="Measurements and photos the report is built from.">
+            <div className="grid gap-7 lg:grid-cols-[.85fr_1.15fr]">
               <div>
-                <div className="flex items-center justify-between gap-3 mb-4">
+                <div className="mb-4 flex items-center justify-between gap-3">
                   <div>
-                    <p className="luxury-body text-sm font-medium">Measurements</p>
-                    <p className="luxury-body text-xs mt-1" style={{ color: C.muted }}>Enter exactly what the client sent.</p>
+                    <p className="text-[14px]" style={{ fontWeight: 600 }}>Measurements</p>
+                    <p className="ma-faint mt-0.5 text-[13px]">Enter exactly what the client sent.</p>
                   </div>
-                  <div className="flex rounded-xl p-1" style={{ background: C.bg, border: `1px solid ${C.border}` }}>
-                    {(['cm', 'in'] as const).map(unit => <button key={unit} type="button" onClick={() => setMeasurementUnit(unit)} className="rounded-lg px-3 py-1.5 iconik-micro" style={{ background: measurementUnit === unit ? C.ink : 'transparent', color: measurementUnit === unit ? C.bg : C.muted }}>{unit}</button>)}
+                  <div className="ma-seg">
+                    {(['cm', 'in'] as const).map(unit => <button key={unit} type="button" aria-pressed={measurementUnit === unit} onClick={() => setMeasurementUnit(unit)}>{unit}</button>)}
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   {([
                     ['shoulders', 'Shoulders *'], ['bust', 'Bust'], ['chest', 'Chest'], ['waist', 'Waist *'], ['hips', 'Hips *'],
                   ] as Array<[MeasurementKey, string]>).map(([key, label]) => <label key={key} className="block">
-                    <span className="iconik-micro" style={{ color: C.muted }}>{label}</span>
-                    <div className="relative mt-2">
-                      <input type="number" inputMode="decimal" min="1" max={measurementUnit === 'in' ? 120 : 300} step="0.1" value={measurementValues[key]} onChange={event => setMeasurementValues(current => ({ ...current, [key]: event.target.value }))} className="w-full rounded-xl px-3 py-3 pr-10 outline-none luxury-body text-sm" style={{ background: C.bg, border: `1px solid ${C.border}` }} />
-                      <span className="absolute right-3 top-1/2 -translate-y-1/2 iconik-micro" style={{ color: C.muted }}>{measurementUnit}</span>
-                    </div>
+                    <span className="ma-label">{label}</span>
+                    <span className="relative block">
+                      <input type="number" inputMode="decimal" min="1" max={measurementUnit === 'in' ? 120 : 300} step="0.1" value={measurementValues[key]} onChange={event => setMeasurementValues(current => ({ ...current, [key]: event.target.value }))} className="ma-input ma-num" style={{ paddingRight: 40 }} />
+                      <span className="ma-faint absolute right-3.5 top-1/2 -translate-y-1/2 text-[12px]">{measurementUnit}</span>
+                    </span>
                   </label>)}
                 </div>
-                <p className="luxury-body text-xs mt-3" style={{ color: C.muted }}>Bust or chest is required; you do not need both.</p>
+                <p className="ma-faint mt-3 text-[13px]">Bust or chest is required; you do not need both.</p>
               </div>
 
               <div>
-                <p className="luxury-body text-sm font-medium mb-1">Client photos</p>
-                <p className="luxury-body text-xs mb-4" style={{ color: C.muted }}>Upload WhatsApp images here. Re-uploading a slot safely replaces the previous image.</p>
-                <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-2 gap-3">
+                <p className="text-[14px]" style={{ fontWeight: 600 }}>Client photos</p>
+                <p className="ma-faint mb-4 mt-0.5 text-[13px]">Upload WhatsApp images here. Re-uploading a slot safely replaces the previous image.</p>
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-2">
                   {photos.map(([key, label]) => {
                     const selected = selectedPhotos[key];
-                    return <label key={key} htmlFor={`stylist-photo-${key}`} className="group rounded-2xl overflow-hidden cursor-pointer" style={{ background: C.bg, border: `1px solid ${selected ? C.gold : C.border}` }}>
+                    return <label key={key} htmlFor={`stylist-photo-${key}`} className="group cursor-pointer overflow-hidden rounded-2xl" style={{ background: 'var(--ma-surface-2)', border: `1px solid ${selected ? 'var(--ma-accent)' : 'var(--ma-line)'}`, boxShadow: selected ? '0 0 0 3px var(--ma-accent-soft)' : undefined }}>
                       <input id={`stylist-photo-${key}`} type="file" accept="image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.heif" className="sr-only" onChange={event => {
                         const file = event.target.files?.[0];
                         if (file) setSelectedPhotos(current => ({ ...current, [key]: file }));
                         event.target.value = '';
                       }} />
-                      <div className="aspect-[4/3] relative flex items-center justify-center overflow-hidden">
-                        {detail.photoUrls[key] ? <img loading="lazy" decoding="async" src={detail.photoUrls[key]!} alt={label} className="w-full h-full object-cover opacity-75 group-hover:opacity-55 transition" /> : <ImageIcon size={21} style={{ color: C.muted }} />}
-                        <div className="absolute inset-0 flex items-center justify-center"><span className="w-9 h-9 rounded-full flex items-center justify-center" style={{ background: 'rgba(44,38,34,.82)', color: C.bg }}><UploadCloud size={16} /></span></div>
+                      <div className="relative flex aspect-[4/3] items-center justify-center overflow-hidden">
+                        {detail.photoUrls[key] ? <img loading="lazy" decoding="async" src={detail.photoUrls[key]!} alt={label} className="h-full w-full object-cover opacity-80 transition group-hover:opacity-60" /> : <ImageIcon size={21} className="ma-faint" />}
+                        <div className="absolute inset-0 flex items-center justify-center"><span className="flex h-9 w-9 items-center justify-center rounded-full" style={{ background: 'rgba(17,19,21,.78)', color: '#fff' }}><UploadCloud size={16} /></span></div>
                       </div>
                       <div className="px-3 py-2.5">
-                        <p className="iconik-micro truncate" style={{ color: selected ? C.gold : C.muted }}>{selected?.name || label}</p>
-                        {selected && <p className="luxury-body text-[11px] mt-1" style={{ color: C.success }}>Ready to upload</p>}
+                        <p className="truncate text-[13px]" style={{ fontWeight: 500, color: selected ? 'var(--ma-accent)' : 'var(--ma-ink-2)' }}>{selected?.name || label}</p>
+                        {selected && <p className="mt-0.5 text-[12px]" style={{ color: 'var(--ma-green)' }}>Ready to upload</p>}
                       </div>
                     </label>;
                   })}
                 </div>
               </div>
             </div>
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mt-6 pt-5" style={{ borderTop: `1px solid ${C.border}` }}>
-              <p className="luxury-body text-xs" style={{ color: detail.readiness.ready ? C.success : C.muted }}>{detail.readiness.ready ? 'All required inputs are complete.' : `${detail.readiness.missing.length} required input${detail.readiness.missing.length === 1 ? '' : 's'} still missing.`}</p>
-              <button onClick={() => void saveClientInputs()} disabled={!consultation.stylist_id || Boolean(working)} className="inline-flex items-center justify-center gap-2 rounded-xl px-5 py-3 luxury-body text-sm disabled:opacity-50" style={{ background: C.ink, color: C.bg }}>{working === 'inputs' ? <Loader2 size={15} className="animate-spin" /> : <UploadCloud size={15} />} {working === 'inputs' ? 'Saving inputs…' : 'Save measurements & photos'}</button>
+            <div className="mt-6 flex flex-col justify-between gap-3 pt-5 sm:flex-row sm:items-center" style={{ borderTop: '1px solid var(--ma-line-2)' }}>
+              {detail.readiness.ready ? <Pill tone="green" dot>All required inputs are complete</Pill> : <Pill tone="amber" dot>{detail.readiness.missing.length} required input{detail.readiness.missing.length === 1 ? '' : 's'} still missing</Pill>}
+              <Button variant="dark" onClick={() => void saveClientInputs()} disabled={!consultation.stylist_id || Boolean(working)} loading={working === 'inputs'} icon={<UploadCloud size={15} />}>{working === 'inputs' ? 'Saving inputs…' : 'Save measurements & photos'}</Button>
             </div>
           </Section>
-          <Section title="Client Direction">
-            <div className="grid md:grid-cols-2 gap-x-8">
+          <Section title="Client direction">
+            <div className="grid gap-x-8 md:grid-cols-2">
               <div><Field label="Occupation" value={clientData.occupation} /><Field label="Aesthetics" value={clientData.aesthetics} /><Field label="Desired feeling" value={clientData.desiredFeelings} /><Field label="Occasions" value={clientData.occasions} /></div>
               <div><Field label="Style goals" value={[clientData.styleGoal1, clientData.styleGoal2, clientData.styleGoal3].filter(Boolean)} /><Field label="Special goals" value={clientData.specialGoals} /><Field label="Upcoming events" value={clientData.upcomingEvents} /><Field label="Wardrobe challenge" value={clientData.wardrobeChallenge} /></div>
             </div>
           </Section>
-          <Section title="Body, Coverage & Boundaries">
-            <div className="grid md:grid-cols-2 gap-x-8">
+          <Section title="Body, coverage & boundaries">
+            <div className="grid gap-x-8 md:grid-cols-2">
               <div><Field label="Body shape" value={clientData.bodyShape} /><Field label="Body concerns" value={[clientData.bodyConcerns, clientData.bodyConcernsOther].filter(Boolean)} /><Field label="Fit restrictions" value={clientData.fitRestrictions} /><Field label="Modesty" value={[clientData.modestyPreference, clientData.modestyReason].filter(Boolean)} /></div>
               <div><Field label="Boundaries" value={clientData.boundaries} /><Field label="Fabric restrictions" value={clientData.fabricRestrictions} /><Field label="Cultural restrictions" value={clientData.culturalRestrictions} /><Field label="Height / weight" value={[clientData.height, clientData.weight].filter(Boolean)} /></div>
             </div>
           </Section>
           <Section title="Style preferences">
-            <div className="grid md:grid-cols-2 gap-x-8">
+            <div className="grid gap-x-8 md:grid-cols-2">
               <div><Field label="Items loved" value={clientData.itemsLoved} /><Field label="Items avoided" value={[clientData.itemsHated, clientData.wardrobeLeastFavorites].filter(Boolean)} /><Field label="Footwear" value={clientData.footwear} /><Field label="Experimentation" value={clientData.styleExperimentation} /></div>
               <div><Field label="Skin context" value={[clientData.skinTone, clientData.skinType, clientData.skinTint, clientData.sunReaction].filter(Boolean)} /><Field label="Colour preference" value={clientData.colorFamilyPreference} /><Field label="Metal preference" value={clientData.metalPreference} /><Field label="Hair" value={[clientData.hairType, clientData.hairChangeOpenness].filter(Boolean)} /></div>
             </div>
           </Section>
-          <Section title="02 · Your styling notes">
-            <textarea disabled={Boolean(working)} value={notes} onChange={event => setNotes(event.target.value)} placeholder="Anything the report should know? Add preferences, corrections or details from your conversation." className="w-full min-h-44 rounded-2xl p-4 outline-none resize-y luxury-body text-sm leading-6" style={{ background: C.bg, border: `1px solid ${C.border}` }} />
-            <div className="flex flex-wrap gap-2 mt-4"><button onClick={() => void saveNotes()} disabled={!consultation.stylist_id || Boolean(working)} className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm luxury-body" style={{ background: C.ink, color: C.bg }}>{working === 'save' ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />} Save report notes</button>{detail.intake && <button onClick={() => void refreshSnapshot()} disabled={Boolean(working)} className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm luxury-body" style={{ border: `1px solid ${C.border}`, color: C.muted }}>{working === 'refresh' ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />} Refresh source snapshot</button>}</div>
+          <Section title="Your styling notes" hint="The report reads these when it is generated.">
+            <textarea disabled={Boolean(working)} value={notes} onChange={event => setNotes(event.target.value)} placeholder="Anything the report should know? Add preferences, corrections or details from your conversation." className="ma-textarea min-h-44" />
+            <div className="mt-4 flex flex-wrap gap-2">
+              <Button variant="dark" onClick={() => void saveNotes()} disabled={!consultation.stylist_id || Boolean(working)} loading={working === 'save'} icon={<Save size={14} />}>Save report notes</Button>
+              {detail.intake && <Button variant="ghost" onClick={() => void refreshSnapshot()} disabled={Boolean(working)} loading={working === 'refresh'} icon={<RefreshCw size={14} />}>Refresh source snapshot</Button>}
+            </div>
           </Section>
         </div>
 
-        <aside className="space-y-5 xl:sticky xl:top-6">
+        <aside className="space-y-5 xl:sticky xl:top-20">
           <Section title="Ready for the report?">
-            <div className="flex items-center gap-3 mb-5"><div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: detail.readiness.ready ? 'rgba(90,139,106,.12)' : 'rgba(201,169,110,.16)', color: detail.readiness.ready ? C.success : C.gold }}>{detail.readiness.ready ? <Check size={18} /> : <Clock3 size={18} />}</div><div><p className="luxury-body text-sm font-medium">{detail.readiness.ready ? 'Ready to generate' : 'Waiting for inputs'}</p><p className="luxury-body text-xs mt-1" style={{ color: C.muted }}>{detail.readiness.ready ? 'Photos and measurements are complete.' : `${detail.readiness.missing.length} required items are missing.`}</p></div></div>
-            {!detail.readiness.ready && <div className="space-y-2">{detail.readiness.missing.map(item => <div key={item} className="rounded-xl px-3 py-2.5 luxury-body text-sm" style={{ background: C.bg, color: C.error }}>{item}</div>)}</div>}
-            {!detail.readiness.ready && detail.uploadLink?.url && <a href={detail.uploadLink.url} target="_blank" rel="noreferrer" className="mt-4 w-full inline-flex items-center justify-center gap-2 rounded-xl px-4 py-3 luxury-body text-sm" style={{ background: C.ink, color: C.bg }}><ImageIcon size={15} /> Open client upload link</a>}
+            <div className="mb-4 flex items-center gap-3">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full" style={{ background: detail.readiness.ready ? 'var(--ma-green-soft)' : 'var(--ma-amber-soft)', color: detail.readiness.ready ? 'var(--ma-green)' : 'var(--ma-amber)' }}>{detail.readiness.ready ? <Check size={18} /> : <Clock3 size={18} />}</span>
+              <div><p className="text-[14px]" style={{ fontWeight: 600 }}>{detail.readiness.ready ? 'Ready to generate' : 'Waiting for inputs'}</p><p className="ma-faint mt-0.5 text-[13px]">{detail.readiness.ready ? 'Photos and measurements are complete.' : `${detail.readiness.missing.length} required items are missing.`}</p></div>
+            </div>
+            {!detail.readiness.ready && <div className="flex flex-wrap gap-1.5">{detail.readiness.missing.map(item => <Pill key={item} tone="red">{item}</Pill>)}</div>}
+            {!detail.readiness.ready && detail.uploadLink?.url && <a href={detail.uploadLink.url} target="_blank" rel="noreferrer" className="ma-btn ma-btn--dark mt-4 w-full"><ImageIcon size={15} /> Open client upload link</a>}
           </Section>
-          <Section title="Client reference photos">
-            <div className="grid grid-cols-2 gap-3">{photos.map(([key, label]) => <div key={key} className="rounded-2xl overflow-hidden" style={{ border: `1px solid ${C.border}`, background: C.bg }}><div className="aspect-[3/4] flex items-center justify-center">{detail.photoUrls[key] ? <img loading="lazy" decoding="async" src={detail.photoUrls[key]!} alt={label} className="w-full h-full object-cover" /> : <ImageIcon size={22} style={{ color: C.muted }} />}</div><p className="iconik-micro px-3 py-2.5" style={{ color: detail.photoUrls[key] ? C.success : C.muted }}>{label}</p></div>)}</div>
+          <Section title="Reference photos">
+            <div className="grid grid-cols-2 gap-3">{photos.map(([key, label]) => <div key={key} className="overflow-hidden rounded-2xl" style={{ border: '1px solid var(--ma-line)', background: 'var(--ma-surface-2)' }}><div className="flex aspect-[3/4] items-center justify-center">{detail.photoUrls[key] ? <img loading="lazy" decoding="async" src={detail.photoUrls[key]!} alt={label} className="h-full w-full object-cover" /> : <ImageIcon size={22} className="ma-faint" />}</div><p className="flex items-center gap-1.5 px-3 py-2 text-[12px]" style={{ fontWeight: 500, color: detail.photoUrls[key] ? 'var(--ma-green)' : 'var(--ma-ink-3)' }}>{detail.photoUrls[key] && <Check size={12} />}{label}</p></div>)}</div>
           </Section>
-          <Section title="Measurements">
-            <div className="flex items-center gap-2 mb-3" style={{ color: C.slate }}><Ruler size={16} /><span className="luxury-body text-sm">Current saved measurements</span></div>
-            {Object.entries(detail.source.upload?.measurements ?? {}).map(([key, value]) => <div key={key} className="flex justify-between gap-4 py-2.5" style={{ borderTop: `1px solid ${C.border}` }}><span className="iconik-micro capitalize" style={{ color: C.muted }}>{key}</span><span className="luxury-body text-sm">{display(value)}</span></div>)}
+          <Section title="Saved measurements">
+            {Object.entries(detail.source.upload?.measurements ?? {}).map(([key, value]) => <div key={key} className="flex justify-between gap-4 py-2.5" style={{ borderTop: '1px solid var(--ma-line-2)' }}><span className="ma-faint text-[13px] capitalize">{key}</span><span className="ma-num text-[14px]" style={{ fontWeight: 500 }}>{display(value)}</span></div>)}
+            {!Object.keys(detail.source.upload?.measurements ?? {}).length && <p className="ma-faint text-[13px]">None saved yet.</p>}
           </Section>
-          {consultation.status === 'delivered' && <button disabled={!detail.source.consultation.stylist_id || !detail.readiness.ready || Boolean(working)} onClick={() => void generate(true)} className="w-full inline-flex items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm luxury-body disabled:opacity-40" style={{ border: `1px solid ${C.border}`, color: C.ink }}><Sparkles size={15} /> Create a new draft Blueprint</button>}
+          {canRecordManual && <Section title="Already sent this report?" hint="Sent it yourself on WhatsApp or email, not through the studio.">
+            <Button className="w-full" icon={<Check size={14} />} onClick={() => setManualOpen(true)}>Mark as delivered</Button>
+          </Section>}
+          {consultation.status === 'delivered' && <Button className="w-full" disabled={!detail.source.consultation.stylist_id || !detail.readiness.ready || Boolean(working)} onClick={() => void generate(true)} icon={<Sparkles size={15} />}>Create a new draft Blueprint</Button>}
         </aside>
       </div>
+      {manualOpen && <StylistManualDeliveryDialog consultationId={consultationId} clientName={consultation.client_name || 'your client'} onClose={() => setManualOpen(false)} onDone={() => { setManualOpen(false); void load(true); }} />}
     </div>
   );
 }

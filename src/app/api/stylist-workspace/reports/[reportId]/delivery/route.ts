@@ -67,8 +67,15 @@ export async function POST(
     if (!delivered) return NextResponse.json({ error: 'The report changed during delivery. Review and publish it again.' }, { status: 409 });
     await supabaseAdmin
       .from('consultations')
-      .update({ status: 'delivered', delivered_at: now, updated_at: now })
+      .update({ status: 'delivered', updated_at: now })
       .eq('id', intake.consultation_id);
+    // The first delivery is what the report deadline is measured against.
+    // Confirming a revised version later must not move it.
+    await supabaseAdmin
+      .from('consultations')
+      .update({ delivered_at: now })
+      .eq('id', intake.consultation_id)
+      .is('delivered_at', null);
     await logStylistReportActivity({
       action: 'whatsapp_delivery_confirmed', reportId, consultationId: intake.consultation_id, stylistId: identity?.stylistId,
     });

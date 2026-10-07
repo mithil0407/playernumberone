@@ -167,3 +167,54 @@ test('a published report can be marked delivered from its dashboard card', () =>
   assert.match(dashboard, /window\.confirm\(`Mark \$\{name\}'s report as delivered\?/);
   assert.match(dashboard, /setRefresh\(value => value \+ 1\);/);
 });
+
+import { deliveryRecord, isOverdue, lateLabel } from './stylistWorkspaceQueueModel.ts';
+test('the delivery record judges the first version from complete inputs to Mark delivered', () => {
+  const now = Date.parse('2026-10-06T12:00:00Z');
+  const completeUpload = { photo_paths: requiredPhotos, measurements: { shoulders: 38, bust: 91, waist: 72, hips: 98 } };
+  const published = { id: 'r', status: 'approved', progress_stage: null, error_message: null, published_at: '2026-10-03T10:00:00Z', delivered_at: null, created_at: '2026-10-01T10:00:00Z', updated_at: '2026-10-03T10:00:00Z' };
+  const items = [
+    workspaceQueueItem(queueRow({ id: 'on-time', status: 'delivered', report_due_at: '2026-10-04T10:00:00Z', delivered_at: '2026-10-04T09:00:00Z' })),
+    workspaceQueueItem(queueRow({ id: 'late', status: 'delivered', report_due_at: '2026-10-02T10:00:00Z', delivered_at: '2026-10-03T16:00:00Z' })),
+    // Delivered late, but before this week: no longer on the record.
+    workspaceQueueItem(queueRow({ id: 'old', status: 'delivered', report_due_at: '2026-09-20T10:00:00Z', delivered_at: '2026-09-25T10:00:00Z' })),
+    // Published is not delivered: the clock only stops at Mark delivered.
+    workspaceQueueItem(queueRow({ id: 'unmarked', status: 'review', report_due_at: '2026-10-05T10:00:00Z', consultation_upload_links: completeUpload, stylist_intake_responses: [{ stylist_blueprint_reports: [published] }] })),
+    // Inputs still missing: no clock is running.
+    workspaceQueueItem(queueRow({ id: 'waiting', report_due_at: '2026-10-01T10:00:00Z' })),
+  ];
+  const record = deliveryRecord(items, now);
+  assert.equal(record.onTime, 1);
+  assert.deepEqual(record.late.map(entry => [entry.id, lateLabel(entry.lateMs)]), [['late', '1d 6h']]);
+  assert.deepEqual(record.overdue.map(entry => [entry.id, lateLabel(entry.lateMs)]), [['unmarked', '1d 2h']]);
+  assert.equal(isOverdue(items[3], now), true);
+  assert.equal(isOverdue(items[4], now), false);
+});
+
+test('marking a revised version delivered never moves the first delivery time', () => {
+  const route = readFileSync('src/app/api/stylist-workspace/reports/[reportId]/delivery/route.ts', 'utf8');
+  assert.match(route, /\.update\(\{ delivered_at: now \}\)[\s\S]{0,120}\.is\('delivered_at', null\)/);
+  const inputs = readFileSync('src/app/api/stylist-workspace/consultations/[consultationId]/inputs/route.ts', 'utf8');
+  assert.match(inputs, /becameReady \? \{ images_received_at: now, report_due_at: reportDueAt\(now\) \}/);
+});
+
+import { manualDeliveredAt } from './stylistWorkspaceQueueModel.ts';
+test('a report sent outside the studio takes the date the stylist gives, within reason', () => {
+  const now = Date.parse('2026-10-07T09:00:00Z');
+  const consultation = '2026-09-01T09:27:00Z';
+  assert.deepEqual(manualDeliveredAt('2026-09-10', consultation, now), { at: '2026-09-10T18:29:59.999Z' });
+  assert.deepEqual(manualDeliveredAt('2026-10-07', consultation, now), { at: '2026-10-07T09:00:00.000Z' });
+  assert.ok('error' in manualDeliveredAt('2026-10-09', consultation, now));
+  assert.ok('error' in manualDeliveredAt('2026-08-20', consultation, now));
+  assert.ok('error' in manualDeliveredAt('yesterday', consultation, now));
+  assert.ok('error' in manualDeliveredAt(undefined, consultation, now));
+});
+
+test('recording a hand-sent report is write-once, access-checked and logged with both times', () => {
+  const route = readFileSync('src/app/api/stylist-workspace/consultations/[consultationId]/manual-delivery/route.ts', 'utf8');
+  assert.match(route, /getConsultationWorkspaceAccess\(consultationId\)/);
+  assert.match(route, /\.is\('delivered_at', null\)/);
+  assert.match(route, /action: 'manual_delivery_recorded'[\s\S]*recorded_at: now/);
+  // Nothing is published, so no client link is opened by this action.
+  assert.doesNotMatch(route, /published_at/);
+});
