@@ -40,6 +40,9 @@ const nextConfig: NextConfig = {
     '/api/man-report/**': ['./src/lib/ICONIK_Mens_Library_Board.md', './src/lib/ICONIK_Mens_Library_100.md'],
     '/api/man-edit/**': ['./src/lib/ICONIK_Mens_Library_Board.md', './src/lib/ICONIK_Mens_Library_100.md'],
     '/api/payment/**': ['./src/lib/ICONIK_Mens_Library_Board.md', './src/lib/ICONIK_Mens_Library_100.md'],
+    // Occasion looks (Diwali…) are picked from this library when a client asks to see his.
+    '/api/whatsapp/**': ['./src/lib/ICONIK_Mens_Library_Diwali.md'],
+    '/api/agent/**': ['./src/lib/ICONIK_Mens_Library_Diwali.md'],
   },
   async headers() {
     return [

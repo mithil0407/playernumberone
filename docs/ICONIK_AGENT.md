@@ -228,15 +228,25 @@ only spent on men who engage.
      free reply buttons instead when his chat is already open.
 3. **He asks to see it** (taps the button or sends the email's text):
    `revealOccasionLook` says "Give me a minute, dressing you up for Diwali 🪔",
-   designs the look from his report (`designLook`), draws him in it
+   picks his look from the hand-picked library (`designLook`: a shortlist ranked for
+   his colours near the face, style and height, then one model call chooses and
+   writes the line on why it suits him), draws him in it
    (`generateManEditOutfitImage`) and sends it with **Love it 😍 / Show me another**.
    This is the only point where credits are spent. If his first message was
    something else, the agent answers it right after the picture.
 4. For 21 days (until the day after Diwali) the prompt carries the look
    (`occasionLookSection`): "Love it" → ask for pincode + shirt size in one line, then
    search and present checked products; "Show me another" → a new picture straight
-   away; family mentioned → one natural offer to plan her outfit too (pairing
+   away, from three library alternatives in other shapes; family mentioned → one natural offer to plan her outfit too (pairing
    invite, free Colour Card). Replies are recorded on the row (`response`).
+
+**The library** (`src/lib/ICONIK_Mens_Library_Diwali.md`, 210 looks, IDs 600+): kurta sets,
+kurta + Nehru jacket, bandhgalas and Jodhpuri suits, short kurtas, pathanis, dhoti
+sets, Indo-western, embroidered kurtas, angrakhas, stoles, achkans and long-jacket
+sets, across pooja, family, card party, office party and visiting. Every piece is a
+real garment in a colour Indian stores sell; edit or add looks in the file (the
+tests check every colour is one the matcher knows). Parsed and ranked by
+`agentOccasionLibrary.ts`; bundled for the webhook and agent routes in `next.config.ts`.
 
 Code: `agentOccasionLooks.ts` (pure: campaign copy, payloads, prompt section; tested
 in `agentOccasionLooks.test.ts`), `agentOccasionLookStore.ts` (list, invite, reveal,
