@@ -32,16 +32,25 @@ class Page(HTMLParser):
         self.schema_errors = []
         self.capture = None
         self.buffer = []
+        self.in_head = False
+        self.head_meta = {}
+        self.head_canonicals = []
 
     def handle_starttag(self, tag, attrs):
         a = dict(attrs)
+        if tag == 'head':
+            self.in_head = True
         if tag in ('title', 'h1') or (tag == 'script' and a.get('type') == 'application/ld+json'):
             self.capture, self.buffer = tag, []
         if tag == 'meta':
             key = a.get('name', a.get('property', '')).lower()
             self.meta.setdefault(key, []).append(a.get('content', ''))
+            if self.in_head:
+                self.head_meta.setdefault(key, []).append(a.get('content', ''))
         if tag == 'link' and 'canonical' in a.get('rel', '').lower().split():
             self.canonicals.append(a.get('href', ''))
+            if self.in_head:
+                self.head_canonicals.append(a.get('href', ''))
         if tag == 'a' and a.get('href'):
             self.links.add(a['href'])
         if tag == 'img' and 'alt' not in a:
@@ -52,6 +61,8 @@ class Page(HTMLParser):
             self.buffer.append(data)
 
     def handle_endtag(self, tag):
+        if tag == 'head':
+            self.in_head = False
         if tag != self.capture:
             return
         value = ''.join(self.buffer).strip()
@@ -122,9 +133,9 @@ def main():
             problems.append('noindex-in-sitemap')
         if len(page.title) != 1 or not page.title[0]:
             problems.append('missing-or-multiple-title')
-        if not any(page.meta.get('description', [])):
+        if not any(page.head_meta.get('description', [])):
             problems.append('missing-description')
-        if len(page.canonicals) != 1 or normalized(page.canonicals[0]) != normalized(canonical_origin + path):
+        if len(page.head_canonicals) != 1 or normalized(page.head_canonicals[0]) != normalized(canonical_origin + path):
             problems.append('missing-or-mismatched-canonical')
         if len(page.h1) != 1:
             problems.append('missing-or-multiple-h1')

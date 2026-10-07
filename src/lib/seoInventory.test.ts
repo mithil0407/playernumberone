@@ -5,6 +5,12 @@ import path from 'node:path';
 import { indexedSeoPages, noindexSeoPages, redirectSeoPages, seoPageInventory } from './seoContent.ts';
 import { buildMetadata, SITE_URL } from './seo.ts';
 import { leadMagnetDefinitions } from './leadMagnets.ts';
+import nextConfig from '../../next.config.ts';
+
+test('metadata is emitted in the initial head for both crawlers and browsers', () => {
+  assert.ok(nextConfig.htmlLimitedBots?.test('Googlebot'));
+  assert.ok(nextConfig.htmlLimitedBots?.test('Mozilla/5.0 Chrome/154.0'));
+});
 
 test('SEO inventory assigns one policy per route and includes current public products', () => {
   const paths = seoPageInventory.map(entry => entry.path);

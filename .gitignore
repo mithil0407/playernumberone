@@ -49,8 +49,7 @@ next-env.d.ts
 
 # Local SEO audit build and raw Lighthouse artifacts
 /.next-seo-audit/
+/.next-seo-final/
 /.next-seo-cache/
-/reports/seo-*/lighthouse-live/
-/reports/seo-*/lighthouse-local/
-/reports/seo-*/lighthouse-supported-node.json
-/reports/seo-*/lighthouse*.report.*
+/reports/seo-*/
+/scripts/__pycache__/
