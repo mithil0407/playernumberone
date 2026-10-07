@@ -145,3 +145,75 @@ test('invites wait until the agent answers Blueprint clients', () => {
 test('the email button opens WhatsApp with the request typed', () => {
   assert.equal(whatsappLink('+91 98765 43210', diwali.showText), `https://wa.me/919876543210?text=${encodeURIComponent('Show me my Diwali look 🪔')}`);
 });
+
+// ─── The Diwali outfit library ──────────────────────────────────────────────
+
+import { readFileSync } from 'node:fs';
+import { findManColourMentions } from './manOutfitColour.ts';
+import {
+  findOccasionOutfit,
+  occasionOutfitText,
+  parseOccasionLibrary,
+  shortlistOccasionOutfits,
+} from './agentOccasionLibrary.ts';
+
+const library = parseOccasionLibrary(readFileSync(new URL('./ICONIK_Mens_Library_Diwali.md', import.meta.url), 'utf-8'));
+
+test('the Diwali library has 200+ distinct, real looks across many shapes', () => {
+  assert.ok(library.length >= 200, `only ${library.length} looks`);
+  assert.equal(new Set(library.map(occasionOutfitText)).size, library.length, 'duplicate looks');
+  assert.equal(new Set(library.map(outfit => outfit.id)).size, library.length, 'duplicate ids');
+  const families = new Map<string, number>();
+  for (const outfit of library) families.set(outfit.family, (families.get(outfit.family) ?? 0) + 1);
+  assert.ok(families.size >= 10, 'too few shapes');
+  // Every piece near the face and the bottom has a colour the matcher knows.
+  for (const outfit of library) {
+    for (const piece of [outfit.top, outfit.layer, outfit.bottom]) {
+      if (piece) assert.ok(findManColourMentions(piece).length, `unknown colour in ${outfit.id}: ${piece}`);
+    }
+  }
+});
+
+const warmClient = {
+  colour: {
+    season: 'Deep Autumn', undertone: 'warm', skin_tone_depth: 'deep',
+    primary_palette: [{ name: 'rust' }, { name: 'olive' }, { name: 'mustard' }, { name: 'bottle green' }],
+    neutral_base_colours: ['cream', 'camel'],
+    colours_to_avoid: [{ name: 'pale pink' }, { name: 'powder blue' }, { name: 'lavender' }],
+  },
+  style: { tribes: ['indian_casual'] },
+};
+
+test('a shortlist never puts his avoid colours near his face, and mixes shapes', () => {
+  const shortlist = shortlistOccasionOutfits(library, warmClient, { count: 10, seed: 'a' });
+  assert.equal(shortlist.length, 10);
+  for (const outfit of shortlist) {
+    const nearFace = `${outfit.top} ${outfit.layer ?? ''}`.toLowerCase();
+    assert.doesNotMatch(nearFace, /pale pink|powder blue|lavender/);
+  }
+  const perFamily = new Map<string, number>();
+  for (const outfit of shortlist) perFamily.set(outfit.family, (perFamily.get(outfit.family) ?? 0) + 1);
+  assert.ok([...perFamily.values()].every(count => count <= 2));
+  assert.ok(perFamily.size >= 5);
+});
+
+test('alternatives skip the look he saw and its shape', () => {
+  const [first] = shortlistOccasionOutfits(library, warmClient, { count: 1, seed: 'b' });
+  const shown = findOccasionOutfit(library, occasionOutfitText(first));
+  assert.equal(shown?.id, first.id);
+  const others = shortlistOccasionOutfits(library, warmClient, {
+    count: 3, perFamily: 1, exclude: [occasionOutfitText(first)], avoidFamilies: [first.family], seed: 'c',
+  });
+  assert.equal(others.length, 3);
+  assert.equal(new Set(others.map(outfit => outfit.family)).size, 3);
+  assert.ok(others.every(outfit => outfit.family !== first.family));
+});
+
+test('"Show me another" uses the library alternatives word for word', () => {
+  const section = occasionLookSection({
+    campaign: 'diwali_2026', outfit: 'rust kurta', hook: 'the rust suits you', sentAt: '2026-10-22T05:00:00Z', response: 'another',
+    alternatives: ['Olive green wool-blend bandhgala jacket, buttoned; Beige tailored trousers; Brown leather derby shoes'],
+  }, new Date('2026-10-23T05:00:00Z'));
+  assert.match(section, /word for word/);
+  assert.match(section, /1\) Olive green wool-blend bandhgala jacket/);
+});

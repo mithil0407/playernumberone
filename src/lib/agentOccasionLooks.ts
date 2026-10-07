@@ -16,6 +16,8 @@ export interface OccasionCampaign {
   date: string;
   /** What the look is for, for the designer. */
   brief: string;
+  /** The hand-picked outfit library looks are chosen from (agentOccasionLibrary.ts). */
+  library: string;
   /**
    * The WhatsApp nudge, exactly as submitted to Meta as the template body.
    * {{1}} is the first name. Also sent as-is (free) when his chat is open.
@@ -37,6 +39,7 @@ export const OCCASION_CAMPAIGNS: Record<string, OccasionCampaign> = {
     key: 'diwali_2026',
     occasion: 'Diwali',
     date: '2026-11-08',
+    library: 'diwali',
     brief: 'Festive Indian menswear for Diwali: the pooja, family photos and card parties. Kurta sets, a bandhgala, or a Nehru jacket over a kurta, in festive fabrics (silk blend, raw silk, chanderi, jacquard, linen-silk). Rich but wearable, nothing costume-like, and every piece easy to buy online in India.',
     inviteBody: "Hi {{1}}, Diwali's on the 8th 🪔 I've put together a look for you, built on your Blueprint: your colours, your fit.\n\nWant to see it?",
     template: 'iconik_diwali_look_invite_v1',
@@ -194,6 +197,8 @@ export interface ActiveLookForPrompt {
   /** When we told him about it (email or WhatsApp). */
   sentAt: string;
   response: string | null;
+  /** Other library looks for him, each a different shape, for "Show me another". */
+  alternatives?: string[];
 }
 
 /** How long after the invite a look still steers the conversation. */
@@ -222,7 +227,10 @@ You sent him a photo of himself in: ${look.outfit}
 With the line: "${look.hook}". ${reaction}
 This is why he's here, so follow through, lightly and like a friend:
 - He likes it ("Love it", 😍, "where do I get this"): if you know his size and delivery pincode, go straight to the pieces: search_products for each, then present_products with his size, pincode and the deadline (before ${campaign.occasion}). If not, ask for both in ONE short line and nothing else, e.g. "Glad you like it 🙌 Send me your pincode and shirt size, and I'll find these at stores that deliver to you before ${campaign.occasion}." When he sends them, remember both, then search and present. No questions about budget or brands unless he raises them; let the real prices speak.
-- He wants another: call show_outfit_image straight away with a clearly different look for ${campaign.occasion} in his colours (another hero colour or another shape, e.g. a bandhgala instead of a kurta), then one line on why it works and "This one or the first?" No questions before the picture.
+- He wants another: call show_outfit_image straight away with ${look.alternatives?.length ? `the first of these he hasn't seen yet, word for word (real looks from our library, picked for his colours, each a different shape):
+${look.alternatives.map((outfit, index) => `  ${index + 1}) ${outfit}`).join('\n')}
+  ` : `a clearly different look for ${campaign.occasion} in his colours (another hero colour or another shape, e.g. a bandhgala instead of a kurta), `}then one line on why it works and "This one or the first?" No questions before the picture.
+- When you search for the pieces, search for them as described in the look, colour and fabric included.
 - He's not interested or not celebrating: take it lightly and move on. Never push.
 - Once the pieces are on their way to him, and only if he has mentioned a wife, partner or family dressing up with him, you may offer once, in passing: "If she's still planning her outfit, send her this, I'll make sure you two go together" and call share_invite. This is the one time an invite is welcome unprompted.
 `;

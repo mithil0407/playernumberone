@@ -36,6 +36,7 @@ import {
   sendWhatsAppTextMessage,
 } from '@/lib/whatsapp';
 import { sendOccasionLookEmail } from '@/lib/emailMen';
+import { loadOccasionLibrary, occasionOutfitText, shortlistOccasionOutfits } from '@/lib/agentOccasionLibrary';
 
 export interface OccasionLookRow {
   id: string;
@@ -328,29 +329,34 @@ export async function sendOccasionInvites(campaignKey: string, options: {
 
 // ─── The reveal: only when he asks ───────────────────────────────────────────
 
-async function designLook(campaign: OccasionCampaign, reportData: unknown) {
+/**
+ * Chooses his look from the hand-picked library: a shortlist ranked for his
+ * colours, style and height, then one model call picks the best and writes the
+ * line on why it suits him. The pieces are the library's, word for word.
+ */
+async function designLook(campaign: OccasionCampaign, reportData: unknown, seed: string) {
   const profile = manPassportProfile(reportData);
-  const raw = await generateAgentJson(`You are ICONIK's menswear stylist. Design ONE ${campaign.occasion} look for this client, from his ICONIK report below.
+  const shortlist = shortlistOccasionOutfits(loadOccasionLibrary(campaign.library), profile, { count: 10, seed });
+  if (!shortlist.length) throw new Error('No library look fits his colours');
+  const raw = await generateAgentJson(`You are ICONIK's menswear stylist. Choose the ONE ${campaign.occasion} look below that suits this client best, from his ICONIK report.
+
+Think about: colours near his face against his palette, cuts against his fit rules, and how traditional or modern his style brief is. Every look is real and buyable; don't change any piece.
 
 THE OCCASION: ${campaign.brief}
 
-RULES
-- Colours from his palette (primary or accent colours near the face), never his colours to avoid. One hero colour; the rest supports it.
-- Cuts that follow his fit directive and silhouette rules.
-- His style brief decides how traditional or modern it is; respect his anti-preferences.
-- Every piece is a real, common product type an Indian online store would sell (e.g. "deep rust silk-blend straight kurta", "ivory cotton-silk churidar", "tan leather mojaris"). No custom tailoring, no designer names.
-- 3-4 pieces: top, bottom, footwear, and optionally a layer (Nehru jacket) or one accessory.
+THE LOOKS
+${shortlist.map(outfit => `${outfit.id}: ${occasionOutfitText(outfit)} (${outfit.styling})`).join('\n')}
 
 THE HOOK: a short clause that finishes the sentence "I put this together for you, …" — it names the hero piece and says, like a friend, why it works on HIM (his colouring, his build). Starts lowercase, no full stop, max 90 characters, plain words (no season names, no jargon like "silhouette"). E.g. "the deep rust brings out the warmth in your skin" or "the olive bandhgala gives your shoulders a sharp line".
 
-Return ONLY JSON: {"outfit": "the full outfit, piece by piece, with colours and fabrics", "hook": "…"}
+Return ONLY JSON: {"id": <the look's number>, "hook": "…"}
 
 HIS REPORT
 ${JSON.stringify(profile)}`, 'iconik_agent_occasion_look');
-  const outfit = typeof raw.outfit === 'string' ? raw.outfit.trim().slice(0, 600) : '';
+  const chosen = shortlist.find(outfit => outfit.id === Number(raw.id)) ?? shortlist[0];
   const hook = typeof raw.hook === 'string' ? cleanHook(raw.hook) : '';
-  if (!outfit || !hook) throw new Error('The look designer returned an incomplete look');
-  return { outfit, hook };
+  if (!hook) throw new Error('The look designer returned no hook');
+  return { outfit: occasionOutfitText(chosen), styling: chosen.styling, hook };
 }
 
 /** He was invited and hasn't seen his look yet. */
@@ -409,10 +415,10 @@ export async function revealOccasionLook(
     const { loadManEditReportContext, generateManEditOutfitImage, uploadManEditChatImageBytes } = await import('@/lib/manEdit');
     const context = await loadManEditReportContext(look.share_token, false);
     if (!context) throw new Error('Could not load his report');
-    const design = await withAgentUsage({ clientId: client.id, kind: 'other' }, () => designLook(campaign, context.report.report_data));
+    const design = await withAgentUsage({ clientId: client.id, kind: 'other' }, () => designLook(campaign, context.report.report_data, look.id));
     const generated = await generateManEditOutfitImage({
       context,
-      request: `His ${campaign.occasion} look: ${design.outfit}`,
+      request: `His ${campaign.occasion} look: ${design.outfit}. Styling: ${design.styling}`,
       outfitDirection: design.outfit,
     });
     const uploaded = await uploadManEditChatImageBytes(context.report.id, generated.bytes, generated.mimeType, 'occasion-look.png');

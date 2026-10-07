@@ -78,6 +78,7 @@ import {
 } from '@/lib/agentMemoryTree';
 import { buildAgentInstructions } from '@/lib/agentPrompt';
 import { forwardableOccasionInvite, lookResponseFromText, occasionCampaign, parseLookButtonPayload } from '@/lib/agentOccasionLooks';
+import { findOccasionOutfit, loadOccasionLibrary, occasionOutfitText, shortlistOccasionOutfits } from '@/lib/agentOccasionLibrary';
 import { activeOccasionLookFor, noteOccasionLookResponse, revealOccasionLook } from '@/lib/agentOccasionLookStore';
 import { searchProducts, type ProductCandidate } from '@/lib/agentProductSearch';
 import {
@@ -649,6 +650,22 @@ export function agentTools(options: { freeTier: boolean; outfitImages: boolean }
   return tools;
 }
 
+/** Three other library looks for "Show me another", each a different shape from the one he saw. */
+function occasionAlternatives(look: { campaign: string; outfit: string; id: string }, profile: Record<string, unknown>) {
+  const campaign = occasionCampaign(look.campaign);
+  if (!campaign) return [];
+  try {
+    const library = loadOccasionLibrary(campaign.library);
+    const shown = findOccasionOutfit(library, look.outfit);
+    return shortlistOccasionOutfits(library, profile, {
+      count: 3, perFamily: 1, exclude: [look.outfit], avoidFamilies: shown ? [shown.family] : [], seed: `${look.id}:another`,
+    }).map(occasionOutfitText);
+  } catch (error) {
+    console.warn('[agent] could not load occasion alternatives:', error);
+    return [];
+  }
+}
+
 /** Sends a bubble; recording it doesn't hold up the next one (the turn awaits it before ending). */
 async function sendText(state: TurnState, text: string, metadata: Record<string, unknown> = {}) {
   const sent = await sendWhatsAppTextMessage(state.client.phone, text);
@@ -1216,7 +1233,7 @@ async function runAgentTurnInner(client: AgentClient, options: TurnOptions) {
       friendsJoined: joined,
       photoChecksLeft: checks?.left ?? null,
       blueprintUrl: new URL(client.line === 'man' ? '/man' : '/', process.env.NEXT_PUBLIC_SITE_URL || 'https://www.iconik.pro').toString(),
-      occasionLook,
+      occasionLook: occasionLook ? { ...occasionLook, alternatives: occasionAlternatives(occasionLook, passport.profile) } : null,
     });
 
     const pendingIds = new Set(pending.map(message => message.id));
