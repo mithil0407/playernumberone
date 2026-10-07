@@ -168,7 +168,7 @@ test('a published report can be marked delivered from its dashboard card', () =>
   assert.match(dashboard, /setRefresh\(value => value \+ 1\);/);
 });
 
-import { deliveryRecord, isOverdue, lateLabel } from './stylistWorkspaceQueueModel.ts';
+import { deliveryRecord, firstDeliveredAt, isOverdue, lateLabel } from './stylistWorkspaceQueueModel.ts';
 test('the delivery record judges the first version from complete inputs to Mark delivered', () => {
   const now = Date.parse('2026-10-06T12:00:00Z');
   const completeUpload = { photo_paths: requiredPhotos, measurements: { shoulders: 38, bust: 91, waist: 72, hips: 98 } };
@@ -213,8 +213,16 @@ test('a report sent outside the studio takes the date the stylist gives, within 
 test('recording a hand-sent report is write-once, access-checked and logged with both times', () => {
   const route = readFileSync('src/app/api/stylist-workspace/consultations/[consultationId]/manual-delivery/route.ts', 'utf8');
   assert.match(route, /getConsultationWorkspaceAccess\(consultationId\)/);
+  assert.match(route, /status === 'delivered'/);
   assert.match(route, /\.is\('delivered_at', null\)/);
   assert.match(route, /action: 'manual_delivery_recorded'[\s\S]*recorded_at: now/);
   // Nothing is published, so no client link is opened by this action.
   assert.doesNotMatch(route, /published_at/);
+});
+
+test('a stray delivered date on a client still in review does not count as delivered', () => {
+  const stray = workspaceQueueItem(queueRow({ status: 'review', report_due_at: '2026-09-05T10:00:00Z', delivered_at: '2026-09-09T06:00:00Z' }));
+  assert.equal(firstDeliveredAt(stray), null);
+  const real = workspaceQueueItem(queueRow({ status: 'delivered', report_due_at: '2026-09-05T10:00:00Z', delivered_at: '2026-09-09T06:00:00Z' }));
+  assert.equal(firstDeliveredAt(real), '2026-09-09T06:00:00Z');
 });
