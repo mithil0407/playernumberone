@@ -201,7 +201,7 @@ export default function RectangleBodyShapeIndiaPage() {
             <h2 className="text-xl font-bold text-gray-900 mb-4">Related Guides</h2>
             <ul className="space-y-2 text-gray-600">
               <li>→ <Link href="/body-type-styling" className="underline hover:opacity-70">Body Type Styling — Full Hub</Link></li>
-              <li>→ <Link href="/body-type-styling/rectangle-body-shape-india" className="underline hover:opacity-70">Rectangle Body Type: Styling Guide</Link></li>
+              <li>→ <Link href="/body-type-styling" className="underline hover:opacity-70">Body-Type Styling Guide</Link></li>
               <li>→ <Link href="/body-type-styling/apple-body-shape-india" className="underline hover:opacity-70">Apple Body Shape India Guide</Link></li>
               <li>→ <Link href="/colour-analysis" className="underline hover:opacity-70">Colour Analysis for Indian Skin Tones</Link></li>
             </ul>

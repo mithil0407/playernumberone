@@ -51,4 +51,6 @@ next-env.d.ts
 /.next-seo-audit/
 /.next-seo-cache/
 /reports/seo-*/lighthouse-live/
+/reports/seo-*/lighthouse-local/
+/reports/seo-*/lighthouse-supported-node.json
 /reports/seo-*/lighthouse*.report.*

@@ -36,6 +36,11 @@ test('every page route has an intentional indexing policy', () => {
     && !/^\/stylist\/\[stylistSlug\]\/(?:dashboard|consultations|reports)(?:\/|$)/.test(route));
   assert.deepEqual(missing, [], 'Add new public, private or redirect routes to the SEO inventory');
   for (const tool of leadMagnetDefinitions) assert.ok(exact.has(`/tools/${tool.slug}`));
+  const implemented = new Set(routes);
+  for (const entry of indexedSeoPages) {
+    assert.ok(implemented.has(entry.path) || leadMagnetDefinitions.some(tool => entry.path === `/tools/${tool.slug}`),
+      `Sitemap URL has no page: ${entry.path}`);
+  }
 });
 
 test('new public metadata produces a clean canonical and private metadata excludes Googlebot', () => {

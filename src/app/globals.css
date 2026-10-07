@@ -2848,4 +2848,4 @@ div.root-concept-precision > main > section.root-hero-section.root-hero-compact 
 }
 
 /* Preserve a readable light label against the dark sample-report chips. */
-.root-concept-precision .root-report-dark-tag { color: #F4EFE5 !important; }
+.root-concept-precision .root-report-section .root-report-dark-tag { color: #F4EFE5 !important; }
