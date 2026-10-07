@@ -11,7 +11,7 @@ import {
   type BodyLibraryLook,
 } from './agentBodyOutfit.ts';
 import {
-  BODY_PHOTO_RECEIVED_MESSAGE,
+  bodyPhotoReceivedMessage,
   asksForBodyShapeAnalysis,
   bodyPhotoAskMessage,
   inviteLink,
@@ -48,13 +48,13 @@ test('body shape requests are recognised, and a bare request is an opener', () =
 
 test('the photo ask says what makes a body photo readable, and never mentions codes', () => {
   const first = bodyPhotoAskMessage('Riya', true);
-  assert.match(first, /^Hey Riya 👋/);
+  assert.match(first, /^Hey Riya!/);
   assert.match(first, /full-length/);
-  assert.match(first, /head to feet/);
-  assert.match(first, /private/);
+  assert.match(first, /head to toe/);
+  assert.match(first, /stays between us/);
   assert.doesNotMatch(first, /code|link/i);
   assert.doesNotMatch(bodyPhotoAskMessage(null, false), /^Hey/);
-  assert.match(BODY_PHOTO_RECEIVED_MESSAGE, /proportions/);
+  assert.match(bodyPhotoReceivedMessage("a") + bodyPhotoReceivedMessage("b") + bodyPhotoReceivedMessage("c"), /\w/);
 });
 
 test('body card: only a complete analysis in a valid shape for the line renders; text is escaped', () => {
@@ -129,11 +129,12 @@ test('the real libraries load, with searchable pieces for each look', () => {
 test('the outfit message gives the best outfit, a library look and why it works; the question asks for pincode and size', () => {
   const item = look('women-06', 'Professional', ['Top: Optic white knit shell', 'Layer: Deep teal blazer', 'Bottom: Deep teal trousers', 'Shoes: Tan mules'], 'Tuck the knit smoothly');
   const message = bodyOutfitMessage({ line: 'woman', shape: 'pear', bestOutfit: 'a structured top with a clean A-line below', look: item });
-  assert.match(message, /^Your best outfit as a pear: a structured top/);
+  assert.match(message, /^What I'd put you in: a structured top/);
   assert.match(message, /• Top: Optic white knit shell/);
-  assert.match(message, /Why it works for you: Structure and detail on top/);
-  assert.match(message, /Styling tip: Tuck the knit smoothly\./);
-  assert.equal(bodyOutfitMessage({ line: 'woman', shape: 'pear', bestOutfit: 'a structured top', look: null }), 'Your best outfit as a pear: a structured top');
+  assert.match(message, /Structure and detail on top/);
+  assert.match(message, /Tuck the knit smoothly\./);
+  assert.doesNotMatch(message, /Why it works for you:|Styling tip:/);
+  assert.equal(bodyOutfitMessage({ line: 'woman', shape: 'pear', bestOutfit: 'a structured top', look: null }), "What I'd put you in: a structured top");
   assert.match(BODY_LINK_QUESTION, /pincode/);
   assert.match(BODY_LINK_QUESTION, /size/);
 });
@@ -141,7 +142,7 @@ test('the outfit message gives the best outfit, a library look and why it works;
 test('the prompt switches the colour selfie off while the body card is open, and carries the offered outfit afterwards', () => {
   const base = {
     line: null, firstName: 'Riya', today: '2026-10-07', reportUrl: null, memoryText: '', events: [], lookActivity: '',
-    firstConversation: false, canShowOutfitImages: false, tier: 'free' as const, runsLeft: 3, invitesLeft: 5,
+    firstConversation: false, hasReportPhotos: false, tier: 'free' as const, runsLeft: 3, invitesLeft: 5,
   };
   const pending = buildAgentInstructions({ ...base, profile: { body_ask_at: '2026-10-07T10:00:00Z' } });
   assert.match(pending, /BODY CARD \(free\) — they asked for it/);

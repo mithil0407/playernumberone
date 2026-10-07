@@ -15,7 +15,7 @@ export const AGENT_TEXT_MODEL = process.env.ICONIK_AGENT_TEXT_MODEL?.trim()
   || process.env.ICONIK_MAN_WHATSAPP_TEXT_MODEL?.trim()
   || 'gpt-5.6-luna';
 
-export type AgentUsageKind = 'chat' | 'search' | 'product_check' | 'memory' | 'followup' | 'checkin' | 'other';
+export type AgentUsageKind = 'chat' | 'search' | 'product_check' | 'memory' | 'followup' | 'checkin' | 'image' | 'other';
 
 const usageContext = new AsyncLocalStorage<{ clientId: string | null; kind: AgentUsageKind }>();
 

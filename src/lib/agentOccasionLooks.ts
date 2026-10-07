@@ -227,7 +227,7 @@ You sent him a photo of himself in: ${look.outfit}
 With the line: "${look.hook}". ${reaction}
 This is why he's here, so follow through, lightly and like a friend:
 - He likes it ("Love it", 😍, "where do I get this"): if you know his size and delivery pincode, go straight to the pieces: search_products for each, then present_products with his size, pincode and the deadline (before ${campaign.occasion}). If not, ask for both in ONE short line and nothing else, e.g. "Glad you like it 🙌 Send me your pincode and shirt size, and I'll find these at stores that deliver to you before ${campaign.occasion}." When he sends them, remember both, then search and present. No questions about budget or brands unless he raises them; let the real prices speak.
-- He wants another: call show_outfit_image straight away with ${look.alternatives?.length ? `the first of these he hasn't seen yet, word for word (real looks from our library, picked for his colours, each a different shape):
+- He wants another: call create_image (kind look_on_them) straight away, with as the brief ${look.alternatives?.length ? `the first of these he hasn't seen yet, word for word (real looks from our library, picked for his colours, each a different shape):
 ${look.alternatives.map((outfit, index) => `  ${index + 1}) ${outfit}`).join('\n')}
   ` : `a clearly different look for ${campaign.occasion} in his colours (another hero colour or another shape, e.g. a bandhgala instead of a kurta), `}then one line on why it works and "This one or the first?" No questions before the picture.
 - When you search for the pieces, search for them as described in the look, colour and fabric included.

@@ -100,19 +100,20 @@ const REQUEST = /\?|\b(?:help|find|need|want|suggest|recommend|show|send|buy|loo
 
 /**
  * The instant reaction that says "got it" before the real reply, the way a
- * person acknowledges a message: 👀 on a request (work is starting), 👍 on an
- * answer to our question, 👋 on a greeting, and a warmer emoji when the moment
- * calls for one. Every message gets exactly one.
+ * person would: 👀 on a photo or a request (work is starting), 👋 on a hello,
+ * and a warmer emoji when the moment calls for one. A plain answer to our
+ * question ("pink", "yes", "saree") gets none: a friend doesn't react to every
+ * text, and "typing…" already shows we're on it.
  */
-export function pickAckReaction(input: { text: string; hasImage: boolean }): string {
+export function pickAckReaction(input: { text: string; hasImage: boolean }): string | null {
   const text = input.text.trim();
   for (const rule of ACK_RULES) {
     if (rule.pattern.test(text)) return rule.emoji;
   }
   if (input.hasImage) return '👀';
   if (GREETING.test(text)) return '👋';
-  if (REQUEST.test(text)) return '👀';
-  return '👍';
+  if (REQUEST.test(text) && text.split(/\s+/).length > 2) return '👀';
+  return null;
 }
 
 /**
@@ -130,9 +131,121 @@ export function splitIntoBubbles(reply: string, maxBubbles = MAX_REPLY_BUBBLES):
   ];
 }
 
-/** A short, human pause before a follow-up bubble, scaled to its length. */
+/**
+ * The model's reply text. output_text glues separate message parts together with
+ * no space ("…your contrast.For a casual look…"); each part is its own paragraph.
+ */
+export function replyText(output: Array<{ type: string; content?: unknown; phase?: unknown }>) {
+  const messages = output.filter(item => item.type === 'message' && Array.isArray(item.content));
+  // When the model marks its final answer, that is the reply; earlier commentary isn't repeated.
+  const finals = messages.filter(item => item.phase === 'final_answer');
+  const parts: string[] = [];
+  for (const item of finals.length ? finals : messages) {
+    for (const part of item.content as Array<{ type?: string; text?: string }>) {
+      const text = part.type === 'output_text' ? part.text?.trim() : '';
+      if (text && !parts.includes(text)) parts.push(text);
+    }
+  }
+  return parts.join('\n\n').trim();
+}
+
+// ── Quote replies: theirs to us, ours to them ──
+
+/** Adds WhatsApp's reply context, so the message shows as a reply quoting messageId. */
+export function withReplyContext<T extends Record<string, unknown>>(payload: T, messageId?: string | null) {
+  const id = messageId?.trim();
+  return id ? { ...payload, context: { message_id: id } } : payload;
+}
+
+/** What they swiped to reply to, stored on their message so the thread can show it. */
+export interface QuotedMessage {
+  /** "us" when they quoted one of our messages, "them" when they quoted their own. */
+  by: 'us' | 'them';
+  kind: string;
+  text: string;
+}
+
+export function quotedFrom(row: { direction: string; kind: string; content: string } | null): QuotedMessage | null {
+  if (!row) return null;
+  return {
+    by: row.direction === 'outbound' ? 'us' : 'them',
+    kind: row.kind,
+    text: row.content.replace(/\s+/g, ' ').trim().slice(0, 180),
+  };
+}
+
+/** How a quoted reply reads to the model, before the message itself. */
+export function quotePrefix(metadata: Record<string, unknown> | null | undefined) {
+  const quoted = metadata?.quoted as QuotedMessage | undefined;
+  if (!quoted || (quoted.by !== 'us' && quoted.by !== 'them')) return '';
+  const what = quoted.kind === 'image'
+    ? quoted.by === 'us' ? 'your picture' : 'their photo'
+    : quoted.by === 'us' ? 'your message' : 'their earlier message';
+  return `[replying to ${what}${quoted.text ? `: "${quoted.text}"` : ''}] `;
+}
+
+/**
+ * Short labels (m1, m2…) for their recent messages, oldest first, so the model
+ * can quote-reply to one: "[reply m2] this one's the winner". Only messages
+ * WhatsApp can quote (those with an id).
+ */
+export function quoteRefs(messages: Array<{ id: string; direction: string; kind: string; whatsapp_message_id: string | null }>, limit = 8) {
+  const quotable = messages
+    .filter(message => message.direction === 'inbound' && message.whatsapp_message_id && ['text', 'image', 'interactive'].includes(message.kind))
+    .slice(-limit);
+  const byMessageId = new Map<string, string>();
+  const byRef = new Map<string, string>();
+  quotable.forEach((message, index) => {
+    const ref = `m${index + 1}`;
+    byMessageId.set(message.id, ref);
+    byRef.set(ref, message.whatsapp_message_id!);
+  });
+  return { byMessageId, byRef };
+}
+
+/**
+ * When several of their messages are answered at once (three photos, two
+ * questions), a note beside them so each answer can quote the one it's about.
+ */
+export function severalMessagesNote(labels: string[]) {
+  if (labels.length < 2) return null;
+  return `[ICONIK note, not from them: they sent ${labels.length} messages together (${labels.join(', ')}). Where a bubble is about one of them, start it with [reply ${labels[labels.length - 1]}] (the label of that one) so it quotes it — like a person replying to each.]`;
+}
+
+const QUOTE_MARKER = /\[reply\s+(m\d+)\]\s*/gi;
+
+/**
+ * A bubble that starts with "[reply m2]" is sent as a reply quoting their
+ * message m2. Markers anywhere else, labels the model echoed ("(m2)"), and
+ * refs that don't exist are dropped, so nothing technical reaches them.
+ */
+export function parseQuoteMarker(bubble: string, refs: Map<string, string>) {
+  const leading = bubble.match(/^\s*\[reply\s+(m\d+)\]/i);
+  const replyTo = leading ? refs.get(leading[1].toLowerCase()) ?? null : null;
+  const text = bubble.replace(QUOTE_MARKER, '').replace(/^\s*\(m\d+\)\s*/i, '').trim();
+  return { text, replyTo };
+}
+
+/** Bubbles not already sent this turn: the model sometimes double-texts a line early, then repeats it in its reply. */
+export function unsentBubbles<T extends { text: string }>(bubbles: T[], alreadySent: string[]) {
+  const key = (text: string) => text.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
+  const seen = new Set(alreadySent.map(key));
+  return bubbles.filter(bubble => {
+    const id = key(bubble.text);
+    if (!id || seen.has(id)) return false;
+    seen.add(id);
+    return true;
+  });
+}
+
+/**
+ * A human pause before a follow-up bubble: roughly the time to type it, with an
+ * extra beat before an afterthought ("oh and…", "also…"), the way people double-text.
+ */
 export function typingDelayMs(bubble: string) {
-  return Math.min(3_000, 700 + bubble.length * 18);
+  const typing = Math.min(4_200, 900 + bubble.length * 26);
+  const afterthought = /^(?:oh|ooh|also|btw|wait|and|plus|actually|p\.?s\.?)\b/i.test(bubble.trim()) ? 1_400 : 0;
+  return typing + afterthought;
 }
 
 /**

@@ -19,9 +19,18 @@ import {
   typingDelayMs,
   isWithinCustomerServiceWindow,
   NO_REPLY_SENTINEL,
+  parseQuoteMarker,
   pickAckReaction,
+  quotePrefix,
+  quoteRefs,
+  quotedFrom,
+  replyText,
+  severalMessagesNote,
   splitIntoBubbles,
+  unsentBubbles,
+  withReplyContext,
 } from './agentWhatsapp.ts';
+import { extractWhatsappWebhookEvents } from './whatsappPilot.ts';
 
 // 3 Oct 2026, 15:30 IST
 const NOW = new Date('2026-10-03T10:00:00Z');
@@ -54,15 +63,25 @@ test('typing indicator and reaction payloads match the Cloud API shape', () => {
   });
 });
 
-test('every message gets one acknowledgement reaction that fits it', () => {
+test('photos, requests and moments get a fitting reaction; plain answers get none', () => {
   assert.equal(pickAckReaction({ text: 'my cousin’s wedding is next month!', hasImage: false }), '🎉');
   assert.equal(pickAckReaction({ text: 'thanks so much', hasImage: false }), '🙏');
   assert.equal(pickAckReaction({ text: 'how does this look', hasImage: true }), '👀');
   assert.equal(pickAckReaction({ text: 'Hey', hasImage: false }), '👋');
   assert.equal(pickAckReaction({ text: 'i want a ralph lauren style old money outfit, send me a link', hasImage: false }), '👀');
   assert.equal(pickAckReaction({ text: 'what colour trousers go with olive?', hasImage: false }), '👀');
-  assert.equal(pickAckReaction({ text: '411037 10000inr', hasImage: false }), '👍');
-  assert.equal(pickAckReaction({ text: '1', hasImage: false }), '👍');
+  assert.equal(pickAckReaction({ text: '411037 10000inr', hasImage: false }), null);
+  assert.equal(pickAckReaction({ text: '1', hasImage: false }), null);
+  assert.equal(pickAckReaction({ text: 'Saree', hasImage: false }), null);
+  assert.equal(pickAckReaction({ text: 'Help me find one', hasImage: false }), '👀');
+});
+
+test('the reply text keeps separate parts as paragraphs, once, preferring the final answer', () => {
+  const message = (text: string, phase?: string) => ({ type: 'message', phase, content: [{ type: 'output_text', text }] });
+  assert.equal(replyText([message('your contrast.'), message('For a casual look, add hoops.')]), 'your contrast.\n\nFor a casual look, add hoops.');
+  assert.equal(replyText([message('same'), message('same')]), 'same');
+  assert.equal(replyText([message('thinking aloud', 'commentary'), message('the answer', 'final_answer')]), 'the answer');
+  assert.equal(replyText([{ type: 'reasoning' }, { type: 'function_call' }]), '');
 });
 
 test('replies split into at most three bubbles; NO_REPLY sends nothing', () => {
@@ -135,14 +154,15 @@ test('instructions carry the passport, memory and a due check-in', () => {
     events,
     lookActivity: '',
     firstConversation: true,
-    canShowOutfitImages: false,
+    hasReportPhotos: false,
     now: NOW,
   });
-  assert.match(instructions, /Riya's ICONIK report/);
+  assert.match(instructions, /Riya's personal stylist[\s\S]*wrote her ICONIK report/);
   assert.match(instructions, /Warm Autumn/);
   assert.match(instructions, /PORTRAIT: Loves earthy colours/);
   assert.match(instructions, /FIRST CONVERSATION/);
-  assert.doesNotMatch(instructions, /show_outfit_image/);
+  assert.doesNotMatch(instructions, /show_outfit_image|report photos can be used/);
+  assert.match(instructions, /create_image/);
   assert.match(instructions, /present_products/);
   assert.match(instructions, /ONE short message/);
   assert.match(formatEvents(events, NOW), /in 21 days[\s\S]*CHECK-IN DUE: Three weeks out/);
@@ -230,9 +250,9 @@ test('team test commands switch between free and Blueprint', () => {
 test('before the Colour Card the ask is one bubble with no talk of codes', () => {
   const prompt = buildAgentInstructions({
     line: null, firstName: null, today: '2026-10-05', profile: {}, reportUrl: null, memoryText: '', events: [],
-    lookActivity: '', firstConversation: true, canShowOutfitImages: false, tier: 'free', runsLeft: 3, invitesLeft: 3,
+    lookActivity: '', firstConversation: true, hasReportPhotos: false, tier: 'free', runsLeft: 3, invitesLeft: 3,
   });
-  assert.match(prompt, /arrives as one bubble/);
+  assert.match(prompt, /ONE short warm message, a single paragraph/);
   assert.match(prompt, /never mention codes/);
   assert.deepEqual(splitIntoBubbles('Hi! Welcome.\n\nSend a selfie and your name.', 1), ['Hi! Welcome.\n\nSend a selfie and your name.']);
 });
@@ -240,34 +260,101 @@ test('before the Colour Card the ask is one bubble with no talk of codes', () =>
 test('the prompt carries the everyday-help playbook, what is coming up, and no Blueprint pitch', () => {
   const prompt = buildAgentInstructions({
     line: 'woman', firstName: 'Riya', today: '2026-10-05', profile: { season: 'Deep Autumn', best_colours: ['Rust'] }, reportUrl: null,
-    memoryText: '', events: [], lookActivity: '', firstConversation: false, canShowOutfitImages: false, tier: 'free', runsLeft: 3, invitesLeft: 3,
+    memoryText: '', events: [], lookActivity: '', firstConversation: false, hasReportPhotos: false, tier: 'free', runsLeft: 3, invitesLeft: 3,
   });
   assert.match(prompt, /Wardrobe check/);
   assert.match(prompt, /Screenshot to shop/);
-  assert.match(prompt, /COMING UP[\s\S]*Diwali/);
-  assert.match(prompt, /never as a sales line/);
+  assert.match(prompt, /Shades: lipstick, foundation/);
+  assert.match(prompt, /COMING UP[\s\S]*Navratri[\s\S]*Diwali/);
+  assert.match(prompt, /without pushing/);
   const fresh = buildAgentInstructions({
     line: null, firstName: null, today: '2026-10-05', profile: {}, reportUrl: null, memoryText: '', events: [],
-    lookActivity: '', firstConversation: true, canShowOutfitImages: false, tier: 'free', runsLeft: 3, invitesLeft: 3,
+    lookActivity: '', firstConversation: true, hasReportPhotos: false, tier: 'free', runsLeft: 3, invitesLeft: 3,
   });
   assert.match(fresh, /Don't wait for their name/);
   assert.match(fresh, /In your FIRST response, call send_colour_card/);
 });
 
-test('Face Analysis is locked until 3 friends join, and photo questions are answered inside the card flow', () => {
+test('nothing is locked: face analysis is free, pictures and shade cards are offered, and the voice mirrors them', () => {
   const base = {
     line: 'woman' as const, firstName: null, today: '2026-10-05', reportUrl: null, memoryText: '', events: [],
-    lookActivity: '', firstConversation: false, canShowOutfitImages: false, tier: 'free' as const, runsLeft: 3, invitesLeft: 5,
+    lookActivity: '', firstConversation: false, hasReportPhotos: false, tier: 'free' as const, runsLeft: 3, invitesLeft: 5,
   };
-  const locked = buildAgentInstructions({ ...base, profile: { season: 'Deep Autumn', best_colours: ['Rust'] }, friendsJoined: 1 });
-  assert.match(locked, /FACE ANALYSIS: locked[\s\S]*1\/3 so far[\s\S]*2 more friends/);
-  assert.doesNotMatch(locked, /can't see their body proportions or face shape/);
-  const unlocked = buildAgentInstructions({ ...base, profile: { season: 'Deep Autumn', best_colours: ['Rust'] }, friendsJoined: 3 });
-  assert.match(unlocked, /FACE ANALYSIS: unlocked/);
-  const fresh = buildAgentInstructions({ ...base, profile: {}, friendsJoined: 0 });
+  const prompt = buildAgentInstructions({ ...base, profile: { season: 'Deep Autumn', best_colours: ['Rust'] }, imagesLeftToday: 2, textingStyle: 'They write very short messages (a few words).' });
+  assert.match(prompt, /FACE ANALYSIS \(free/);
+  assert.doesNotMatch(prompt, /FACE ANALYSIS: locked|unlocks? (?:when|with)|photo checks/i);
+  assert.match(prompt, /NEVER TURN DOWN HELP/);
+  assert.match(prompt, /Never say you can't make or send an image/);
+  assert.match(prompt, /create_image \(2 left today\)/);
+  assert.match(prompt, /send_shade_card/);
+  assert.match(prompt, /HOW THEY TEXT — mirror it\nThey write very short messages/);
+  assert.match(prompt, /No scores unless they ask/);
+  assert.match(prompt, /EXAMPLES/);
+  assert.doesNotMatch(prompt, /THIS TURN/);
+  const photo = buildAgentInstructions({ ...base, profile: { best_colours: ['Rust'] }, imagesLeftToday: 3, photoThisTurn: true });
+  assert.match(prompt, /start that bubble with \[reply m2\]/);
+  assert.match(prompt, /Double-text the way people do/);
+  assert.match(photo, /THIS TURN\n- They sent a photo[\s\S]*want to see it with the espresso trousers/);
+  const fresh = buildAgentInstructions({ ...base, profile: {} });
   assert.match(fresh, /make the card FIRST, and if they asked about the outfit, answer inside the wow/);
   assert.match(fresh, /A photo with no caption is their selfie for the card: don't rate it/);
-  assert.match(fresh, /never offer the invite unprompted/);
-  assert.doesNotMatch(fresh, /card, wow, invite/);
-  assert.match(fresh, /never leave the selfie ask out/);
+  assert.match(fresh, /Monk Skin Tone scale/);
+  assert.match(fresh, /never as a pitch/);
+  assert.match(fresh, /You haven't seen how they text yet/);
+});
+
+test('a swipe-reply arrives with the quoted message id; reactions keep their own shape', () => {
+  const webhook = (message: Record<string, unknown>) => ({
+    object: 'whatsapp_business_account',
+    entry: [{ changes: [{ value: { messages: [{ from: '919800000001', id: 'wamid.in', timestamp: '1', ...message }] } }] }],
+  });
+  const reply = extractWhatsappWebhookEvents(webhook({ type: 'text', text: { body: 'this one' }, context: { from: '919657564840', id: 'wamid.ours' } })).messages[0];
+  assert.equal(reply.text, 'this one');
+  assert.equal(reply.replyTo, 'wamid.ours');
+  assert.equal(extractWhatsappWebhookEvents(webhook({ type: 'text', text: { body: 'hi' } })).messages[0].replyTo, undefined);
+  const reaction = extractWhatsappWebhookEvents(webhook({ type: 'reaction', reaction: { message_id: 'wamid.ours', emoji: '❤️' } })).messages[0];
+  assert.deepEqual(reaction.reaction, { messageId: 'wamid.ours', emoji: '❤️' });
+  assert.equal(reaction.replyTo, undefined);
+});
+
+test('what they quoted reads naturally to the model, ours or theirs, text or picture', () => {
+  assert.equal(quotePrefix({ quoted: quotedFrom({ direction: 'outbound', kind: 'image', content: 'the espresso version 👀' }) }), '[replying to your picture: "the espresso version 👀"] ');
+  assert.equal(quotePrefix({ quoted: quotedFrom({ direction: 'inbound', kind: 'text', content: 'Navy blue saree' }) }), '[replying to their earlier message: "Navy blue saree"] ');
+  assert.equal(quotePrefix({ quoted: quotedFrom({ direction: 'inbound', kind: 'image', content: '' }) }), '[replying to their photo] ');
+  assert.equal(quotePrefix({}), '');
+  assert.equal(quotedFrom(null), null);
+});
+
+test('the agent can quote-reply to one of their messages by label, and labels never leak', () => {
+  const rows = [
+    { id: 'a', direction: 'inbound', kind: 'image', whatsapp_message_id: 'wamid.a' },
+    { id: 'b', direction: 'outbound', kind: 'text', whatsapp_message_id: 'wamid.b' },
+    { id: 'c', direction: 'inbound', kind: 'image', whatsapp_message_id: 'wamid.c' },
+    { id: 'd', direction: 'inbound', kind: 'reaction', whatsapp_message_id: 'wamid.d' },
+    { id: 'e', direction: 'inbound', kind: 'text', whatsapp_message_id: null },
+  ];
+  const refs = quoteRefs(rows);
+  assert.deepEqual([...refs.byMessageId], [['a', 'm1'], ['c', 'm2']]);
+  assert.equal(refs.byRef.get('m2'), 'wamid.c');
+  assert.deepEqual(parseQuoteMarker("[reply m2] this one's the winner", refs.byRef), { text: "this one's the winner", replyTo: 'wamid.c' });
+  assert.deepEqual(parseQuoteMarker('[Reply M1]  love it', refs.byRef), { text: 'love it', replyTo: 'wamid.a' });
+  assert.deepEqual(parseQuoteMarker('[reply m9] which?', refs.byRef), { text: 'which?', replyTo: null });
+  assert.deepEqual(parseQuoteMarker('(m2) the second one [reply m1] works', refs.byRef), { text: 'the second one works', replyTo: null });
+  assert.equal(quoteRefs(Array.from({ length: 12 }, (_, i) => ({ id: `x${i}`, direction: 'inbound', kind: 'text', whatsapp_message_id: `w${i}` }))).byRef.get('m1'), 'w4');
+  assert.equal(severalMessagesNote(['m3']), null);
+  assert.match(severalMessagesNote(['m3', 'm4', 'm5']) ?? '', /3 messages together \(m3, m4, m5\)[\s\S]*\[reply m5\]/);
+  assert.deepEqual(withReplyContext({ type: 'text' }, 'wamid.c'), { type: 'text', context: { message_id: 'wamid.c' } });
+  assert.deepEqual(withReplyContext({ type: 'text' }, null), { type: 'text' });
+});
+
+test('a line already double-texted this turn is not repeated in the reply', () => {
+  const bubbles = [{ text: 'The turquoise is a little cool next to you.' }, { text: 'Want to see it with a bottle-green blouse?' }, { text: 'want to see it with a bottle green blouse' }];
+  assert.deepEqual(unsentBubbles(bubbles, ['the turquoise is a little cool next to you']).map(bubble => bubble.text), ['Want to see it with a bottle-green blouse?']);
+  assert.deepEqual(unsentBubbles([{ text: '' }, { text: 'ok' }], []).map(bubble => bubble.text), ['ok']);
+});
+
+test('double-texting pauses like typing, with an extra beat before an afterthought', () => {
+  assert.ok(typingDelayMs('ok') < typingDelayMs('only thing, the grey is a bit cold next to your skin'));
+  assert.ok(typingDelayMs('x'.repeat(2_000)) <= 4_200);
+  assert.equal(typingDelayMs('oh and gold hoops with it') - typingDelayMs('so and gold hoops with it'), 1_400);
 });

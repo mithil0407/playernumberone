@@ -116,11 +116,11 @@ test('the prompt tells the agent to ask only for pincode and size after he likes
   assert.match(section, /Diwali is in 16 days/);
   assert.match(section, /He tapped "Love it"/);
   assert.match(section, /pincode and shirt size/);
-  assert.match(section, /show_outfit_image straight away/);
+  assert.match(section, /create_image \(kind look_on_them\) straight away/);
 
   const instructions = buildAgentInstructions({
     line: 'man', firstName: 'Rohan', today: '2026-10-23', profile: {}, reportUrl: null, memoryText: '', events: [],
-    lookActivity: '', firstConversation: true, canShowOutfitImages: true, tier: 'blueprint', now,
+    lookActivity: '', firstConversation: true, hasReportPhotos: true, tier: 'blueprint', now,
     occasionLook: { campaign: 'diwali_2026', outfit: 'rust kurta', hook: 'the rust suits you', sentAt: '2026-10-22T05:00:00Z', response: 'show' },
   });
   assert.match(instructions, /DIWALI LOOK YOU MADE HIM/);

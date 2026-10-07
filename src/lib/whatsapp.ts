@@ -3,6 +3,7 @@ import {
   buildWhatsappImageByIdPayload,
   buildWhatsappReactionPayload,
   buildWhatsappTypingPayload,
+  withReplyContext,
 } from './agentWhatsapp.ts';
 import {
   buildLookButtonsPayload,
@@ -175,12 +176,13 @@ export async function getWhatsAppBusinessNumber(): Promise<string | null> {
   return businessNumber;
 }
 
-export async function sendWhatsAppTextMessage(to: string, body: string) {
-  return sendWhatsappPayload(buildWhatsappPilotTextPayload(to, body));
+/** replyTo quotes one of the client's messages (a WhatsApp message id), the way a person swipes to reply. */
+export async function sendWhatsAppTextMessage(to: string, body: string, replyTo?: string | null) {
+  return sendWhatsappPayload(withReplyContext(buildWhatsappPilotTextPayload(to, body), replyTo));
 }
 
-export async function sendWhatsAppImageMessage(to: string, imageUrl: string, caption?: string) {
-  return sendWhatsappPayload(buildWhatsappPilotImagePayload(to, imageUrl, caption));
+export async function sendWhatsAppImageMessage(to: string, imageUrl: string, caption?: string, replyTo?: string | null) {
+  return sendWhatsappPayload(withReplyContext(buildWhatsappPilotImagePayload(to, imageUrl, caption), replyTo));
 }
 
 /**
@@ -189,16 +191,16 @@ export async function sendWhatsAppImageMessage(to: string, imageUrl: string, cap
  * so the text sent right after it can overtake it on the client's phone. Falls
  * back to the link if the upload fails.
  */
-export async function sendWhatsAppImageInOrder(to: string, imageUrl: string, caption?: string, bytes?: Buffer) {
+export async function sendWhatsAppImageInOrder(to: string, imageUrl: string, caption?: string, bytes?: Buffer, replyTo?: string | null) {
   const mediaId = await uploadWhatsAppImage(imageUrl, bytes).catch(error => {
     console.warn('[whatsapp] image upload failed, sending by link:', error instanceof Error ? error.message : error);
     return null;
   });
-  if (!mediaId) return sendWhatsAppImageMessage(to, imageUrl, caption);
-  const sent = await sendWhatsappPayload(buildWhatsappImageByIdPayload(to, mediaId, caption));
+  if (!mediaId) return sendWhatsAppImageMessage(to, imageUrl, caption, replyTo);
+  const sent = await sendWhatsappPayload(withReplyContext(buildWhatsappImageByIdPayload(to, mediaId, caption), replyTo));
   if (sent.success) return sent;
   console.warn('[whatsapp] image send by media id failed, sending by link:', sent.error);
-  return sendWhatsAppImageMessage(to, imageUrl, caption);
+  return sendWhatsAppImageMessage(to, imageUrl, caption, replyTo);
 }
 
 /** Uploads the image to WhatsApp; pass the PNG bytes when we just rendered them, to skip a download. */
@@ -209,6 +211,8 @@ async function uploadWhatsAppImage(imageUrl: string, pngBytes?: Buffer) {
   let data: ArrayBuffer;
   if (pngBytes) {
     data = new Uint8Array(pngBytes).buffer;
+    // Rendered cards are PNG; generated pictures come back as JPEG.
+    if (pngBytes[0] === 0xff && pngBytes[1] === 0xd8) mimeType = 'image/jpeg';
   } else {
     const image = await fetch(imageUrl, { signal: AbortSignal.timeout(15_000) });
     if (!image.ok) throw new Error(`Could not fetch the image: HTTP ${image.status}`);
