@@ -244,7 +244,7 @@ function ClientMessageCard({ message, showPhoto }: { message: ClientMessage; sho
       <div className="client-card-chat">
         {showPhoto && message.photo && (
           <div className="client-card-photo">
-            <Image src={message.photo.src} alt="Client's own photo in her outfit, face hidden" width={message.photo.width} height={message.photo.height} sizes="280px" className="block h-auto w-full" />
+            <Image src={message.photo.src} alt="Client's own photo in her outfit, face hidden" width={message.photo.width} height={message.photo.height} sizes="(max-width: 400px) 52vw, 214px" className="block h-auto w-full" />
           </div>
         )}
         <blockquote className="client-card-bubble">

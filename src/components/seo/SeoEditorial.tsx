@@ -292,11 +292,15 @@ export function SeoEditorialFooter() {
       <div className="seo-editorial-shell flex flex-col justify-between gap-4 py-8 md:flex-row md:items-center">
         <Link href="/" className="seo-wordmark">ICONIK</Link>
         <p>Methodology-led personal styling for Indian women.</p>
-        <div className="flex gap-5">
+        <nav aria-label="Styling services and company" className="flex flex-wrap gap-x-5 gap-y-2">
+          <Link href="/monthly/indian">Monthly Styling India</Link>
+          <Link href="/monthly">International Styling Plans</Link>
+          <Link href="/iconik-club/join">Iconik Club</Link>
+          <Link href="/instant-report">Instant Style Report</Link>
           <Link href="/about">About</Link>
           <Link href="/contact">Contact</Link>
           <Link href="/privacy-policy">Privacy</Link>
-        </div>
+        </nav>
       </div>
     </footer>
   );

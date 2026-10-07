@@ -1443,16 +1443,16 @@ body:has(.seo-editorial) {
   letter-spacing: -0.045em !important;
 }
 
-.root-design-preview > section {
+.root-design-preview > main > section {
   background: rgba(245, 243, 238, 0.88) !important;
   color: var(--root-carbon);
 }
 
-.root-design-preview > section:nth-of-type(even) {
+.root-design-preview > main > section:nth-of-type(even) {
   background: rgba(174, 187, 193, 0.24) !important;
 }
 
-.root-design-preview > section :is(h1, h2, h3, p, .iconik-display, .iconik-display-it, .iconik-micro, .iconik-mono),
+.root-design-preview > main > section :is(h1, h2, h3, p, .iconik-display, .iconik-display-it, .iconik-micro, .iconik-mono),
 .root-design-preview > footer :is(h1, h2, h3, p, span, a, .iconik-display, .iconik-display-it, .iconik-micro, .iconik-mono) {
   color: inherit !important;
 }
@@ -1462,7 +1462,7 @@ body:has(.seo-editorial) {
   color: var(--root-oxblood) !important;
 }
 
-.root-design-preview > section::after {
+.root-design-preview > main > section::after {
   content: '';
   position: absolute;
   z-index: 0;
@@ -1477,7 +1477,7 @@ body:has(.seo-editorial) {
   pointer-events: none;
 }
 
-.root-design-preview > section > * {
+.root-design-preview > main > section > * {
   position: relative;
   z-index: 1;
 }
@@ -1587,7 +1587,7 @@ body:has(.seo-editorial) {
     var(--root-bone) !important;
 }
 
-.root-concept-precision > section:first-of-type {
+.root-concept-precision > main > section:first-of-type {
   padding-top: 9.5rem !important;
   padding-bottom: 8rem !important;
   background:
@@ -1861,11 +1861,11 @@ body:has(.seo-editorial) {
     font-size: 10px;
   }
 
-  .root-design-preview > section:first-of-type {
+  .root-design-preview > main > section:first-of-type {
     padding-top: 10.75rem !important;
   }
 
-  .root-design-preview > section::after { top: 24px; right: 16px; }
+  .root-design-preview > main > section::after { top: 24px; right: 16px; }
   .root-concept-monolith > section:first-of-type { min-height: auto; }
   .root-concept-atelier .root-hero-media { margin-top: 2rem; margin-right: auto; }
 }
@@ -1921,15 +1921,15 @@ body:has(.seo-editorial) {
   line-height: 1.5 !important;
 }
 
-.root-concept-precision > section::after {
+.root-concept-precision > main > section::after {
   display: none !important;
 }
 
-.root-concept-precision > section {
+.root-concept-precision > main > section {
   border-top: 1px solid var(--root-hairline);
 }
 
-.root-concept-precision > section:first-of-type {
+.root-concept-precision > main > section:first-of-type {
   border-top: 0;
 }
 
@@ -2057,7 +2057,7 @@ body:has(.seo-editorial) {
   color: var(--root-bone);
 }
 
-.root-concept-precision > :is(.root-process-section,.root-inclusions-section,.root-comparison-section,.root-client-section,.root-price-section,.root-faq-section,.root-final-section) {
+.root-concept-precision > main > :is(.root-process-section,.root-inclusions-section,.root-comparison-section,.root-client-section,.root-price-section,.root-faq-section,.root-final-section) {
   padding-top: 7rem !important;
   padding-bottom: 7rem !important;
 }
@@ -2326,7 +2326,7 @@ body:has(.seo-editorial) {
     line-height: 1.45 !important;
   }
 
-  .root-concept-precision > :is(.root-process-section,.root-inclusions-section,.root-comparison-section,.root-client-section,.root-price-section,.root-faq-section,.root-final-section) {
+  .root-concept-precision > main > :is(.root-process-section,.root-inclusions-section,.root-comparison-section,.root-client-section,.root-price-section,.root-faq-section,.root-final-section) {
     padding-top: 5rem !important;
     padding-bottom: 5rem !important;
   }
@@ -2367,11 +2367,11 @@ body:has(.seo-editorial) {
 
 /* Precision Glass responsive correction pass. Higher-specificity selectors
    explicitly neutralize the exploratory nth-of-type rules above. */
-div.root-concept-precision > section::before {
+div.root-concept-precision > main > section::before {
   display: none !important;
 }
 
-div.root-concept-precision > section.root-hero-section {
+div.root-concept-precision > main > section.root-hero-section {
   padding-top: 6rem !important;
   padding-bottom: 3.5rem !important;
   background:
@@ -2381,24 +2381,24 @@ div.root-concept-precision > section.root-hero-section {
   background-size: 40px 40px, 40px 40px, auto !important;
 }
 
-div.root-concept-precision > section.root-process-section,
-div.root-concept-precision > section.root-report-section,
-div.root-concept-precision > section.root-comparison-section,
-div.root-concept-precision > section.root-faq-section {
+div.root-concept-precision > main > section.root-process-section,
+div.root-concept-precision > main > section.root-report-section,
+div.root-concept-precision > main > section.root-comparison-section,
+div.root-concept-precision > main > section.root-faq-section {
   background: var(--root-bone) !important;
   color: var(--root-carbon) !important;
 }
 
-div.root-concept-precision > section.root-stats-section,
-div.root-concept-precision > section.root-inclusions-section,
-div.root-concept-precision > section.root-client-section {
+div.root-concept-precision > main > section.root-stats-section,
+div.root-concept-precision > main > section.root-inclusions-section,
+div.root-concept-precision > main > section.root-client-section {
   background: linear-gradient(135deg, rgba(174,187,193,0.28), rgba(245,243,238,0.98)) !important;
   color: var(--root-carbon) !important;
 }
 
-div.root-concept-precision > section.root-video-testimonials,
-div.root-concept-precision > section.root-price-section,
-div.root-concept-precision > section.root-final-section {
+div.root-concept-precision > main > section.root-video-testimonials,
+div.root-concept-precision > main > section.root-price-section,
+div.root-concept-precision > main > section.root-final-section {
   background:
     radial-gradient(circle at 84% 8%, rgba(148,166,173,0.16), transparent 28rem),
     var(--root-carbon) !important;
@@ -2515,7 +2515,7 @@ div.root-concept-precision > section.root-final-section {
 }
 
 @media (max-width: 640px) {
-  div.root-concept-precision > section.root-hero-section {
+  div.root-concept-precision > main > section.root-hero-section {
     padding-top: 5.25rem !important;
     padding-bottom: 3rem !important;
     background-size: 28px 28px, 28px 28px, auto !important;
@@ -2558,7 +2558,7 @@ div.root-concept-precision > section.root-final-section {
     margin-top: 1.15rem !important;
   }
 
-  div.root-concept-precision > :is(section.root-process-section,section.root-video-testimonials,section.root-report-section,section.root-inclusions-section,section.root-comparison-section,section.root-client-section,section.root-price-section,section.root-faq-section,section.root-final-section) {
+  div.root-concept-precision > main > :is(section.root-process-section,section.root-video-testimonials,section.root-report-section,section.root-inclusions-section,section.root-comparison-section,section.root-client-section,section.root-price-section,section.root-faq-section,section.root-final-section) {
     padding-top: 3.75rem !important;
     padding-bottom: 3.75rem !important;
   }
@@ -2709,8 +2709,8 @@ div.root-concept-precision > section.root-final-section {
   opacity: 1;
 }
 
-.root-concept-precision > section.root-offer-box-section,
-.root-concept-precision > section.root-messages-section {
+.root-concept-precision > main > section.root-offer-box-section,
+.root-concept-precision > main > section.root-messages-section {
   background: var(--root-bone) !important;
   color: var(--root-carbon);
 }
@@ -2795,8 +2795,8 @@ div.root-concept-precision > section.root-final-section {
 .client-messages--compact .client-card { width: 76vw; max-width: 290px; }
 .checkout-featured-quote .client-card { width: 100%; max-width: none; box-shadow: none; }
 .client-card-head { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; padding: 0.8rem 1rem; }
-.client-card-source { display: inline-flex; align-items: center; gap: 0.35rem; color: #1E9E4F; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.02em; }
-.client-card-context { color: rgba(17, 19, 21, 0.5); font-size: 0.7rem; text-align: right; }
+.client-card-source { display: inline-flex; align-items: center; gap: 0.35rem; color: #157A3C; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.02em; }
+.client-card-context { color: rgba(17, 19, 21, 0.65); font-size: 0.7rem; text-align: right; }
 .client-card-chat { padding: 0.8rem; background: #EFE7DC; }
 .client-card-photo {
   width: 78%;
@@ -2815,8 +2815,8 @@ div.root-concept-precision > section.root-final-section {
   box-shadow: 0 1px 1px rgba(0, 0, 0, 0.12);
 }
 .client-card-bubble p { color: #111315; font-size: 0.9rem; line-height: 1.5; text-align: left; }
-.client-card-time { position: absolute; right: 0.65rem; bottom: 0.3rem; color: rgba(17, 19, 21, 0.45); font-size: 0.66rem; }
-.client-card-foot { display: flex; align-items: center; justify-content: space-between; padding: 0.7rem 1rem; color: rgba(17, 19, 21, 0.5); font-size: 0.7rem; }
+.client-card-time { position: absolute; right: 0.65rem; bottom: 0.3rem; color: rgba(17, 19, 21, 0.65); font-size: 0.66rem; }
+.client-card-foot { display: flex; align-items: center; justify-content: space-between; padding: 0.7rem 1rem; color: rgba(17, 19, 21, 0.65); font-size: 0.7rem; }
 .root-concept-precision .client-messages--compact .client-messages-title { font-size: 1.35rem !important; }
 @media (min-width: 1024px) {
   .client-messages:not(.client-messages--compact) .client-messages-track { justify-content: center; }
@@ -2824,12 +2824,12 @@ div.root-concept-precision > section.root-final-section {
 
 /* /offer-2699 paid pages: no brand bar, so the hero starts near the top and the
    sample Blueprint gallery moves toward the first screen. */
-div.root-concept-precision > section.root-hero-section.root-hero-compact {
+div.root-concept-precision > main > section.root-hero-section.root-hero-compact {
   padding-top: 3rem !important;
 }
 
 @media (max-width: 640px) {
-  div.root-concept-precision > section.root-hero-section.root-hero-compact {
+  div.root-concept-precision > main > section.root-hero-section.root-hero-compact {
     padding-top: 1.75rem !important;
   }
 
@@ -2846,3 +2846,6 @@ div.root-concept-precision > section.root-hero-section.root-hero-compact {
     margin-top: 0.9rem !important;
   }
 }
+
+/* Preserve a readable light label against the dark sample-report chips. */
+.root-concept-precision .root-report-section .root-report-dark-tag { color: #F4EFE5 !important; }

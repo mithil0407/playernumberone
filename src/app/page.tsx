@@ -33,10 +33,10 @@ export default function Home() {
       headline={
         <>
           <span className="block">
-            <span className="text-luxury-accent">Stop Guessing</span> What Suits You.
+            <span className="text-luxury-accent">Stop Guessing</span> What Suits You.{' '}
           </span>
           <span className="mt-1 block sm:mt-2">
-            <span className="text-luxury-accent root-serif-moment">Talk to a Stylist</span><span className="root-headline-tail">Who&apos;ll Tell You.</span>
+            <span className="text-luxury-accent root-serif-moment">Talk to a Stylist</span>{' '}<span className="root-headline-tail">Who&apos;ll Tell You.</span>
           </span>
         </>
       }

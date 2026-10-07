@@ -4,6 +4,9 @@ import { indexedSeoPages } from "@/lib/seoContent";
 const BASE = "https://www.iconik.pro";
 
 const verifiedLastModified: Record<string, string> = {
+  "/free-colour-analysis-quiz": "2026-10-07",
+  "/style-scan": "2026-10-07",
+  "/instant-report": "2026-10-07",
   "/blog": "2026-07-24",
   "/methodology": "2026-07-24",
   "/methodology/geometric-silhouette-profiling": "2026-07-24",

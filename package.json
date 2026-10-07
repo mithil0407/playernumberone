@@ -23,7 +23,10 @@
     "lint": "next lint",
     "test": "node --experimental-strip-types --import ./scripts/node-test-hooks.mjs --test src/lib/*.test.ts src/components/*.test.ts",
     "typecheck": "tsc --noEmit --incremental false",
-    "smoke:stylist-reports": "node --env-file=.env.local scripts/smoke-stylist-reports.mjs"
+    "smoke:stylist-reports": "node --env-file=.env.local scripts/smoke-stylist-reports.mjs",
+    "seo:audit": "python3 scripts/audit-seo.py",
+    "seo:lighthouse": "node scripts/lighthouse-seo.mjs",
+    "test:seo": "node --experimental-strip-types --import ./scripts/node-test-hooks.mjs --test src/lib/seoInventory.test.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.131.0",

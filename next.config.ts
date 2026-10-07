@@ -1,6 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Public metadata must be in the initial <head>, including dynamic pages.
+  // Streaming it into <body> leaves descriptions/canonicals invisible to
+  // HTML-only consumers and fails Lighthouse on /style-scan and /instant-report.
+  htmlLimitedBots: /.*/,
   distDir: process.env.NEXT_BUILD_DIR || '.next',
   images: {
     formats: ["image/avif", "image/webp"],
