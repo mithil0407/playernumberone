@@ -55,15 +55,15 @@ export function parseColourAnalysis(raw: Record<string, unknown>, firstName: str
   };
 }
 
-function escapeHtml(value: string) {
+export function escapeHtml(value: string) {
   return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
-function capitalise(value: string) {
+export function capitalise(value: string) {
   return value.charAt(0).toUpperCase() + value.slice(1);
 }
 
-const CARD_FONT_LINKS = `<link rel="preconnect" href="https://fonts.googleapis.com" />
+export const CARD_FONT_LINKS = `<link rel="preconnect" href="https://fonts.googleapis.com" />
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&display=block" rel="stylesheet" />`;
 
 /** A blank page that loads the card fonts, used to warm the renderer before the card is ready. */

@@ -7,10 +7,10 @@ export async function POST(request: NextRequest) {
   if (!isAdminAuthenticatedFromCookieValue(request.cookies.get(ADMIN_COOKIE)?.value)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
-  const body = await request.json().catch(() => ({})) as { count?: unknown; maxUses?: unknown; note?: unknown; campaign?: unknown };
+  const body = await request.json().catch(() => ({})) as { count?: unknown; maxUses?: unknown; note?: unknown; campaign?: unknown; purpose?: unknown };
   if (typeof body.campaign === 'string' && body.campaign.trim()) {
     const maxUses = Math.min(1_000_000, Math.max(1, Math.round(Number(body.maxUses) || 100_000)));
-    return NextResponse.json({ campaign: await createCampaign(body.campaign, maxUses) });
+    return NextResponse.json({ campaign: await createCampaign(body.campaign, maxUses, body.purpose === 'body_analysis' ? 'body_analysis' : 'colour_analysis') });
   }
   const count = Math.min(200, Math.max(1, Math.round(Number(body.count) || 1)));
   const maxUses = Math.min(10_000, Math.max(1, Math.round(Number(body.maxUses) || 1)));

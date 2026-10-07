@@ -1,11 +1,12 @@
 import 'server-only';
 
 // Renders the agent's image cards — product cards (agentPresentation.ts) and the
-// Colour Card (agentColourCard.ts) — to PNG in headless Chrome, the same browser
+// Colour Card (agentColourCard.ts) and Body Card (agentBodyCard.ts) — to PNG in headless Chrome, the same browser
 // stack as report PDFs, with Google Fonts so text looks right on Vercel, and
 // stores them for WhatsApp to fetch.
 
 import type { Browser, Page } from 'puppeteer-core';
+import { bodyCardHtml, type BodyAnalysis } from '@/lib/agentBodyCard';
 import { CARD_FONTS_HTML, colourCardHtml, type ColourAnalysis } from '@/lib/agentColourCard';
 import { launchHeadlessBrowser } from '@/lib/headlessBrowser';
 import { productCardHtml, type PresentableProduct } from '@/lib/agentPresentation';
@@ -92,4 +93,8 @@ export async function renderProductCards(clientId: string, products: Presentable
 
 export async function renderColourCard(clientId: string, analysis: ColourAnalysis, dateLabel: string) {
   return withCardPage(720, page => renderCard(page, clientId, colourCardHtml(analysis, dateLabel)));
+}
+
+export async function renderBodyCard(clientId: string, analysis: BodyAnalysis, dateLabel: string) {
+  return withCardPage(720, page => renderCard(page, clientId, bodyCardHtml(analysis, dateLabel)));
 }

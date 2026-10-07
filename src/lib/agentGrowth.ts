@@ -58,12 +58,14 @@ export function parseInviteCode(text: string) {
  * friend only taps send. Their message opens the conversation, so no template
  * is needed. Campaign links (reels, ads) ask for the free colour analysis.
  */
-export function inviteLink(code: string, businessNumber: string | null, purpose: 'invite' | 'colour_analysis' = 'invite') {
+export function inviteLink(code: string, businessNumber: string | null, purpose: 'invite' | 'colour_analysis' | 'body_analysis' = 'invite') {
   const digits = (businessNumber ?? '').replace(/\D+/g, '');
   if (!digits) return null;
   const message = purpose === 'colour_analysis'
     ? `Hi ICONIK! I want my free colour analysis 🎨 ${code}`
-    : `Hi ICONIK! My invite code is ${code}`;
+    : purpose === 'body_analysis'
+      ? `Hi ICONIK! I want my free body shape analysis 👗 ${code}`
+      : `Hi ICONIK! My invite code is ${code}`;
   return `https://wa.me/${digits}?text=${encodeURIComponent(message)}`;
 }
 
@@ -93,6 +95,11 @@ export function isCampaignNote(note: string | null | undefined) {
 /** Someone messaging the number asking for their colours (e.g. from a reel), with or without a link. */
 export function asksForColourAnalysis(text: string) {
   return /\bcolou?r\s*(?:analysis|season|test|palette|type)\b|\b(?:my|best)\s+colou?rs\b|\bwhat colou?rs suit\b/i.test(text);
+}
+
+/** Someone asking for their body shape (the campaign link's text, or in their own words). */
+export function asksForBodyShapeAnalysis(text: string) {
+  return /\bbody\s*(?:shape|type|analysis|card|scan)\b/i.test(text);
 }
 
 export const DIRECT_CAMPAIGN_NAME = 'Direct messages (colour analysis)';
@@ -150,6 +157,35 @@ export function isOpenerMessage(text: string) {
 export function selfieAskMessage(firstName: string | null) {
   return `Hey${firstName ? ` ${firstName}` : ''} 👋 I'm ICONIK, your stylist on WhatsApp. Send me a close selfie — face to the camera, no sunglasses or filter. Daylight is best, but any good light works right now. Your Colour Card will be ready in under a minute 🎨 (your photo stays private 🔒)`;
 }
+
+/** A body shape request that only opens the conversation (the campaign link's text): no model call needed. */
+export function isBodyOpenerMessage(text: string) {
+  const trimmed = text.trim();
+  if (!trimmed || trimmed.length > 160 || trimmed.includes('?') || !asksForBodyShapeAnalysis(trimmed)) return false;
+  // "Hi ICONIK! I want my free body shape analysis 👗 ICK-XXXXXX" is a request to start; a sentence with details is not.
+  const words = trimmed.replace(INVITE_CODE, '').split(/\s+/).filter(word => /[a-z0-9]/i.test(word));
+  return words.length <= 12;
+}
+
+/**
+ * The instant first reply on the Body Card flow: one bubble, no model call. A
+ * full-length photo is the whole ask, so it says exactly what makes it readable.
+ */
+export function bodyPhotoAskMessage(firstName: string | null, firstConversation: boolean) {
+  const ask = "send me one full-length photo — head to feet in the frame, standing straight, in something fairly fitted (a mirror photo works). Daylight is best, but any good light is fine. Your Body Card will be ready in under a minute 👗 (your photo stays private 🔒)";
+  return firstConversation
+    ? `Hey${firstName ? ` ${firstName}` : ''} 👋 I'm ICONIK, your stylist on WhatsApp. For your Body Card, ${ask}`
+    : `Let's do it${firstName ? `, ${firstName}` : ''} ✨ For your Body Card, ${ask}`;
+}
+
+/** Sent the moment the body photo lands. */
+export const BODY_PHOTO_RECEIVED_MESSAGE = 'Got it 📸 Reading your proportions now — your Body Card is coming up in a few seconds.';
+
+/** When the photo can't be read, the ask that says what to change. */
+export const BETTER_BODY_PHOTO_ASK = "For your Body Card I need one full-length photo — head to feet in the frame, standing straight, in something fitted (not a coat or a very loose fit) — so I can read your proportions 📸 Send one and it'll be ready in under a minute.";
+
+/** One nudge for people who asked for their Body Card but never sent a photo. */
+export const BODY_PHOTO_REMINDER_MESSAGE = "Your Body Card is still waiting for you 👗 Just send one full-length photo — head to feet, standing straight, in something fitted — and I'll have it ready in under a minute.";
 
 /** One nudge for people who got the selfie ask but never sent a photo. */
 export const SELFIE_REMINDER_MESSAGE = "Your Colour Card is still waiting for you 🎨 Just send one close selfie — face to the camera, no sunglasses — and I'll have it ready in under a minute.";
