@@ -197,3 +197,24 @@ test('marking a revised version delivered never moves the first delivery time', 
   const inputs = readFileSync('src/app/api/stylist-workspace/consultations/[consultationId]/inputs/route.ts', 'utf8');
   assert.match(inputs, /becameReady \? \{ images_received_at: now, report_due_at: reportDueAt\(now\) \}/);
 });
+
+import { manualDeliveredAt } from './stylistWorkspaceQueueModel.ts';
+test('a report sent outside the studio takes the date the stylist gives, within reason', () => {
+  const now = Date.parse('2026-10-07T09:00:00Z');
+  const consultation = '2026-09-01T09:27:00Z';
+  assert.deepEqual(manualDeliveredAt('2026-09-10', consultation, now), { at: '2026-09-10T18:29:59.999Z' });
+  assert.deepEqual(manualDeliveredAt('2026-10-07', consultation, now), { at: '2026-10-07T09:00:00.000Z' });
+  assert.ok('error' in manualDeliveredAt('2026-10-09', consultation, now));
+  assert.ok('error' in manualDeliveredAt('2026-08-20', consultation, now));
+  assert.ok('error' in manualDeliveredAt('yesterday', consultation, now));
+  assert.ok('error' in manualDeliveredAt(undefined, consultation, now));
+});
+
+test('recording a hand-sent report is write-once, access-checked and logged with both times', () => {
+  const route = readFileSync('src/app/api/stylist-workspace/consultations/[consultationId]/manual-delivery/route.ts', 'utf8');
+  assert.match(route, /getConsultationWorkspaceAccess\(consultationId\)/);
+  assert.match(route, /\.is\('delivered_at', null\)/);
+  assert.match(route, /action: 'manual_delivery_recorded'[\s\S]*recorded_at: now/);
+  // Nothing is published, so no client link is opened by this action.
+  assert.doesNotMatch(route, /published_at/);
+});

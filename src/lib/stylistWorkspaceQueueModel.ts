@@ -316,3 +316,20 @@ export function positiveInteger(value: string | null, fallback: number, maximum:
   const number = Number(value);
   return Number.isFinite(number) && number >= 1 ? Math.min(maximum, Math.floor(number)) : fallback;
 }
+
+/**
+ * A report sent outside the studio (WhatsApp, email) has no Mark delivered
+ * moment, so the stylist says when it went. Dates are whole days in India; the
+ * day can be today but not in the future, and not before the consultation.
+ */
+export function manualDeliveredAt(input: unknown, consultationDate: string | null, now = Date.now()) {
+  if (typeof input !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(input)) return { error: 'Choose the date you sent the report.' } as const;
+  const day = Date.parse(`${input}T00:00:00+05:30`);
+  if (!Number.isFinite(day)) return { error: 'Choose the date you sent the report.' } as const;
+  if (day > indiaDayEnd(now)) return { error: 'The date cannot be in the future.' } as const;
+  if (consultationDate && indiaDayEnd(day) < Date.parse(consultationDate)) return { error: 'The date is before this client’s consultation.' } as const;
+  // Sent today: the moment of the click. An earlier day: the end of that day,
+  // the most generous reading of when she sent it.
+  const sameDay = day + 86_400_000 > now;
+  return { at: new Date(sameDay ? now : day + 86_400_000 - 1).toISOString() } as const;
+}

@@ -6,6 +6,7 @@ import { usePathname, useSearchParams } from 'next/navigation';
 import { AlertTriangle, ArrowRight, Check, ChevronLeft, MessageSquarePlus, RefreshCw, Search } from 'lucide-react';
 import { REPORT_DUE_DAYS, WORKSPACE_CATEGORIES, WORKSPACE_STAGE_LABELS, WORKSPACE_VIEWS, firstDeliveredAt, isOverdue, lateLabel, queryWorkspaceItems, workspaceDue, workspaceNextAction, type DeliveryRecord, type WorkspaceQueueItem } from '@/lib/stylistWorkspaceQueueModel';
 import StylistRevisionRequestDialog, { type RevisionCreated } from '@/components/StylistRevisionRequestDialog';
+import StylistManualDeliveryDialog from '@/components/StylistManualDeliveryDialog';
 import { Avatar, Button, Pill, type PillTone } from '@/components/manAdmin/ui';
 
 const STAGE_TONE: Record<string, PillTone> = {
@@ -27,6 +28,13 @@ function dateLabel(value: string | null) {
  */
 function canMarkDelivered(item: WorkspaceQueueItem) {
   return Boolean(item.report?.publishedAt) && !item.report?.hasUnpublishedChanges && item.bucket !== 'delivered';
+}
+/**
+ * A report the studio never published may still have reached the client, sent
+ * by hand. Anything not yet delivered and not mid-generation can be recorded.
+ */
+function canRecordManualDelivery(item: WorkspaceQueueItem) {
+  return !item.report?.publishedAt && item.bucket !== 'delivered' && item.bucket !== 'generating';
 }
 /**
  * A client can only ask for changes to a report she already has. An open
@@ -141,6 +149,7 @@ export default function StylistWorkspaceDashboard({ admin = false, stylistSlug, 
   const [deliveringId, setDeliveringId] = useState('');
   const [deliveryNote, setDeliveryNote] = useState('');
   const [revisionFor, setRevisionFor] = useState<WorkspaceQueueItem | null>(null);
+  const [manualFor, setManualFor] = useState<WorkspaceQueueItem | null>(null);
   const [error, setError] = useState('');
   const [refresh, setRefresh] = useState(0);
   const [updated, setUpdated] = useState<number | null>(null);
@@ -440,6 +449,14 @@ export default function StylistWorkspaceDashboard({ admin = false, stylistSlug, 
                   {deliveringId === item.id ? 'Marking…' : 'Mark delivered'}
                 </Button>
               )}
+              {canRecordManualDelivery(item) && <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => setManualFor(item)}
+                title="Already sent this report yourself? Record when it went."
+              >
+                Sent already?
+              </Button>}
               {canRequestRevision(item) && <Button
                 size="sm"
                 onClick={() => setRevisionFor(item)}
@@ -465,6 +482,13 @@ export default function StylistWorkspaceDashboard({ admin = false, stylistSlug, 
           ? <><div className="ma-h2">You’re all caught up</div><p className="ma-muted mt-1 text-sm">No reports need you right now.{counts.waiting ? ` ${counts.waiting} client${counts.waiting > 1 ? 's are' : ' is'} still sending photos or measurements.` : ''}</p></>
           : <div className="ma-h2">{category.key === 'waiting' ? 'No recent clients are waiting' : 'No clients here yet'}</div>}
     </div>}
+
+    {manualFor && <StylistManualDeliveryDialog
+      consultationId={manualFor.id}
+      clientName={manualFor.clientName || 'your client'}
+      onClose={() => setManualFor(null)}
+      onDone={() => { setDeliveryNote(`${manualFor.clientName || 'This client'}'s report is marked delivered.`); setManualFor(null); setRefresh(value => value + 1); }}
+    />}
 
     {revisionFor?.report && <StylistRevisionRequestDialog
       reportId={revisionFor.report.id}

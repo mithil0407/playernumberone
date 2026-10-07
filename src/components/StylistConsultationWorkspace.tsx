@@ -8,6 +8,7 @@ import {
   Save, Sparkles, UploadCloud,
 } from 'lucide-react';
 import { Avatar, Button, Pill } from '@/components/manAdmin/ui';
+import StylistManualDeliveryDialog from '@/components/StylistManualDeliveryDialog';
 type Json = Record<string, unknown>;
 type PhotoKey = 'headshot' | 'full_body_front' | 'full_body_side' | 'one_outfit';
 type MeasurementKey = 'shoulders' | 'bust' | 'chest' | 'waist' | 'hips';
@@ -53,6 +54,7 @@ export default function ConsultationWorkspacePage({ params, adminMode = false }:
   const [notes, setNotes] = useState('');
   const [measurementUnit, setMeasurementUnit] = useState<'cm' | 'in'>('cm');
   const [measurementValues, setMeasurementValues] = useState<Record<MeasurementKey, string>>({ shoulders: '', bust: '', chest: '', waist: '', hips: '' });
+  const [manualOpen, setManualOpen] = useState(false);
   const [selectedPhotos, setSelectedPhotos] = useState<Partial<Record<PhotoKey, File>>>({});
 
   const load = useCallback(async (preserveNotes = false) => {
@@ -156,6 +158,8 @@ export default function ConsultationWorkspacePage({ params, adminMode = false }:
   if (!detail) return <div className="rounded-2xl px-4 py-3 text-[14px]" style={{ color: 'var(--ma-red)', background: 'var(--ma-red-soft)' }}>{error || 'Consultation not found'}</div>;
   const consultation = detail.source.consultation;
   const delivered = latest?.status === 'delivered' || latest?.status === 'sent';
+  const alreadyDelivered = consultation.status === 'delivered' || Boolean(consultation.delivered_at);
+  const canRecordManual = !alreadyDelivered && !detail.reports.some(report => report.status === 'generating');
 
   return (
     <div>
@@ -285,9 +289,13 @@ export default function ConsultationWorkspacePage({ params, adminMode = false }:
             {Object.entries(detail.source.upload?.measurements ?? {}).map(([key, value]) => <div key={key} className="flex justify-between gap-4 py-2.5" style={{ borderTop: '1px solid var(--ma-line-2)' }}><span className="ma-faint text-[13px] capitalize">{key}</span><span className="ma-num text-[14px]" style={{ fontWeight: 500 }}>{display(value)}</span></div>)}
             {!Object.keys(detail.source.upload?.measurements ?? {}).length && <p className="ma-faint text-[13px]">None saved yet.</p>}
           </Section>
+          {canRecordManual && <Section title="Already sent this report?" hint="Sent it yourself on WhatsApp or email, not through the studio.">
+            <Button className="w-full" icon={<Check size={14} />} onClick={() => setManualOpen(true)}>Mark as delivered</Button>
+          </Section>}
           {consultation.status === 'delivered' && <Button className="w-full" disabled={!detail.source.consultation.stylist_id || !detail.readiness.ready || Boolean(working)} onClick={() => void generate(true)} icon={<Sparkles size={15} />}>Create a new draft Blueprint</Button>}
         </aside>
       </div>
+      {manualOpen && <StylistManualDeliveryDialog consultationId={consultationId} clientName={consultation.client_name || 'your client'} onClose={() => setManualOpen(false)} onDone={() => { setManualOpen(false); void load(true); }} />}
     </div>
   );
 }
