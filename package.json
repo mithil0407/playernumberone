@@ -12,7 +12,7 @@
     "test:man-image-identity": "node --experimental-strip-types --test src/lib/manOutfitImageIdentity.test.ts",
     "test:meta-pixel": "node --experimental-strip-types --test src/lib/metaPageView.test.ts src/lib/metaTrackingContract.test.ts src/lib/indiaBlueprintPricing.test.ts src/lib/clarity.test.ts",
     "test:whatsapp": "node --experimental-strip-types --test src/lib/whatsapp.test.ts",
-    "test:agent": "node --experimental-strip-types --import ./scripts/node-test-hooks.mjs --test src/lib/agentMemoryTree.test.ts src/lib/agentConversation.test.ts src/lib/agentGrowth.test.ts src/lib/agentOccasionLooks.test.ts src/lib/agentBodyCard.test.ts",
+    "test:agent": "node --experimental-strip-types --import ./scripts/node-test-hooks.mjs --test src/lib/agentMemoryTree.test.ts src/lib/agentConversation.test.ts src/lib/agentGrowth.test.ts src/lib/agentOccasionLooks.test.ts src/lib/agentBodyCard.test.ts src/lib/agentVoice.test.ts",
     "test:checkout-recovery": "node --experimental-strip-types --test src/lib/checkoutRecovery.test.ts",
     "verify:meta-tracking": "node --experimental-strip-types --conditions=react-server --env-file=.env.local scripts/verify-meta-tracking.ts",
     "test:stylist-workspace": "node --experimental-strip-types --import ./scripts/node-test-hooks.mjs --test src/lib/stylist*.test.ts",

@@ -84,27 +84,22 @@ export async function inboundMessagesToday(clientId: string) {
   return count ?? 0;
 }
 
-/**
- * Photo checks used since `since`: answered conversations that included a
- * photo (an album of three is one check). The instant share message doesn't count.
- */
-export async function photoChecksUsed(clientId: string, since: Date) {
-  const { data: photos, error } = await supabaseAdmin
+function indiaStartOfDay() {
+  return new Date(`${new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata' }).format(new Date())}T00:00:00+05:30`);
+}
+
+/** Pictures we generated today (India): for one client, or for everyone when clientId is null. */
+export async function generatedImagesToday(clientId: string | null) {
+  let query = supabaseAdmin
     .from('agent_messages')
-    .select('turn_id')
-    .eq('client_id', clientId)
-    .eq('direction', 'inbound')
-    .eq('kind', 'image')
-    .not('turn_id', 'is', null)
-    .gte('created_at', since.toISOString());
-  if (error) throw new Error(`Could not count photo checks: ${error.message}`);
-  const turnIds = [...new Set((photos ?? []).map(row => row.turn_id as string))];
-  if (!turnIds.length) return 0;
-  const { count } = await supabaseAdmin
-    .from('agent_turns')
     .select('id', { count: 'exact', head: true })
-    .in('id', turnIds)
-    .neq('model', 'instant');
+    .eq('direction', 'outbound')
+    .eq('kind', 'image')
+    .contains('metadata', { type: 'generated_image' })
+    .gte('created_at', indiaStartOfDay().toISOString());
+  if (clientId) query = query.eq('client_id', clientId);
+  const { count, error } = await query;
+  if (error) throw new Error(`Could not count pictures: ${error.message}`);
   return count ?? 0;
 }
 

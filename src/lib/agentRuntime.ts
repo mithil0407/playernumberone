@@ -32,29 +32,28 @@ import { dispatchAgentWorker } from '@/lib/agentJobs';
 import { AGENT_TEXT_MODEL, agentOpenAI, withAgentUsage } from '@/lib/agentLlm';
 import {
   BETTER_BODY_PHOTO_ASK,
-  BODY_PHOTO_RECEIVED_MESSAGE,
   FREE_LIMITS,
-  SELFIE_RECEIVED_MESSAGE,
   asksForBodyShapeAnalysis,
   asksForColourAnalysis,
   bodyPhotoAskMessage,
+  bodyPhotoReceivedMessage,
   forwardableInvite,
-  inviteUnlockIntro,
+  inviteIntro,
   isBodyOpenerMessage,
   isOpenerMessage,
   isOverDailyMessageCap,
-  outOfPhotoChecksMessage,
   ownInviteReply,
   parseInviteCode,
-  photoCheckAllowance,
-  photoChecksCountFrom,
   selfieAskMessage,
-  stillOutOfPhotoChecksMessage,
+  selfieReceivedMessage,
 } from '@/lib/agentGrowth';
 import { BODY_SHAPES, bodyCardPending, bodyProfileFields, bodyShapeKey, parseBodyAnalysis } from '@/lib/agentBodyCard';
 import { BODY_LINK_QUESTION, bodyOutfitMessage, lookBullets, lookText, pickBodyLooks } from '@/lib/agentBodyOutfit';
-import { parseColourAnalysis } from '@/lib/agentColourCard';
-import { prewarmCardBrowser, renderBodyCard, renderColourCard } from '@/lib/agentProductCards';
+import { parseColourAnalysis, parseShadeCard } from '@/lib/agentColourCard';
+import { parseColourObservations, readingsFrom, sameSeason, seasonFor } from '@/lib/agentColourSeason';
+import { IMAGE_KINDS, imageNeedsTheirPhoto, type ImageKind } from '@/lib/agentImagePrompts';
+import { prewarmCardBrowser, renderBodyCard, renderColourCard, renderShadeCard } from '@/lib/agentProductCards';
+import { describeTextingStyle, readTextingStyle } from '@/lib/agentTextingStyle';
 import {
   chargeShoppingRun,
   creditBalance,
@@ -62,11 +61,10 @@ import {
   ensureDirectCampaignCode,
   ensureInviteCode,
   ensureMonthlyGrant,
-  friendsJoined,
+  generatedImagesToday,
   inboundMessagesToday,
   inviteOwner,
   joinWaitlist,
-  photoChecksUsed,
 } from '@/lib/agentGrowthStore';
 import {
   ensureMemoryTree,
@@ -92,6 +90,7 @@ import {
   attachInboundImage,
   claimEventNudge,
   createLookLink,
+  downloadAgentMedia,
   enqueueAgentJob,
   finishTurn,
   hasQueuedJob,
@@ -101,6 +100,9 @@ import {
   listClientEvents,
   loadThread,
   markMessagesAnswered,
+  messageByWhatsappId,
+  outboundMessageByWhatsappId,
+  recentClientPhotos,
   recentLookActivity,
   recordOutboundMessage,
   saveClientEvent,
@@ -115,8 +117,15 @@ import {
 import {
   MAX_REPLY_BUBBLES,
   NO_REPLY_SENTINEL,
+  parseQuoteMarker,
   pickAckReaction,
+  quotePrefix,
+  quoteRefs,
+  quotedFrom,
   remainingTypingDelayMs,
+  replyText,
+  severalMessagesNote,
+  unsentBubbles,
   splitIntoBubbles,
   teamTestCommand,
 } from '@/lib/agentWhatsapp';
@@ -169,16 +178,16 @@ export function colourAnalysisOpen(env = process.env) {
   return freeTierEnabled(env) && env.ICONIK_AGENT_OPEN_COLOUR_ANALYSIS !== '0';
 }
 
-const WAITLIST_REPLY = "Hey 👋 I'm ICONIK, a personal stylist on WhatsApp. I'm invite-only right now — if a friend sent you an invite code, paste it here. Otherwise you're on the waitlist and I'll let you in soon ✨";
-const COLOUR_ANALYSIS_PROMPT_REPLY = "Hey 👋 I'm ICONIK, a personal stylist on WhatsApp. Want your free colour analysis? Reply \"colour analysis\" and I'll get started ✨";
-const INVALID_INVITE_REPLY = "That invite code isn't working (it may be used up). Ask your friend for a fresh one — meanwhile you're on the waitlist ✨";
-const DAILY_CAP_REPLY = "That's a lot of styling for one day 😄 I'll pick this up with you tomorrow.";
+const WAITLIST_REPLY = "Hey! 👋 I'm ICONIK, a personal stylist on WhatsApp. I'm invite-only right now, so if a friend sent you a code, paste it here. Otherwise you're on the list and I'll let you in soon ✨";
+const COLOUR_ANALYSIS_PROMPT_REPLY = "Hey! 👋 I'm ICONIK, a personal stylist on WhatsApp. Want to know which colours suit you? Just say \"colour analysis\" and we'll start ✨";
+const INVALID_INVITE_REPLY = "Hmm, that code isn't working (it might be used up). Ask your friend for a fresh one, and I've put you on the list meanwhile ✨";
+const DAILY_CAP_REPLY = "Okay that's a LOT of styling for one day 😄 let's pick this up tomorrow!";
 const TEAM_TEST_REPLIES = {
   free: 'Test mode: you are now a fresh free user with no colour profile. Send "colour analysis" to start (send "blueprint mode" to switch back).',
   blueprint: 'Test mode off: you are back on your Blueprint.',
 } as const;
 
-const BETTER_SELFIE_ASK = "For your Colour Card I need a close selfie — face to the camera, no sunglasses or filter — so I can read your skin, eyes and hair 📸 Send one and it'll be ready in under a minute.";
+const BETTER_SELFIE_ASK = "I can't quite read your colouring from this one. Could you send a close selfie, face to the camera, no sunglasses or filter? 📸";
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -310,11 +319,37 @@ export async function handleAgentInbound(message: WhatsappInboundMessage) {
   }
   client = asServedClient(client, team);
 
+  // An emoji reaction to one of our messages is feedback, not a message to answer:
+  // kept in the thread (so the next reply knows they loved the rust kurta), no reply.
+  if (message.reaction) {
+    if (!message.reaction.emoji) return 'reaction' as const;
+    const reactedTo = await outboundMessageByWhatsappId(message.reaction.messageId).catch(() => null);
+    const what = reactedTo
+      ? reactedTo.kind === 'image' ? `your picture "${reactedTo.content.slice(0, 120)}"` : `"${reactedTo.content.slice(0, 160)}"`
+      : 'one of your messages';
+    const stored = await insertInboundMessage({
+      clientId: client.id,
+      kind: 'reaction',
+      content: `[reacted ${message.reaction.emoji} to: ${what}]`,
+      whatsappMessageId: message.id,
+      metadata: { whatsapp_timestamp: message.timestamp ?? null, reacted_to: message.reaction.messageId, emoji: message.reaction.emoji },
+      touchesWindow: false,
+    });
+    if (stored) await markMessagesAnswered([stored.id], stored.id);
+    return 'reaction' as const;
+  }
+
   // Stored straight away, so it keeps its place in the conversation; a photo is
   // attached once it has downloaded.
   const hasPhoto = message.type === 'image' && Boolean(message.mediaId);
   const metadata: Record<string, unknown> = { whatsapp_timestamp: message.timestamp ?? null };
   if (message.payload) metadata.button_payload = message.payload;
+  // A swipe-reply: keep what they quoted, so the agent knows which message they mean.
+  if (message.replyTo) {
+    metadata.reply_to = message.replyTo;
+    const quoted = quotedFrom(await messageByWhatsappId(client.id, message.replyTo).catch(() => null));
+    if (quoted) metadata.quoted = quoted;
+  }
   const stored = await insertInboundMessage({
     clientId: client.id,
     kind: message.type === 'image' && !hasPhoto ? 'unsupported' : message.type,
@@ -329,7 +364,7 @@ export async function handleAgentInbound(message: WhatsappInboundMessage) {
   // Tapping their own invite link sends us their own code: explain it, no model call.
   const sentCode = parseInviteCode(message.text);
   if (sentCode && await inviteOwner(sentCode) === client.id) {
-    const reply = ownInviteReply(await friendsJoined(client.id));
+    const reply = ownInviteReply();
     const sent = await sendWhatsAppTextMessage(client.phone, reply).catch(() => null);
     if (sent?.success) {
       await recordOutboundMessage({ clientId: client.id, content: reply, whatsappMessageId: sent.messageId ?? null, metadata: { type: 'own_invite' } });
@@ -366,30 +401,32 @@ export async function handleAgentInbound(message: WhatsappInboundMessage) {
   const acknowledged = (async () => {
     // The reaction first: sending anything hides "typing…", so it goes up after.
     const ack = pickAckReaction({ text: message.text, hasImage: hasPhoto });
-    const reacted = await sendWhatsAppReaction(servedClient.phone, message.id, ack).catch(() => null);
+    const reacted = ack ? await sendWhatsAppReaction(servedClient.phone, message.id, ack).catch(() => null) : null;
     // The body photo for the Body Card: say straight away that the reading has started.
     if (hasPhoto && servedClient.tier === 'free' && bodyCardPending(servedClient.lite_profile)) {
       if (!await sentRecently(servedClient.id, 'body_photo_received', 3 * 60_000)) {
-        const sent = await sendWhatsAppTextMessage(servedClient.phone, BODY_PHOTO_RECEIVED_MESSAGE).catch(() => null);
+        const received = bodyPhotoReceivedMessage(message.id);
+        const sent = await sendWhatsAppTextMessage(servedClient.phone, received).catch(() => null);
         if (sent?.success) {
           await recordOutboundMessage({
-            clientId: servedClient.id, content: BODY_PHOTO_RECEIVED_MESSAGE, whatsappMessageId: sent.messageId ?? null, metadata: { type: 'body_photo_received' },
+            clientId: servedClient.id, content: received, whatsappMessageId: sent.messageId ?? null, metadata: { type: 'body_photo_received' },
           });
         }
       }
     // The selfie for the Colour Card: say straight away that the reading has started.
     } else if (hasPhoto && awaitingColourCard(servedClient) && !await sentRecently(servedClient.id, 'selfie_received', 3 * 60_000)) {
-      const sent = await sendWhatsAppTextMessage(servedClient.phone, SELFIE_RECEIVED_MESSAGE).catch(() => null);
+      const received = selfieReceivedMessage(message.id);
+      const sent = await sendWhatsAppTextMessage(servedClient.phone, received).catch(() => null);
       if (sent?.success) {
         await recordOutboundMessage({
-          clientId: servedClient.id, content: SELFIE_RECEIVED_MESSAGE, whatsappMessageId: sent.messageId ?? null, metadata: { type: 'selfie_received' },
+          clientId: servedClient.id, content: received, whatsappMessageId: sent.messageId ?? null, metadata: { type: 'selfie_received' },
         });
       }
     }
     if (hasPhoto || !LIKELY_NO_REPLY.test(message.text)) typing.start();
-    if (reacted?.success) {
+    if (ack && reacted?.success) {
       await recordOutboundMessage({ clientId: servedClient.id, kind: 'reaction', content: ack, metadata: { reacted_to: message.id } });
-    } else {
+    } else if (ack) {
       console.warn('[agent] acknowledgement reaction failed:', reacted?.error);
     }
   })().catch(error => console.warn('[agent] acknowledgement failed:', error));
@@ -447,14 +484,18 @@ interface TurnState {
   searchCount: number;
   interimSent: number;
   runCharged: boolean;
-  /** Friends who joined with their invite link (free tier): 3 unlock the Face Analysis. */
-  friendsJoined: number;
+  /** Pictures (create_image) they can still get today. */
+  imagesLeft: number;
+  /** Their recent messages by label (m1, m2…) → WhatsApp id, so a bubble can quote one. */
+  quoteRefs: Map<string, string>;
+  /** Text already sent this turn, so the final reply doesn't repeat a double-text. */
+  sentTexts: string[];
   /** The occasion of the look we sent them (e.g. "Diwali"), while it's active. */
   occasion: string | null;
   toolLog: Array<{ name: string; ok: boolean; summary: string }>;
 }
 
-export function agentTools(options: { freeTier: boolean; outfitImages: boolean }): FunctionTool[] {
+export function agentTools(options: { freeTier: boolean }): FunctionTool[] {
   const tools: FunctionTool[] = [
     {
       type: 'function',
@@ -462,8 +503,11 @@ export function agentTools(options: { freeTier: boolean; outfitImages: boolean }
       description: 'Send a short WhatsApp message right now, before you finish (a heads-up before slow work, or a natural double-text).',
       strict: true,
       parameters: {
-        type: 'object', additionalProperties: false, required: ['text'],
-        properties: { text: { type: 'string', description: 'One short bubble.' } },
+        type: 'object', additionalProperties: false, required: ['text', 'reply_to'],
+        properties: {
+          text: { type: 'string', description: 'One short bubble.' },
+          reply_to: { type: ['string', 'null'], description: 'A label like "m2" to send it as a reply quoting that message of theirs; null for a normal message.' },
+        },
       },
     },
     {
@@ -605,11 +649,51 @@ export function agentTools(options: { freeTier: boolean; outfitImages: boolean }
   tools.push({
     type: 'function',
     name: 'share_invite',
-    description: 'Send the client a ready-to-forward invite message with their personal ICONIK link. Only when they ask how to share or get more, ask for the locked Face Analysis, or run out of product hunts — never unprompted. On the free tier each friend who joins gives them more photo checks and both of them extra product hunts, and 3 friends unlock the Face Analysis (the intro explaining that is sent for you).',
+    description: "Send the client a ready-to-forward invite message with their personal ICONIK link. Only when it's natural: they mention someone who'd want their colours, ask how to share, or run out of product hunts — never as a pitch. On the free tier each friend who joins gives them both extra product hunts (the intro saying so is sent for you).",
     strict: true,
     parameters: {
       type: 'object', additionalProperties: false, required: ['intro'],
       properties: { intro: { type: 'string', description: 'One short line before the forwardable message, e.g. "Here you go — forward this 👇".' } },
+    },
+  });
+  tools.push({
+    type: 'function',
+    name: 'create_image',
+    description: "Make and send a photo-realistic picture (about 20 seconds; send a quick heads-up with send_message first). outfit_fix: their latest photo with your change applied. look_on_them: them wearing a full look you recommend. hairstyles: four hairstyles on their face. idea: a flat lay or styling idea without a person. The first three use their most recent photo in this chat (or their report photos).",
+    strict: true,
+    parameters: {
+      type: 'object', additionalProperties: false, required: ['kind', 'brief', 'caption'],
+      properties: {
+        kind: { type: 'string', enum: [...IMAGE_KINDS] },
+        brief: { type: 'string', description: 'What to show, piece by piece with colours and fabrics, like briefing a photographer. For outfit_fix, only what changes ("swap the grey trousers for espresso straight-leg trousers; add small gold hoops").' },
+        caption: { type: ['string', 'null'], description: 'Optional short caption on the picture, in your voice ("the espresso version 👀"). null for none.' },
+      },
+    },
+  });
+  tools.push({
+    type: 'function',
+    name: 'send_shade_card',
+    description: 'Send an image of exact colour swatches with names and notes: lipstick/foundation/kajal/nail shades by brand, their palette or someone else\'s, colours that go with a piece. Rendered from hex codes, so colours and names are exact.',
+    strict: true,
+    parameters: {
+      type: 'object', additionalProperties: false, required: ['title', 'subtitle', 'swatches', 'caption'],
+      properties: {
+        title: { type: 'string', description: 'Short, personal: "Your reds", "Riya\'s Soft Autumn palette", "Blouses for the green saree".' },
+        subtitle: { type: ['string', 'null'], description: 'One line, e.g. "Lakmé and Maybelline, under ₹600".' },
+        swatches: {
+          type: 'array',
+          description: '2 to 9 swatches, best first.',
+          items: {
+            type: 'object', additionalProperties: false, required: ['name', 'hex', 'note'],
+            properties: {
+              name: { type: 'string', description: 'Exact shade or colour name, e.g. "Red Coat" or "Rust".' },
+              hex: { type: 'string', description: 'Closest #RRGGBB.' },
+              note: { type: ['string', 'null'], description: 'Brand/range or when to wear it, e.g. "Lakmé 9 to 5 · festive".' },
+            },
+          },
+        },
+        caption: { type: ['string', 'null'], description: 'Optional short caption in your voice. null for none.' },
+      },
     },
   });
   if (options.freeTier) {
@@ -628,20 +712,23 @@ export function agentTools(options: { freeTier: boolean; outfitImages: boolean }
       strict: true,
       parameters: {
         type: 'object', additionalProperties: false,
-        required: ['first_name', 'season', 'undertone', 'depth', 'contrast', 'best_colours', 'neutrals', 'avoid_colours', 'metal', 'caption', 'wow', 'next_step'],
+        required: ['first_name', 'seen', 'undertone', 'skin_depth', 'hair_depth', 'eye_depth', 'chroma', 'season', 'best_colours', 'neutrals', 'avoid_colours', 'metal', 'caption', 'wow', 'next_step'],
         properties: {
           first_name: { type: ['string', 'null'] },
-          season: { type: 'string', description: 'Seasonal colour family, e.g. "Deep Autumn", "Soft Summer", "Bright Winter".' },
+          seen: { type: 'string', description: 'First, in a few words: what you see in the photo (light, skin at the jaw, hair, eyes, what they are wearing). Not shown to them. If their eyes are hidden (sunglasses) or the face is tiny, blurred or filtered, stop: do not call this tool — ask for a close selfie instead.' },
           undertone: { type: 'string', enum: ['warm', 'cool', 'neutral', 'olive'] },
-          depth: { type: ['string', 'null'], enum: ['light', 'medium', 'deep', null] },
-          contrast: { type: ['string', 'null'], enum: ['low', 'medium', 'high', null] },
+          skin_depth: { type: 'integer', description: 'Monk Skin Tone scale, 1 (very fair) to 10 (deepest).' },
+          hair_depth: { type: 'integer', description: '1 (light) to 10 (jet black).' },
+          eye_depth: { type: 'integer', description: '1 (light) to 10 (near-black).' },
+          chroma: { type: 'string', enum: ['muted', 'clear'] },
+          season: { type: 'string', description: 'Your best guess of their season. It is checked against your readings; if they point elsewhere you will be told the right season and asked for its palette.' },
           best_colours: swatchList('Exactly 8 colours that light them up, most flattering first.'),
           neutrals: swatchList('3 neutrals to build outfits on.'),
           avoid_colours: swatchList('3 colours to keep away from the face.'),
           metal: { type: ['string', 'null'], enum: ['gold', 'silver', 'both', null] },
-          caption: { type: 'string', description: 'Short caption under the card, e.g. "Riya, you\'re a Deep Autumn 🍂".' },
-          wow: { type: 'string', description: 'Sent right after the card (max 70 words): what you saw in their photo (e.g. golden warmth along the jaw, deep brown eyes, the contrast with their hair) and one surprising, specific insight — a colour they very likely wear that drains them, and the swap that lights them up. If their message asked something about the photo (e.g. "rate my outfit"), answer it here: a quick verdict and the one fix, in their colours. Never give a rating or score they did not ask for.' },
-          next_step: { type: 'string', description: 'The last message, a question they will want to answer (max 30 words) that moves forward from the wow — never re-ask what the wow answered. Default: invite them to send a photo of something in their wardrobe they are unsure about, and you will tell them if it is their colour. If they mentioned an occasion, offer to plan their look for it instead.' },
+          caption: { type: 'string', description: 'Short caption under the card, in your voice, e.g. "Riya, this is you 🍂".' },
+          wow: { type: 'string', description: 'Sent right after the card (max 60 words), in their texting style: what you actually saw in THEIR photo (something specific to them, not "golden warmth and strong contrast" you could say to anyone) and one surprising insight, e.g. the colour they are wearing and what would beat it. If they asked something about the photo (e.g. "rate my outfit"), answer it here. Never give a score they did not ask for.' },
+          next_step: { type: 'string', description: 'The last message (max 25 words): a natural, specific next thing, the way a friend would say it, tied to what you saw or to what is coming up (Navratri, Diwali, a wedding): e.g. "what are you wearing for Navratri? I\'ll put together something in these colours". Not a generic "send me a wardrobe piece".' },
         },
       },
     });
@@ -716,18 +803,6 @@ export function agentTools(options: { freeTier: boolean; outfitImages: boolean }
       },
     });
   }
-  if (options.outfitImages) {
-    tools.push({
-      type: 'function',
-      name: 'show_outfit_image',
-      description: 'Create and send a photo-realistic image of the client wearing an outfit you described.',
-      strict: true,
-      parameters: {
-        type: 'object', additionalProperties: false, required: ['outfit'],
-        properties: { outfit: { type: 'string', description: 'The full outfit, piece by piece, with colours.' } },
-      },
-    });
-  }
   return tools;
 }
 
@@ -747,13 +822,64 @@ function occasionAlternatives(look: { campaign: string; outfit: string; id: stri
   }
 }
 
+/**
+ * The photos a picture of them is made from. An outfit fix edits their latest
+ * photo here. A full look on a Blueprint man uses his report's full-length photo
+ * and headshot (the ones his report was made from); everyone else, their latest
+ * photo here. Hairstyles use their latest photo, or his report headshot.
+ */
+async function imageReferences(state: TurnState, kind: ImageKind) {
+  let sourceWhatsappId: string | null = null;
+  const latestChatPhoto = async () => {
+    const photos = await recentClientPhotos(state.client.id, 1).catch(() => []);
+    if (!photos[0]) return null;
+    const downloaded = await downloadAgentMedia(photos[0].storage_path).catch(() => null);
+    if (downloaded) sourceWhatsappId = photos[0].whatsapp_message_id;
+    return downloaded;
+  };
+  const reportPhotos = async (keys: Array<'photo_fullbody_url' | 'photo_headshot_url'>) => {
+    if (state.client.line !== 'man' || !state.client.report_share_token || state.client.tier === 'free') return [];
+    try {
+      const { loadManEditReportContext } = await import('@/lib/manEdit');
+      const context = await loadManEditReportContext(state.client.report_share_token, false);
+      const submission = (context?.submission ?? {}) as Record<string, unknown>;
+      const found: Array<{ bytes: Buffer; mimeType: string }> = [];
+      for (const key of keys) {
+        const url = submission[key];
+        if (typeof url !== 'string' || !url) continue;
+        const response = await fetch(url);
+        if (!response.ok) continue;
+        found.push({
+          bytes: Buffer.from(await response.arrayBuffer()),
+          mimeType: response.headers.get('content-type')?.split(';')[0]?.trim() || 'image/jpeg',
+        });
+      }
+      return found;
+    } catch (error) {
+      console.warn('[agent] report photos unavailable for the picture:', error);
+      return [];
+    }
+  };
+  if (kind === 'idea') return { references: [], sourceWhatsappId };
+  if (kind === 'look_on_them') {
+    const fromReport = await reportPhotos(['photo_fullbody_url', 'photo_headshot_url']);
+    if (fromReport.length) return { references: fromReport, sourceWhatsappId };
+  }
+  const latest = await latestChatPhoto();
+  if (latest) return { references: [latest], sourceWhatsappId };
+  return { references: kind === 'hairstyles' ? await reportPhotos(['photo_headshot_url']) : [], sourceWhatsappId };
+}
+
+
 /** Sends a bubble; recording it doesn't hold up the next one (the turn awaits it before ending). */
-async function sendText(state: TurnState, text: string, metadata: Record<string, unknown> = {}) {
-  const sent = await sendWhatsAppTextMessage(state.client.phone, text);
+async function sendText(state: TurnState, text: string, metadata: Record<string, unknown> = {}, replyTo: string | null = null) {
+  const sent = await sendWhatsAppTextMessage(state.client.phone, text, replyTo);
   if (!sent.success) throw new Error(sent.error || 'WhatsApp send failed');
   state.committed = true;
+  state.sentTexts.push(text);
   state.recordings.push(recordOutboundMessage({
-    clientId: state.client.id, content: text, whatsappMessageId: sent.messageId ?? null, turnId: state.turnId, metadata,
+    clientId: state.client.id, content: text, whatsappMessageId: sent.messageId ?? null, turnId: state.turnId,
+    metadata: replyTo ? { ...metadata, reply_to: replyTo } : metadata,
   }).catch(error => console.warn('[agent] could not record a sent message:', error)));
 }
 
@@ -763,7 +889,7 @@ async function sendText(state: TurnState, text: string, metadata: Record<string,
  */
 async function sendPaced(
   state: TurnState,
-  messages: Array<{ text: string; metadata?: Record<string, unknown> }>,
+  messages: Array<{ text: string; metadata?: Record<string, unknown>; replyTo?: string | null }>,
   options: { firstImmediately?: boolean; previousSendStartedAt?: number } = {},
 ) {
   let previousStartedAt = options.previousSendStartedAt ?? Date.now();
@@ -773,13 +899,13 @@ async function sendPaced(
       await sleep(remainingTypingDelayMs(message.text, previousStartedAt));
     }
     previousStartedAt = Date.now();
-    await sendText(state, message.text, message.metadata ?? {});
+    await sendText(state, message.text, message.metadata ?? {}, message.replyTo ?? null);
   }
 }
 
 /** Tools that message the client or spend money: a superseded turn must not start them. */
 const SIDE_EFFECT_TOOLS = new Set([
-  'send_message', 'react', 'search_products', 'present_products', 'share_invite', 'send_colour_card', 'send_body_card', 'start_body_card', 'show_outfit_image', 'forget',
+  'send_message', 'react', 'search_products', 'present_products', 'share_invite', 'send_colour_card', 'send_body_card', 'start_body_card', 'create_image', 'send_shade_card', 'forget',
 ]);
 
 class TurnSuperseded extends Error {}
@@ -793,9 +919,11 @@ async function runTool(state: TurnState, call: ResponseFunctionToolCall): Promis
   switch (call.name) {
     case 'send_message': {
       if (state.interimSent >= MAX_INTERIM_MESSAGES) return 'Skipped: enough interim messages this turn; put the rest in your final reply.';
-      const text = String(args.text ?? '').trim().slice(0, 600);
+      const parsed = parseQuoteMarker(String(args.text ?? '').slice(0, 600), state.quoteRefs);
+      const text = parsed.text;
       if (!text) return 'Nothing to send.';
-      await sendText(state, text, { interim: true });
+      const replyTo = typeof args.reply_to === 'string' ? state.quoteRefs.get(args.reply_to.trim().toLowerCase()) ?? null : parsed.replyTo;
+      await sendText(state, text, { interim: true }, replyTo);
       state.interimSent += 1;
       state.typing.bump();
       return 'Sent.';
@@ -949,8 +1077,8 @@ async function runTool(state: TurnState, call: ResponseFunctionToolCall): Promis
       const invite = await ensureInviteCode(state.client);
       if (invite.remaining <= 0) return 'All their invites have been used. Tell them, and thank them for spreading the word.';
       const intro = state.client.tier === 'free'
-        ? inviteUnlockIntro(state.friendsJoined)
-        : String(args.intro ?? '').trim().slice(0, 200) || 'Here you go — forward this to a friend 👇 the link is for them.';
+        ? inviteIntro()
+        : String(args.intro ?? '').trim().slice(0, 200) || "Here you go, forward this one 👇 (the link's for them, not you)";
       await sendText(state, intro, { type: 'invite_intro' });
       const season = typeof state.client.lite_profile?.season === 'string' ? state.client.lite_profile.season : null;
       // A Blueprint man inviting his wife or family for the occasion: so their outfits go together.
@@ -971,15 +1099,26 @@ async function runTool(state: TurnState, call: ResponseFunctionToolCall): Promis
         return "Their Colour Card for this photo was already sent — don't send another. Carry on from it using their palette; a new analysis needs a new photo.";
       }
       const firstName = nullableString(args.first_name, 40) ?? state.client.first_name;
-      const analysis = parseColourAnalysis(args, firstName);
-      if (!analysis) return 'The colour analysis is incomplete: give a season, an undertone and 8 best colours with valid #RRGGBB hex codes.';
+      const observations = parseColourObservations(args);
+      if (!observations) return 'Give all the readings: undertone, chroma, and skin_depth, hair_depth and eye_depth as whole numbers from 1 to 10.';
+      // The season comes from the readings, not the model's habit (it called nearly everyone Deep Autumn).
+      const readings = readingsFrom(observations);
+      const season = seasonFor(readings);
+      if (!sameSeason(String(args.season ?? ''), season)) {
+        return `Your readings (${readings.undertone} undertone, ${readings.depth} overall, ${readings.contrast} contrast, ${readings.chroma}) make them ${season}, not ${String(args.season)}. Call send_colour_card again with season "${season}" and a ${season} palette (best colours, neutrals, avoid) and the same readings, keeping your wow true to what you saw. Only change a reading if you misjudged it.`;
+      }
+      const analysis = parseColourAnalysis({ ...args, season, depth: readings.depth, contrast: readings.contrast }, firstName);
+      if (!analysis) return 'The colour analysis is incomplete: give 8 best colours with valid #RRGGBB hex codes.';
       const profile: Record<string, unknown> = {
         ...(state.client.lite_profile ?? {}),
         season: analysis.season,
         undertone: analysis.undertone,
         depth: analysis.depth,
         contrast: analysis.contrast,
+        chroma: readings.chroma,
+        colour_readings: { skin: observations.skin, hair: observations.hair, eyes: observations.eyes },
         best_colours: analysis.best.map(swatch => swatch.name),
+        best_hex: analysis.best.map(swatch => swatch.hex),
         neutrals: analysis.neutrals.map(swatch => swatch.name),
         avoid_colours: analysis.avoid.map(swatch => swatch.name),
         metal: analysis.metal,
@@ -1054,6 +1193,10 @@ async function runTool(state: TurnState, call: ResponseFunctionToolCall): Promis
     case 'send_body_card': {
       if (state.client.tier !== 'free') return 'This client has a Blueprint; their report already covers their body analysis.';
       const previous = state.client.lite_profile ?? {};
+      // Only when they asked for it: an outfit photo is an outfit check, not a body analysis.
+      if (!bodyCardPending(previous)) {
+        return "They haven't asked for a Body Card — this photo is for an outfit check. Don't analyse their body; answer about the outfit. You may offer the free Body Card at the end (start_body_card if they say yes).";
+      }
       // One card per photo: a retried or overlapping turn must not send a second one.
       if (!state.newestPhotoWhatsappId) return 'There is no photo in this conversation yet — ask for one full-length photo instead.';
       if (previous.body_card_at && previous.body_card_for === state.newestPhotoWhatsappId) {
@@ -1164,51 +1307,105 @@ async function runTool(state: TurnState, call: ResponseFunctionToolCall): Promis
       state.client = { ...state.client, lite_profile: profile, line, first_name: firstName };
       return 'Saved. Use it for every recommendation from now on.';
     }
-    case 'show_outfit_image': {
-      if (state.client.line !== 'man' || !state.client.report_share_token) return 'Images are not available for this client yet.';
-      const { loadManEditReportContext, generateManEditOutfitImage, uploadManEditChatImageBytes } = await import('@/lib/manEdit');
-      const context = await loadManEditReportContext(state.client.report_share_token, false);
-      if (!context) return 'Could not load their report for the image.';
-      const outfit = String(args.outfit ?? '').slice(0, 800);
-      const generated = await generateManEditOutfitImage({ context, request: outfit, outfitDirection: outfit });
-      const uploaded = await uploadManEditChatImageBytes(context.report.id, generated.bytes, generated.mimeType, 'agent-outfit.png');
-      if (!uploaded.signedUrl) return 'The image could not be stored.';
-      const sent = await sendWhatsAppImageInOrder(state.client.phone, uploaded.signedUrl);
-      if (!sent.success) return 'The image could not be sent.';
+    case 'create_image': {
+      const kind = (IMAGE_KINDS as readonly string[]).includes(String(args.kind)) ? args.kind as ImageKind : null;
+      const brief = String(args.brief ?? '').trim();
+      if (!kind || !brief) return 'Give a kind and a brief.';
+      if (state.imagesLeft <= 0) {
+        return "NO PICTURES LEFT TODAY: don't apologise at length. Describe it vividly in words instead and offer to show them tomorrow.";
+      }
+      const { references, sourceWhatsappId } = await imageReferences(state, kind);
+      if (imageNeedsTheirPhoto(kind) && !references.length) {
+        return 'There is no photo of them to use. Ask for one (a mirror photo for a look, a straight-on selfie for hair) in one line, and say you will show them as soon as it arrives.';
+      }
+      const { generateAgentImage } = await import('@/lib/agentImages');
+      const profile = state.client.lite_profile ?? {};
+      const palette = Array.isArray(profile.best_colours) ? profile.best_colours.map(String) : null;
+      const generated = await generateAgentImage({
+        clientId: state.client.id, kind, brief, line: state.client.line, palette, references,
+      });
+      const extension = generated.mimeType.split('/')[1]?.replace('jpeg', 'jpg') || 'png';
+      const uploaded = await uploadAgentMedia(state.client.id, generated.bytes, generated.mimeType, extension);
+      if (!uploaded.signedUrl) return 'The picture could not be stored. Tell them briefly and describe it instead.';
+      const caption = nullableString(args.caption, 200) ?? undefined;
+      // Their outfit, fixed: sent as a reply to the photo it came from.
+      const quote = kind === 'outfit_fix' ? sourceWhatsappId : null;
+      const sent = await sendWhatsAppImageInOrder(state.client.phone, uploaded.signedUrl, caption, generated.bytes, quote);
+      if (!sent.success) return 'The picture could not be sent. Describe it in words instead.';
       state.committed = true;
+      state.imagesLeft -= 1;
+      state.interimSent += 1;
       state.typing.bump();
       await recordOutboundMessage({
-        clientId: state.client.id, kind: 'image', content: outfit, imageUrl: uploaded.signedUrl,
+        clientId: state.client.id, kind: 'image', content: caption ?? brief.slice(0, 300), imageUrl: uploaded.signedUrl,
         whatsappMessageId: sent.messageId ?? null, turnId: state.turnId,
+        metadata: { type: 'generated_image', image_kind: kind, brief: brief.slice(0, 600) },
       });
-      return 'Image sent. Keep your text reply short — the picture speaks.';
+      return `Picture sent${caption ? ' with your caption' : ''}. Keep your reply to one short line (or ${NO_REPLY_SENTINEL} if the caption said it all). ${state.imagesLeft} picture${state.imagesLeft === 1 ? '' : 's'} left today.`;
+    }
+    case 'send_shade_card': {
+      const card = parseShadeCard(args);
+      if (!card) return 'Give a title and at least 2 swatches with valid #RRGGBB hex codes.';
+      const rendered = await renderShadeCard(state.client.id, card).catch(error => {
+        console.error('[agent] shade card render failed:', error);
+        return null;
+      });
+      if (!rendered?.signedUrl) return 'The card could not be made. Give the shades in a short message instead.';
+      const caption = nullableString(args.caption, 200) ?? undefined;
+      const sent = await sendWhatsAppImageInOrder(state.client.phone, rendered.signedUrl, caption, rendered.bytes);
+      if (!sent.success) return 'The card could not be sent. Give the shades in a short message instead.';
+      state.committed = true;
+      state.interimSent += 1;
+      state.typing.bump();
+      await recordOutboundMessage({
+        clientId: state.client.id, kind: 'image', content: caption ?? card.title, imageUrl: rendered.signedUrl,
+        whatsappMessageId: sent.messageId ?? null, turnId: state.turnId,
+        metadata: { type: 'shade_card', title: card.title, swatches: card.swatches.map(swatch => swatch.name) },
+      });
+      return 'Shade card sent. Add at most one or two short lines: your first pick and why, or nothing more if the card says it.';
     }
     default:
       return `Unknown tool ${call.name}.`;
   }
 }
 
-function threadToInput(thread: AgentMessageRow[], pendingIds: Set<string>): ResponseInputItem[] {
+export function threadToInput(thread: AgentMessageRow[], pendingIds: Set<string>, labels: Map<string, string> = new Map()): ResponseInputItem[] {
   const input: ResponseInputItem[] = [];
   for (const message of thread) {
     if (pendingIds.has(message.id)) continue;
-    const text = message.kind === 'image'
-      ? `[sent a photo] ${message.content}`
+    // Our instant reactions aren't part of the conversation; old rows stored their reactions as "unsupported".
+    if (message.direction === 'outbound' && message.kind === 'reaction') continue;
+    if (/^\[Unsupported WhatsApp message: reaction\]/.test(message.content)) continue;
+    const body = message.kind === 'image'
+      ? message.direction === 'inbound'
+        ? `[sent a photo] ${message.content}`
+        : `[you sent a picture: ${message.content}]`
       : message.content;
+    const label = labels.get(message.id);
+    const text = message.direction === 'inbound'
+      ? `${label ? `(${label}) ` : ''}${quotePrefix(message.metadata)}${body}`
+      : body;
     if (!text.trim()) continue;
     input.push({ role: message.direction === 'inbound' ? 'user' : 'assistant', content: text });
   }
   return input;
 }
 
-function pendingToInput(pending: AgentMessageRow[]): ResponseInputItem {
+/** Said beside an outfit photo, where a small model actually acts on it (at the end of a long prompt it didn't). */
+export const PHOTO_TURN_NOTE = "[ICONIK note, not from them: if your change is something they could picture — a different bottom, blouse, dupatta, layer, jewellery or shoes — end by offering to show it on this photo, e.g. \"want to see it with the espresso trousers?\"]";
+
+export function pendingToInput(pending: AgentMessageRow[], note?: string | null, labels: Map<string, string> = new Map()): ResponseInputItem {
   const content: Array<{ type: 'input_text'; text: string } | { type: 'input_image'; image_url: string; detail: 'auto' }> = [];
   for (const message of pending) {
     if (message.image_url && message.kind === 'image') {
       content.push({ type: 'input_image', image_url: message.image_url, detail: 'auto' });
     }
-    content.push({ type: 'input_text', text: message.content || '[photo]' });
+    const label = labels.get(message.id);
+    content.push({ type: 'input_text', text: `${label ? `(${label}) ` : ''}${quotePrefix(message.metadata)}${message.content || '[photo]'}` });
   }
+  if (note) content.push({ type: 'input_text', text: note });
+  const several = severalMessagesNote(pending.map(message => labels.get(message.id)).filter((label): label is string => Boolean(label)));
+  if (several) content.push({ type: 'input_text', text: several });
   return { role: 'user', content };
 }
 
@@ -1252,53 +1449,6 @@ async function waitForTurnSlot(clientId: string) {
   while (Date.now() < deadline && await turnShouldWait(clientId)) await sleep(TURN_WAIT_POLL_MS);
 }
 
-async function photoCheckStatus(client: AgentClient) {
-  const joined = await friendsJoined(client.id);
-  const allowance = photoCheckAllowance(joined);
-  const colourCardAt = typeof client.lite_profile?.colour_card_at === 'string' ? client.lite_profile.colour_card_at : null;
-  const used = await photoChecksUsed(client.id, photoChecksCountFrom(colourCardAt));
-  return { joined, allowance, left: allowance - used };
-}
-
-/** Their free photo checks are used up: thank them and offer the invite — once; after that a short reminder. */
-async function sendOutOfPhotoChecks(
-  client: AgentClient,
-  pending: AgentMessageRow[],
-  checks: { joined: number; allowance: number },
-  options: TurnOptions,
-) {
-  const turnId = await startTurn(client.id, pending.map(message => message.id), 'instant');
-  await options.typing?.stop();
-  const askedRecently = await sentRecently(client.id, 'share_ask', 12 * 3_600_000);
-  const invite = askedRecently ? null : await ensureInviteCode(client).catch(() => null);
-  const canInvite = Boolean(invite && invite.remaining > 0);
-  const season = typeof client.lite_profile?.season === 'string' ? client.lite_profile.season : null;
-  const messages: Array<{ text: string; metadata: Record<string, unknown> }> = askedRecently
-    ? [{ text: stillOutOfPhotoChecksMessage(), metadata: { type: 'share_reminder' } }]
-    : [{ text: outOfPhotoChecksMessage(checks.allowance, canInvite, checks.joined), metadata: { type: canInvite ? 'share_ask' : 'photo_checks_out' } }];
-  if (invite && canInvite) {
-    messages.push({
-      text: forwardableInvite({ code: invite.code, link: invite.link, inviterName: client.first_name, season }),
-      metadata: { type: 'invite', code: invite.code },
-    });
-  }
-  let ok = true;
-  for (const message of messages) {
-    const sent = await sendWhatsAppTextMessage(client.phone, message.text);
-    if (!sent.success) {
-      ok = false;
-      break;
-    }
-    await recordOutboundMessage({ clientId: client.id, content: message.text, whatsappMessageId: sent.messageId ?? null, turnId, metadata: message.metadata });
-  }
-  await markMessagesAnswered(pending.map(message => message.id), turnId);
-  await finishTurn(turnId, ok ? 'completed' : 'failed', {
-    toolCalls: [{ name: 'out_of_photo_checks', ok, summary: messages.map(message => message.metadata.type).join(', ') }],
-    error: ok ? null : 'send failed',
-  });
-  return ok ? 'replied' as const : 'failed' as const;
-}
-
 async function runAgentTurnInner(client: AgentClient, options: TurnOptions) {
   await waitForTurnSlot(client.id);
   if (options.inboundId) {
@@ -1339,7 +1489,7 @@ async function runAgentTurnInner(client: AgentClient, options: TurnOptions) {
     && await isFirstConversation(client.id)) {
     const turnId = await startTurn(client.id, pending.map(message => message.id), 'instant');
     await options.typing?.stop();
-    const ask = selfieAskMessage(client.first_name);
+    const ask = selfieAskMessage(client.first_name, client.id);
     const sent = await sendWhatsAppTextMessage(client.phone, ask);
     if (sent.success) {
       await recordOutboundMessage({ clientId: client.id, content: ask, whatsappMessageId: sent.messageId ?? null, turnId, metadata: { type: 'selfie_ask' } });
@@ -1353,17 +1503,6 @@ async function runAgentTurnInner(client: AgentClient, options: TurnOptions) {
   }
   // The selfie is in: start the card renderer now, while the model reads it.
   if ((awaitingCard || bodyPending) && newestPhoto) prewarmCardBrowser();
-
-  // A photo after the Colour Card uses one of this month's free photo checks.
-  // When they're used up, the share message goes instead of a model call: the
-  // one moment we ask them to invite friends, after they've had the value.
-  const checks = client.tier === 'free' && !awaitingCard && !bodyPending && newestPhoto
-    ? await photoCheckStatus(client).catch(error => {
-      console.warn('[agent] photo check count failed:', error);
-      return null;
-    })
-    : null;
-  if (checks && checks.left <= 0) return sendOutOfPhotoChecks(client, pending, checks, options);
 
   const turnId = await startTurn(client.id, pending.map(message => message.id), AGENT_TEXT_MODEL);
 
@@ -1384,7 +1523,9 @@ async function runAgentTurnInner(client: AgentClient, options: TurnOptions) {
     searchCount: 0,
     interimSent: 0,
     runCharged: false,
-    friendsJoined: 0,
+    imagesLeft: 0,
+    quoteRefs: new Map(),
+    sentTexts: [],
     occasion: null,
     toolLog: [],
   };
@@ -1409,12 +1550,18 @@ async function runAgentTurnInner(client: AgentClient, options: TurnOptions) {
 
     const freeTier = client.tier === 'free';
     if (freeTier) await ensureMonthlyGrant(client);
-    const [runsLeft, invite, joined] = await Promise.all([
+    const [runsLeft, invite, imagesToday, imagesTodayEveryone] = await Promise.all([
       freeTier ? creditBalance(client.id) : Promise.resolve(null),
       ensureInviteCode(client).catch(() => null),
-      freeTier ? friendsJoined(client.id) : Promise.resolve(0),
+      generatedImagesToday(client.id).catch(() => 0),
+      generatedImagesToday(null).catch(() => 0),
     ]);
-    state.friendsJoined = joined;
+    const dailyImages = freeTier ? FREE_LIMITS.dailyImages : FREE_LIMITS.dailyImagesBlueprint;
+    state.imagesLeft = Math.max(0, Math.min(dailyImages - imagesToday, FREE_LIMITS.dailyImagesGlobal - imagesTodayEveryone));
+    // How they text, from their own typed messages, so the reply can mirror it.
+    const textingStyle = describeTextingStyle(readTextingStyle([...thread, ...pending]
+      .filter(message => message.direction === 'inbound' && message.kind === 'text')
+      .map(message => message.content)));
 
     const clientText = pending.map(message => message.content).join('\n');
     const memory = selectMemoriesForTurn(nodes, clientText);
@@ -1430,19 +1577,27 @@ async function runAgentTurnInner(client: AgentClient, options: TurnOptions) {
       events,
       lookActivity,
       firstConversation,
-      canShowOutfitImages: client.line === 'man' && Boolean(client.report_share_token),
+      hasReportPhotos: client.line === 'man' && Boolean(client.report_share_token),
       tier: client.tier,
       runsLeft,
       invitesLeft: invite?.remaining ?? 0,
-      friendsJoined: joined,
-      photoChecksLeft: checks?.left ?? null,
+      textingStyle,
+      imagesLeftToday: state.imagesLeft,
+      photoThisTurn: Boolean(newestPhoto) && !awaitingCard && !bodyPending,
       blueprintUrl: new URL(client.line === 'man' ? '/man' : '/', process.env.NEXT_PUBLIC_SITE_URL || 'https://www.iconik.pro').toString(),
       occasionLook: occasionLook ? { ...occasionLook, alternatives: occasionAlternatives(occasionLook, passport.profile) } : null,
     });
 
     const pendingIds = new Set(pending.map(message => message.id));
-    let input: ResponseInputItem[] = [...threadToInput(thread, pendingIds), pendingToInput(pending)];
-    const tools = agentTools({ freeTier, outfitImages: client.line === 'man' && Boolean(client.report_share_token) });
+    const photoTurn = Boolean(newestPhoto) && !awaitingCard && !bodyPending;
+    // Their recent messages get labels (m1, m2…) so a bubble can quote-reply to one.
+    const refs = quoteRefs([...thread.filter(message => !pendingIds.has(message.id)), ...pending]);
+    state.quoteRefs = refs.byRef;
+    let input: ResponseInputItem[] = [
+      ...threadToInput(thread, pendingIds, refs.byMessageId),
+      pendingToInput(pending, photoTurn && state.imagesLeft > 0 ? PHOTO_TURN_NOTE : null, refs.byMessageId),
+    ];
+    const tools = agentTools({ freeTier });
     let reply = '';
     // A newer message stops this turn only while the client hasn't seen anything from it.
     const supersededBeforeSending = async () => {
@@ -1466,7 +1621,7 @@ async function runAgentTurnInner(client: AgentClient, options: TurnOptions) {
       const calls = response.output.filter((item): item is ResponseFunctionToolCall => item.type === 'function_call');
       input = [...input, ...(response.output as ResponseInputItem[])];
       if (!calls.length) {
-        reply = response.output_text.trim();
+        reply = replyText(response.output);
         break;
       }
       for (const toolCall of calls) {
@@ -1505,7 +1660,7 @@ async function runAgentTurnInner(client: AgentClient, options: TurnOptions) {
     // The timer stops so no stray "typing…" lands after the last bubble; between
     // bubbles it is shown by hand, for a pause that suits the next bubble's length.
     await typing.stop();
-    await sendPaced(state, bubbles.map(text => ({ text })), { firstImmediately: true });
+    await sendPaced(state, unsentBubbles(bubbles.map(bubble => parseQuoteMarker(bubble, state.quoteRefs)), state.sentTexts), { firstImmediately: true });
 
     await Promise.all(state.recordings);
     await markMessagesAnswered(pending.map(message => message.id), turnId);

@@ -18,13 +18,14 @@ import 'server-only';
 import { loadStylePassport, type AgentClient } from '@/lib/agentClients';
 import { verifyProductWithBrowser, type ProductCheckResult } from '@/lib/agentBrowserVerifier';
 import { dueNudgeStage, EVENT_NUDGE_STAGES, describeEventTiming, indiaDateString } from '@/lib/agentEvents';
-import { SELFIE_REMINDER_MESSAGE, followUpDue, isDaytimeInIndia, upcomingMoments } from '@/lib/agentGrowth';
+import { SELFIE_REMINDER_MESSAGE, followUpDue, followUpPrompt, isDaytimeInIndia, upcomingMoments } from '@/lib/agentGrowth';
 import { generateAgentJson, withAgentUsage } from '@/lib/agentLlm';
 import { lookLinkUrl } from '@/lib/agentLookLinks';
 import { buildProductCaption, type PresentableProduct } from '@/lib/agentPresentation';
 import { renderProductCards } from '@/lib/agentProductCards';
 import { consolidateMemory, loadMemoryNodes } from '@/lib/agentMemoryStore';
-import { searchMemories } from '@/lib/agentMemoryTree';
+import { searchMemories, selectMemoriesForTurn } from '@/lib/agentMemoryTree';
+import { describeTextingStyle, readTextingStyle } from '@/lib/agentTextingStyle';
 import { retailerForUrl } from '@/lib/agentProductSearch';
 import {
   claimAgentJob,
@@ -327,12 +328,14 @@ CLIENT: ${passport.firstName ?? 'the client'}; style notes: ${JSON.stringify(pas
 /** Follow-ups go late in the 24h window, in the daytime (followUpDue decides within this range). */
 const FOLLOW_UP_AFTER_HOURS = 6;
 const FOLLOW_UP_BEFORE_HOURS = 23;
+/** Someone who didn't answer our last follow-up hears from us again after this many days at most. */
 const FOLLOW_UP_EVERY_DAYS = 3;
 
 /**
- * One genuinely useful message to free clients who went quiet ~20 hours ago:
- * a tip in their colours and a question that invites a reply (which reopens the
- * window). At most once every few days, and only once they have a Colour Card.
+ * One message worth replying to, ~20 hours after a free client went quiet —
+ * about their own clothes, plans and what's coming up — while the 24h window is
+ * still open. Someone who replied to the last one can get one every day (that's
+ * the habit); someone who didn't hears from us at most every few days.
  */
 async function runWindowFollowUps() {
   const now = Date.now();
@@ -346,42 +349,48 @@ async function runWindowFollowUps() {
     .limit(200);
   if (error) throw new Error(error.message);
   let sent = 0;
-  const comingUp = upcomingMoments(indiaDateString(), 30);
+  const comingUp = upcomingMoments(indiaDateString(), 21);
   for (const client of (clients ?? []) as AgentClient[]) {
     const profile = client.lite_profile ?? {};
     if (!Array.isArray(profile.best_colours) || !profile.best_colours.length) continue;
     if (!client.last_inbound_at || !followUpDue(new Date(client.last_inbound_at), new Date(now))) continue;
-    const { count } = await supabaseAdmin
+    const { data: lastFollowUp } = await supabaseAdmin
       .from('agent_messages')
-      .select('id', { count: 'exact', head: true })
+      .select('created_at')
       .eq('client_id', client.id)
       .eq('direction', 'outbound')
       .contains('metadata', { type: 'window_followup' })
-      .gte('created_at', new Date(now - FOLLOW_UP_EVERY_DAYS * 86_400_000).toISOString());
-    if (count) continue;
-
-    const { data: recent } = await supabaseAdmin
-      .from('agent_messages')
-      .select('direction, content')
-      .eq('client_id', client.id)
-      .neq('kind', 'reaction')
       .order('created_at', { ascending: false })
-      .limit(8);
-    const thread = [...(recent ?? [])].reverse()
-      .map(message => `${message.direction === 'inbound' ? 'Client' : 'ICONIK'}: ${String(message.content).slice(0, 300)}`)
+      .limit(1)
+      .maybeSingle();
+    const repliedSince = lastFollowUp && client.last_inbound_at > lastFollowUp.created_at;
+    if (lastFollowUp && !repliedSince
+      && now - new Date(lastFollowUp.created_at).getTime() < FOLLOW_UP_EVERY_DAYS * 86_400_000) continue;
+
+    const [{ data: recent }, nodes] = await Promise.all([
+      supabaseAdmin
+        .from('agent_messages')
+        .select('direction, kind, content')
+        .eq('client_id', client.id)
+        .neq('kind', 'reaction')
+        .order('created_at', { ascending: false })
+        .limit(14),
+      loadMemoryNodes(client.id).catch(() => []),
+    ]);
+    const rows = [...(recent ?? [])].reverse() as Array<{ direction: string; kind: string; content: string }>;
+    const thread = rows
+      .map(message => `${message.direction === 'inbound' ? 'Them' : 'You'}: ${message.kind === 'image' ? (message.direction === 'inbound' ? `[photo] ${message.content}` : `[picture: ${message.content}]`) : String(message.content).slice(0, 300)}`)
       .join('\n');
-    const raw = await withAgentUsage({ clientId: client.id, kind: 'checkin' }, () => generateAgentJson(`You are ICONIK, a personal stylist on WhatsApp. The client went quiet yesterday. Write ONE message (max 45 words) that's worth opening:
-- a specific, useful tip in their colours (how to wear their power colour this week, or one swap for something they mentioned owning) — or, if something below is coming up, one idea for it — then
-- one easy thing to send you that takes ten seconds: a photo of tomorrow's outfit, something in their wardrobe they're unsure about, or a screenshot of a look they like.
-Warm and personal, never salesy, never "just checking in", at most one emoji.
-${comingUp.length ? `\nCOMING UP: ${comingUp.join('; ')}` : ''}
-
-Return ONLY JSON: {"message": "…"}
-
-CLIENT: ${client.first_name ?? 'unknown name'}; ${String(profile.season ?? '')} — best colours ${(profile.best_colours as string[]).join(', ')}; avoid ${Array.isArray(profile.avoid_colours) ? (profile.avoid_colours as string[]).join(', ') : 'unknown'}
-RECENT CHAT:
-${thread}`, 'iconik_agent_window_followup'));
-    const message = typeof raw.message === 'string' ? raw.message.trim().slice(0, 500) : '';
+    const style = describeTextingStyle(readTextingStyle(rows.filter(row => row.direction === 'inbound' && row.kind === 'text').map(row => row.content)));
+    const raw = await withAgentUsage({ clientId: client.id, kind: 'checkin' }, () => generateAgentJson(followUpPrompt({
+      firstName: client.first_name,
+      profileLine: `${String(profile.season ?? '')}; best colours ${(profile.best_colours as string[]).join(', ')}${typeof profile.body_shape === 'string' ? `; body shape ${profile.body_shape}` : ''}`,
+      memoryText: selectMemoriesForTurn(nodes, rows.map(row => row.content).join(' ')).text,
+      thread,
+      textingStyle: style,
+      comingUp,
+    }), 'iconik_agent_window_followup'));
+    const message = typeof raw.message === 'string' ? raw.message.trim().slice(0, 400) : '';
     if (!message) continue;
     const delivery = await sendProactiveAgentMessage(client, message, { type: 'window_followup' });
     if (delivery.sent) sent += 1;

@@ -197,11 +197,11 @@ export function lookText(look: BodyLibraryLook) {
 export function bodyOutfitMessage(input: { line: BodyLine; shape: string; bestOutfit: string; look: BodyLibraryLook | null }) {
   const info = BODY_SHAPES[input.line][input.shape];
   const best = input.bestOutfit.trim();
-  const head = `Your best outfit as a ${info.label.toLowerCase()}: ${best}`;
+  const head = `What I'd put you in: ${best}`;
   if (!input.look) return head;
-  const tip = input.look.styling ? `\n\nStyling tip: ${input.look.styling}.` : '';
-  return `${head}\n\nHere's a look from our library that does exactly that:\n${lookBullets(input.look)}\n\nWhy it works for you: ${info.why}${tip}`;
+  const tip = input.look.styling ? ` ${input.look.styling.charAt(0).toUpperCase()}${input.look.styling.slice(1)}.` : '';
+  return `${head}\n\nSomething like this 👇\n${lookBullets(input.look)}\n\n${info.why}${tip}`;
 }
 
 /** The last message of the Body Card flow, the one they answer. */
-export const BODY_LINK_QUESTION = "Want me to find this for you with shopping links? Send your pincode and your usual size, and I'll check stock and delivery to you 📍";
+export const BODY_LINK_QUESTION = "Want me to find these pieces for you? Send your pincode and usual size and I'll check what's in stock and delivers to you 📍";

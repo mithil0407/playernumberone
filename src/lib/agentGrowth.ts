@@ -1,5 +1,5 @@
-// Pure rules for ICONIK's free tier: usage limits, invite codes and links, and
-// what each model call costs. Persistence is in agentCredits.ts / agentInvites.ts.
+// Pure rules for ICONIK's free tier: usage limits, invite codes and links, what
+// each model call costs, and the few messages sent without a model call. Persistence is in agentCredits.ts / agentInvites.ts.
 
 import { randomBytes } from 'node:crypto';
 
@@ -17,12 +17,11 @@ export const FREE_LIMITS = {
   referralBonus: envNumber('ICONIK_AGENT_REFERRAL_BONUS', 2),
   /** Friends each person can invite. */
   invitesPerUser: envNumber('ICONIK_AGENT_INVITES_PER_USER', 5),
-  /** Friends who must join with someone's link to unlock their Face Analysis. */
-  faceUnlockFriends: envNumber('ICONIK_AGENT_FACE_UNLOCK_FRIENDS', 3),
-  /** Photo checks (outfit ratings, "is this my colour?") a free user gets each month after their Colour Card. */
-  monthlyPhotoChecks: envNumber('ICONIK_AGENT_FREE_PHOTO_CHECKS', 5),
-  /** Extra photo checks each month for every friend who joined with their link. */
-  photoChecksPerFriend: envNumber('ICONIK_AGENT_PHOTO_CHECKS_PER_FRIEND', 5),
+  /** Pictures (outfit fixes, try-ons, looks) a free user can get per day. Blueprint clients get dailyImagesBlueprint. */
+  dailyImages: envNumber('ICONIK_AGENT_FREE_DAILY_IMAGES', 3),
+  dailyImagesBlueprint: envNumber('ICONIK_AGENT_BLUEPRINT_DAILY_IMAGES', 10),
+  /** Pictures across everyone per day: the spend safety net. */
+  dailyImagesGlobal: envNumber('ICONIK_AGENT_DAILY_IMAGES_GLOBAL', 400),
   /** Messages a free user can send per day (chat is cheap; this stops abuse). */
   dailyMessages: envNumber('ICONIK_AGENT_FREE_DAILY_MESSAGES', 30),
   /** Shopping runs across all free users per day: the spend safety net. */
@@ -76,12 +75,12 @@ export function inviteLink(code: string, businessNumber: string | null, purpose:
  */
 export function forwardableInvite(input: { code: string; link: string | null; inviterName: string | null; season?: string | null }) {
   const opener = input.season
-    ? `I just found out I'm a ${input.season} 🎨 ICONIK read my colours from one selfie on WhatsApp — and told me exactly what to wear.`
-    : `${input.inviterName ? `${input.inviterName} invited you to ICONIK` : "You're invited to ICONIK"} — a personal stylist on WhatsApp ✨`;
+    ? `Okay I just found out I'm a ${input.season} 🎨 ICONIK worked out my colours from one selfie on WhatsApp, and honestly it's spot on.`
+    : `${input.inviterName ? `${input.inviterName} thinks you'll love this` : 'You have to try this'}: ICONIK, a personal stylist on WhatsApp ✨`;
   return [
     opener,
-    'Send a selfie and get your free colour analysis in a minute, then clothes that actually suit you, checked in your size.',
-    input.link ? `Get yours: ${input.link}` : `Message ICONIK with the code ${input.code}`,
+    "Send a selfie and you get your colours in a minute, then help with outfits, shades and shopping. It's free.",
+    input.link ? `Try it: ${input.link}` : `Message ICONIK with the code ${input.code}`,
   ].join('\n\n');
 }
 
@@ -151,11 +150,26 @@ export function isOpenerMessage(text: string) {
 }
 
 /**
+ * Picks one of a few wordings, the same one for the same seed, so the canned
+ * messages don't read like a form letter to people who compare notes.
+ */
+export function pickVariant<T>(variants: readonly T[], seed: string) {
+  let hash = 0;
+  for (const char of seed) hash = (hash * 31 + char.charCodeAt(0)) >>> 0;
+  return variants[hash % variants.length];
+}
+
+/**
  * The instant first reply on the free colour flow: one bubble, no model call.
  * Most people arrive from a reel late at night, so any decent light is fine.
  */
-export function selfieAskMessage(firstName: string | null) {
-  return `Hey${firstName ? ` ${firstName}` : ''} 👋 I'm ICONIK, your stylist on WhatsApp. Send me a close selfie — face to the camera, no sunglasses or filter. Daylight is best, but any good light works right now. Your Colour Card will be ready in under a minute 🎨 (your photo stays private 🔒)`;
+export function selfieAskMessage(firstName: string | null, seed = firstName ?? '') {
+  const name = firstName ? ` ${firstName}` : '';
+  return pickVariant([
+    `Hey${name}! 👋 Send me a selfie, just your face, no filter or sunglasses. Near a window is perfect but any decent light works. I'll have your colours in a minute 🎨`,
+    `Hii${name} 😊 Okay, let's find your colours! Send me a close selfie with no filter. Daylight's best, but don't stress about it.`,
+    `Hey${name}! So glad you're here 🎨 Send me a clear selfie (no filter, no sunglasses) and I'll tell you exactly which colours are yours. It stays between us 🔒`,
+  ], seed);
 }
 
 /** A body shape request that only opens the conversation (the campaign link's text): no model call needed. */
@@ -169,26 +183,33 @@ export function isBodyOpenerMessage(text: string) {
 
 /**
  * The instant first reply on the Body Card flow: one bubble, no model call. A
- * full-length photo is the whole ask, so it says exactly what makes it readable.
+ * full-length photo is the whole ask, so it says what makes it readable.
  */
 export function bodyPhotoAskMessage(firstName: string | null, firstConversation: boolean) {
-  const ask = "send me one full-length photo — head to feet in the frame, standing straight, in something fairly fitted (a mirror photo works). Daylight is best, but any good light is fine. Your Body Card will be ready in under a minute 👗 (your photo stays private 🔒)";
+  const name = firstName ? ` ${firstName}` : '';
+  const ask = "send me one full-length photo, head to toe, standing straight, in something that isn't too loose. A mirror selfie is perfect 👗";
   return firstConversation
-    ? `Hey${firstName ? ` ${firstName}` : ''} 👋 I'm ICONIK, your stylist on WhatsApp. For your Body Card, ${ask}`
-    : `Let's do it${firstName ? `, ${firstName}` : ''} ✨ For your Body Card, ${ask}`;
+    ? `Hey${name}! 👋 Love this. For your body shape, ${ask} (it stays between us 🔒)`
+    : `Let's do it${firstName ? `, ${firstName}` : ''}! ${ask.charAt(0).toUpperCase()}${ask.slice(1)}`;
 }
 
 /** Sent the moment the body photo lands. */
-export const BODY_PHOTO_RECEIVED_MESSAGE = 'Got it 📸 Reading your proportions now — your Body Card is coming up in a few seconds.';
+export function bodyPhotoReceivedMessage(seed: string) {
+  return pickVariant([
+    'Got it! Looking at your proportions now 👀',
+    'Perfect, give me a minute with this ✨',
+    'Ooh okay, one sec 👀',
+  ], seed);
+}
 
 /** When the photo can't be read, the ask that says what to change. */
-export const BETTER_BODY_PHOTO_ASK = "For your Body Card I need one full-length photo — head to feet in the frame, standing straight, in something fitted (not a coat or a very loose fit) — so I can read your proportions 📸 Send one and it'll be ready in under a minute.";
+export const BETTER_BODY_PHOTO_ASK = "I can't quite read your shape from this one. Could you send a full-length photo, head to toe, standing straight, in something a bit fitted (not a coat or anything very loose)? 📸";
 
 /** One nudge for people who asked for their Body Card but never sent a photo. */
-export const BODY_PHOTO_REMINDER_MESSAGE = "Your Body Card is still waiting for you 👗 Just send one full-length photo — head to feet, standing straight, in something fitted — and I'll have it ready in under a minute.";
+export const BODY_PHOTO_REMINDER_MESSAGE = "Hey, still want your body shape done? One full-length mirror photo is all I need and I'll do it right away 👗";
 
 /** One nudge for people who got the selfie ask but never sent a photo. */
-export const SELFIE_REMINDER_MESSAGE = "Your Colour Card is still waiting for you 🎨 Just send one close selfie — face to the camera, no sunglasses — and I'll have it ready in under a minute.";
+export const SELFIE_REMINDER_MESSAGE = "Hey! Still want to know your colours? 🎨 Just send a quick selfie and I'll do it right away.";
 
 /** Nudges go out during the day in India, never at 2am. */
 export function isDaytimeInIndia(now = new Date()) {
@@ -217,82 +238,45 @@ export function followUpDue(lastInboundAt: Date, now = new Date()) {
   return hour >= 20.5 && 23 - hoursSince < hoursUntilNextMorning + 0.5;
 }
 
-// ── The invite unlock: friends who join unlock the Face Analysis ──
+// ── Invites: a perk for both people, never a wall ──
 
-export function faceAnalysisUnlocked(friendsJoined: number, limits = FREE_LIMITS) {
-  return friendsJoined >= limits.faceUnlockFriends;
-}
-
-/** Sent right before their forwardable invite: what each friend unlocks and how far they are. */
-export function inviteUnlockIntro(friendsJoined: number, limits = FREE_LIMITS) {
-  const needed = limits.faceUnlockFriends;
-  const perFriend = `Every friend who gets their free Colour Card with your link gives you ${limits.photoChecksPerFriend} more photo checks a month, and you both get +${limits.referralBonus} product hunts.`;
-  const face = faceAnalysisUnlocked(friendsJoined, limits)
-    ? ''
-    : ` ${needed} friends also unlock your Face Analysis${friendsJoined > 0 ? ` (${friendsJoined}/${needed} so far)` : ''}.`;
-  return `${perFriend}${face}\n\nForward the message below 👇 the link is for them, not you.`;
-}
-
-// ── Photo checks: the free allowance, and sharing when it runs out ──
-
-/** Photo checks a free client gets this month, given the friends who joined with their link. */
-export function photoCheckAllowance(friendsJoined: number, limits = FREE_LIMITS) {
-  return limits.monthlyPhotoChecks + friendsJoined * limits.photoChecksPerFriend;
-}
-
-/** Checks count from their Colour Card, and start again each calendar month in India. */
-export function photoChecksCountFrom(colourCardAt: string | null | undefined, now = new Date()) {
-  const monthStart = new Date(`${indiaMonthKey(now)}-01T00:00:00+05:30`);
-  const cardAt = colourCardAt ? new Date(colourCardAt) : null;
-  return cardAt && Number.isFinite(cardAt.getTime()) && cardAt > monthStart ? cardAt : monthStart;
-}
-
-/**
- * When their free photo checks are used up: thank them, then the one moment we
- * ask them to share — after they've had the value, not before.
- */
-export function outOfPhotoChecksMessage(allowance: number, canInvite: boolean, friendsJoined: number, limits = FREE_LIMITS) {
-  const used = `That's your ${allowance} free photo checks for this month used up 🙌 I loved doing them.`;
-  if (!canInvite) return `${used} They reset on the 1st — and questions in chat are always free, so ask me anything meanwhile.`;
-  return `${used}\n\nWant more right now? ${inviteUnlockIntro(friendsJoined, limits)}`;
-}
-
-/** If they send another photo soon after the share message, a short reminder instead of the invite again. */
-export function stillOutOfPhotoChecksMessage(limits = FREE_LIMITS) {
-  return `You're out of free photo checks for now — each friend who joins with your link adds ${limits.photoChecksPerFriend} more (the invite is just above 👆). Questions in chat are always free.`;
+/** Sent right before their forwardable invite. */
+export function inviteIntro(limits = FREE_LIMITS) {
+  return `Here's one you can forward 👇 (the link's for them, not you). Every friend who joins gets you both +${limits.referralBonus} shopping hunts.`;
 }
 
 /** Told to the inviter when a friend joins with their link. */
 export function friendJoinedMessage(friendsJoined: number, limits = FREE_LIMITS) {
-  const needed = limits.faceUnlockFriends;
-  if (friendsJoined === needed) {
-    return `🔓 ${needed} friends joined with your link — your Face Analysis is unlocked! Send me a front-facing selfie with your hair off your face and I'll read your face shape and what suits it.`;
-  }
-  if (friendsJoined < needed) {
-    const left = needed - friendsJoined;
-    return `🎉 A friend just joined with your link — +${limits.photoChecksPerFriend} photo checks for you, and you both get +${limits.referralBonus} product hunts. ${friendsJoined}/${needed}: ${left} more and your Face Analysis unlocks.`;
-  }
-  return `🎉 Another friend joined with your link — +${limits.photoChecksPerFriend} photo checks for you, and you both get +${limits.referralBonus} product hunts.`;
+  return friendsJoined <= 1
+    ? `Your friend just joined with your link 🥳 You both got ${limits.referralBonus} extra shopping hunts.`
+    : `Another friend joined with your link 🥳 That's ${friendsJoined} now, and another +${limits.referralBonus} shopping hunts for you both.`;
 }
 
 /** When someone taps their own invite link and sends us their own code. */
-export function ownInviteReply(friendsJoined: number, limits = FREE_LIMITS) {
-  const needed = limits.faceUnlockFriends;
-  const progress = faceAnalysisUnlocked(friendsJoined, limits)
-    ? 'Your Face Analysis is already unlocked — ask me for it anytime.'
-    : `${friendsJoined}/${needed} friends have joined so far; at ${needed} your Face Analysis unlocks 🔓`;
-  return `That's your own invite link 😄 It's for your friends — forward the invite message to them and they'll get their free Colour Card. ${progress}`;
+export function ownInviteReply() {
+  return "Haha that's your own link 😄 It's for your friends. Forward it and they'll get their colours too.";
 }
 
 /** Sent the moment the selfie lands, so the wait for the Colour Card feels like work happening. */
-export const SELFIE_RECEIVED_MESSAGE = 'Got it 📸 Reading your undertone and contrast now — your Colour Card is coming up in a few seconds.';
+export function selfieReceivedMessage(seed: string) {
+  return pickVariant([
+    'Got it! Looking at your colouring now 👀',
+    'Ooh okay, give me a minute with this ✨',
+    'Perfect, one sec while I read your colours 🎨',
+  ], seed);
+}
 
 /**
  * Dates that change what people want to wear. Fixed dates repeat yearly;
  * lunar festivals need their date each year (check before adding one).
  */
 const MOMENTS: Array<{ name: string; date: string; note: string }> = [
+  { name: 'Navratri', date: '2026-10-11', note: 'nine nights of garba and dandiya, a colour for each day; chaniya cholis, kurtas' },
+  { name: 'Dussehra', date: '2026-10-20', note: 'festive ethnic, family visits' },
+  { name: 'Karwa Chauth', date: '2026-10-29', note: 'married women dress up for the evening puja; sarees, suits, red and festive colours' },
+  { name: 'Dhanteras', date: '2026-11-06', note: 'jewellery and shopping day before Diwali' },
   { name: 'Diwali', date: '2026-11-08', note: 'festive ethnic looks, family photos, office parties' },
+  { name: 'Bhai Dooj', date: '2026-11-11', note: 'family lunch, easy festive' },
   { name: 'Christmas', date: '--12-25', note: 'parties, red-and-green done tastefully' },
   { name: "New Year's Eve", date: '--12-31', note: 'party looks' },
   { name: "Valentine's Day", date: '--02-14', note: 'date-night looks' },
@@ -320,4 +304,36 @@ export function upcomingMoments(today: string, withinDays = 45) {
   });
   if (month >= 10 || month <= 2) lines.push('Wedding season (Nov–Feb, planning starts in October): sangeet, mehendi, reception and guest looks');
   return lines;
+}
+
+/**
+ * The next-day message to someone who went quiet: written like their stylist
+ * texting them, about THEIR clothes and plans, so it's worth replying to (a
+ * reply reopens the 24h window — we have no other way to reach them).
+ */
+export function followUpPrompt(input: {
+  firstName: string | null;
+  profileLine: string;
+  memoryText: string;
+  thread: string;
+  textingStyle: string;
+  comingUp: string[];
+}) {
+  return `You are ICONIK, ${input.firstName ?? 'this person'}'s personal stylist on WhatsApp. You chatted yesterday and they went quiet. Write ONE message (max 35 words) that a real stylist friend would send the next day — something they'll actually want to reply to.
+
+Make it about THEM, built from the chat and memory below:
+- follow up on something real: a piece they showed you, an occasion they mentioned, a shade they were deciding on, an outfit you fixed ("did you try the espresso trousers with that tie-neck top?", "what did you end up wearing to the puja?");
+- or a timely idea for something coming up that fits what you know ("Navratri starts Sunday, want me to plan 9 looks from what you've already shown me?").
+Ask for one easy thing in return (a photo, a yes, a choice).
+
+Rules: sound like a person texting, mirror how they text (below), no greeting like "Hi there" or "Dear", no "just checking in", never generic ("send me a photo of tomorrow's outfit" on its own is not allowed), no season names, at most one emoji, never salesy.
+HOW THEY TEXT: ${input.textingStyle}
+${input.comingUp.length ? `COMING UP: ${input.comingUp.join('; ')}\n` : ''}
+Return ONLY JSON: {"message": "…"}
+
+THEM: ${input.profileLine}
+MEMORY:
+${input.memoryText || 'Nothing saved yet.'}
+RECENT CHAT (oldest first):
+${input.thread}`;
 }

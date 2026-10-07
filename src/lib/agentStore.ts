@@ -71,6 +71,28 @@ export async function uploadAgentMedia(clientId: string, bytes: Buffer, contentT
   return { path, signedUrl: data?.signedUrl ?? null };
 }
 
+/** Downloads a stored image (a client photo) so it can be used as a reference. */
+export async function downloadAgentMedia(path: string) {
+  const { data, error } = await supabaseAdmin.storage.from(MEDIA_BUCKET).download(path);
+  if (error || !data) throw new Error(`Could not download ${path}: ${error?.message ?? 'no data'}`);
+  return { bytes: Buffer.from(await data.arrayBuffer()), mimeType: data.type || 'image/jpeg' };
+}
+
+/** Their photos, newest first (only ones we kept). */
+export async function recentClientPhotos(clientId: string, limit = 5) {
+  const { data, error } = await supabaseAdmin
+    .from('agent_messages')
+    .select('id, storage_path, whatsapp_message_id, created_at, content')
+    .eq('client_id', clientId)
+    .eq('direction', 'inbound')
+    .eq('kind', 'image')
+    .not('storage_path', 'is', null)
+    .order('created_at', { ascending: false })
+    .limit(limit);
+  if (error) throw new Error(`Could not load photos: ${error.message}`);
+  return (data ?? []) as Array<{ id: string; storage_path: string; whatsapp_message_id: string | null; created_at: string; content: string }>;
+}
+
 function fail(action: string, error: { message: string } | null): never {
   throw new Error(`Could not ${action}: ${error?.message ?? 'unknown error'}`);
 }
@@ -86,6 +108,8 @@ export async function insertInboundMessage(input: {
   imageUrl?: string | null;
   storagePath?: string | null;
   metadata?: Record<string, unknown>;
+  /** Off for an emoji reaction: we don't count it as reopening the 24h window. */
+  touchesWindow?: boolean;
 }) {
   const { data, error } = await supabaseAdmin
     .from('agent_messages')
@@ -105,6 +129,7 @@ export async function insertInboundMessage(input: {
     if (error.code === '23505') return null;
     fail('save the inbound message', error);
   }
+  if (input.touchesWindow === false) return data as AgentMessageRow;
   await supabaseAdmin.from('agent_clients')
     .update({ last_inbound_at: data.created_at, updated_at: new Date().toISOString() })
     .eq('id', input.clientId);
@@ -140,7 +165,8 @@ export async function loadThread(clientId: string, limit = 30) {
     .from('agent_messages')
     .select('*')
     .eq('client_id', clientId)
-    .neq('kind', 'reaction')
+    // Our own instant reactions are noise; theirs (❤️ on a suggestion) are feedback.
+    .or('kind.neq.reaction,direction.eq.inbound')
     .order('created_at', { ascending: false })
     .limit(limit);
   if (error) fail('load the conversation', error);
@@ -154,6 +180,7 @@ export async function latestInboundMessage(clientId: string) {
     .select('id, created_at, whatsapp_message_id, metadata')
     .eq('client_id', clientId)
     .eq('direction', 'inbound')
+    .neq('kind', 'reaction')
     .order('created_at', { ascending: false })
     .limit(10);
   if (error) fail('load the latest message', error);
@@ -169,6 +196,7 @@ export async function unansweredInboundMessages(clientId: string, withinHours = 
     .select('*')
     .eq('client_id', clientId)
     .eq('direction', 'inbound')
+    .neq('kind', 'reaction')
     .is('answered_at', null)
     .gte('created_at', since)
     .order('created_at', { ascending: true });
@@ -495,4 +523,26 @@ export async function requeueAgentJob(job: AgentJobRow, payload: Record<string, 
   await supabaseAdmin.from('agent_jobs').update({
     status: 'queued', payload, locked_at: null, attempts: Math.max(0, job.attempts - 1), updated_at: new Date().toISOString(),
   }).eq('id', job.id);
+}
+
+/** The text of one of our messages, by its WhatsApp id (what a reaction was to). */
+export async function outboundMessageByWhatsappId(whatsappMessageId: string) {
+  const { data } = await supabaseAdmin
+    .from('agent_messages')
+    .select('id, content, kind, metadata')
+    .eq('whatsapp_message_id', whatsappMessageId)
+    .eq('direction', 'outbound')
+    .maybeSingle();
+  return data as Pick<AgentMessageRow, 'id' | 'content' | 'kind' | 'metadata'> | null;
+}
+
+/** Any message in the conversation by its WhatsApp id (what a swipe-reply quoted). */
+export async function messageByWhatsappId(clientId: string, whatsappMessageId: string) {
+  const { data } = await supabaseAdmin
+    .from('agent_messages')
+    .select('id, direction, kind, content')
+    .eq('client_id', clientId)
+    .eq('whatsapp_message_id', whatsappMessageId)
+    .maybeSingle();
+  return data as Pick<AgentMessageRow, 'id' | 'direction' | 'kind' | 'content'> | null;
 }

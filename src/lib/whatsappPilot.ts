@@ -16,6 +16,10 @@ export interface WhatsappInboundMessage {
   mimeType?: string;
   /** The id behind a tapped button (a template quick reply's payload or a reply button's id). */
   payload?: string;
+  /** An emoji reaction to one of our messages (type stays 'unsupported' for callers that don't read it). An empty emoji removes it. */
+  reaction?: { messageId: string; emoji: string };
+  /** The message they swiped to reply to (ours or their own), when they quoted one. */
+  replyTo?: string;
 }
 
 export interface WhatsappDeliveryStatus {
@@ -80,6 +84,13 @@ function parseInboundMessage(raw: AnyRecord): WhatsappInboundMessage | null {
 
   const rawType = cleanString(raw.type);
   const timestamp = cleanString(raw.timestamp) || undefined;
+  const parsed = parseInboundBody(raw, id, from, rawType, timestamp);
+  // A swipe-reply carries the quoted message's id in context (forwarded messages carry other context fields).
+  const replyTo = cleanString(asRecord(raw.context).id);
+  return parsed && replyTo && rawType !== 'reaction' ? { ...parsed, replyTo } : parsed;
+}
+
+function parseInboundBody(raw: AnyRecord, id: string, from: string, rawType: string, timestamp: string | undefined): WhatsappInboundMessage | null {
 
   if (rawType === 'text') {
     const text = cleanString(asRecord(raw.text).body);
@@ -126,12 +137,15 @@ function parseInboundMessage(raw: AnyRecord): WhatsappInboundMessage | null {
     return { id, from, timestamp, type: 'interactive', text, payload: cleanString(button.payload) || undefined };
   }
 
+  const reaction = rawType === 'reaction' ? asRecord(raw.reaction) : null;
+  const reactedTo = reaction ? cleanString(reaction.message_id) : '';
   return {
     id,
     from,
     timestamp,
     type: 'unsupported',
     text: rawType ? `[Unsupported WhatsApp message: ${rawType}]` : '[Unsupported WhatsApp message]',
+    ...(reactedTo ? { reaction: { messageId: reactedTo, emoji: cleanString(reaction?.emoji) } } : {}),
   };
 }
 

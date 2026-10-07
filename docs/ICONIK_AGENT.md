@@ -27,7 +27,8 @@ page** whose items are verified on the real store pages by a browser agent.
    client: a turn waits for the previous one and for photos still downloading.
 5. **Turn**: OpenAI model with tools — `send_message` (interim "on it" texts),
    `react`, `recall_memory`, `remember`, `save_event`, `update_event`,
-   `search_products`, `present_products`, and (men) `show_outfit_image`.
+   `search_products`, `present_products`, `create_image` (pictures, see below)
+   and `send_shade_card`.
    A newer message stops a turn before it sends anything (checked before every
    tool that messages the client or spends money), and the newer turn answers
    everything. A turn that already sent something (Colour Card, heads-up, cards
@@ -113,6 +114,92 @@ portrait (root)          3-4 sentences: who they are, what never to forget
   browser with residential IPs. Vercel's datacenter IPs may be blocked more often
   than a home connection — check the first production runs.
 
+## Voice: a stylist, not a form
+
+The October 2026 review of the first 67 users found replies that read like a
+report ("8/10 — … My one change: …", bullet lists, the season name in every
+message), refusals ("I can't create an image", "Face Analysis is locked") and
+generic nudges. The prompt (`agentPrompt.ts`) now:
+
+- **Mirrors how each person texts** (`agentTextingStyle.ts`): length, casing,
+  emoji, Hinglish/Devanagari, read from their own typed messages, turned into a
+  per-turn instruction ("very short messages… one or two bubbles under 15
+  words").
+- Bans the stock formats and phrases, gives scores only when asked, and carries
+  before/after examples from real chats. Older stiff replies in the history are
+  not to be copied.
+- **Never turns down help**: shades by brand, hair, face shape, glasses, a
+  partner's or child's look. The only "can't" is orders/payment.
+- Acknowledgement reactions are selective: 👀 on photos and real requests, 👋 on
+  a hello, warmer ones for moments; a plain answer ("pink", "yes") gets none.
+- The client's own emoji reactions to our messages are stored (kind
+  `reaction`, not reopening the window) and shown in the thread as
+  "[reacted ❤️ to: …]" — feedback, never a reply.
+- Canned lines (selfie ask, "looking now", reminders, invites) are written
+  like a person and rotate between variants (`pickVariant`).
+- **Double-texting**: one thought per bubble — a quick reaction, then the
+  substance, sometimes an afterthought ("oh and gold hoops with it"). Pauses
+  are about the time it takes to type the bubble, with an extra beat before an
+  afterthought (`typingDelayMs`). A line the model already double-texted with
+  `send_message` is never repeated in its reply (`unsentBubbles`).
+- **Swipe-replies, both ways** (`agentWhatsapp.ts`):
+  - When they reply to a specific message, the webhook's `context.id` is kept
+    (`metadata.reply_to`) with what they quoted (`metadata.quoted`: ours or
+    theirs, text or picture), and the model sees "[replying to your picture:
+    …]" before their text, so "this one" / "yes" is understood.
+  - Their recent messages are labelled (m1, m2…) for the model only. A bubble
+    starting with "[reply m2]" (or `send_message` with `reply_to: "m2"`) is sent
+    as a WhatsApp reply quoting that message; stray markers and labels are
+    stripped. When several messages arrive together, a note beside them asks
+    for a quote per answer.
+  - "Your outfit, fixed" pictures are sent as a reply to the photo they came from.
+
+### Pictures (`create_image`, `agentImages.ts`, `agentImagePrompts.ts`)
+
+`gemini-nano-banana-2.1` at 1K (`ICONIK_AGENT_IMAGE_MODEL`,
+`ICONIK_AGENT_IMAGE_SIZE`), about 20 seconds:
+- `outfit_fix` — their latest photo with the stylist's change applied (offered
+  after an outfit check whenever the fix is a visible swap);
+- `look_on_them` — them in a full recommended look (Blueprint men: from the
+  report's full-length photo and headshot; everyone else: their latest photo);
+- `hairstyles` — four hairstyles on their face, 1:1;
+- `idea` — a flat lay without a person.
+Every prompt keeps the person exactly as they are (face, skin tone, body —
+never slimmed or lightened). Limits: 3 a day free
+(`ICONIK_AGENT_FREE_DAILY_IMAGES`), 10 a day Blueprint
+(`ICONIK_AGENT_BLUEPRINT_DAILY_IMAGES`), 400 a day across everyone
+(`ICONIK_AGENT_DAILY_IMAGES_GLOBAL`), counted from outbound messages with
+`metadata.type = 'generated_image'`. Usage is logged as kind `image` with an
+estimated cost per picture (`ICONIK_AGENT_IMAGE_COST_USD`, default $0.06 —
+set the real price).
+
+### Shade cards (`send_shade_card`)
+
+Exact swatches with names and notes (lipstick/foundation shades by brand, a
+palette for someone, colours for a piece), rendered from hex codes in the same
+headless Chrome as the Colour Card (`shadeCardHtml`, `renderShadeCard`).
+
+### Colour season from readings (`agentColourSeason.ts`)
+
+Left to itself the model called 39 of the first 42 people "Deep Autumn". It
+now reports four readings — undertone, depth, contrast, chroma — judged against
+South Asian skin (contrast comes from the skin, since nearly everyone has dark
+hair), and the season is mapped in code (`seasonFor`). A card whose season
+doesn't match its readings is sent back to the model with the right season.
+
+### Replaying real chats (`scripts/agent-replay.ts`)
+
+Reruns real conversations through the current prompt and tools and prints what
+they sent, what we replied then, and what the agent would reply now. Nothing is
+sent, generated, searched or written. `--selfies N` replays first selfies to
+show the season spread.
+
+```
+set -a; source .env.local; set +a
+node --experimental-transform-types --no-warnings --import ./scripts/node-test-hooks.mjs \
+  scripts/agent-replay.ts --top 6 --per-client 2 --selfies 15 > replay.md
+```
+
 ## Proactive messages — no templates
 
 ICONIK does not use Meta message templates. `sendProactiveAgentMessage`
@@ -120,6 +207,14 @@ ICONIK does not use Meta message templates. `sendProactiveAgentMessage`
 window. Event check-ins (T-21, T-10, T-2, day after) that fall outside the
 window are raised in the client's next conversation ("CHECK-IN DUE" in the
 prompt) and then marked done.
+
+The **next-day follow-up** (`runWindowFollowUps`, prompt in `followUpPrompt`)
+goes ~19-23h after a free client's last message, in Indian daytime, while the
+window is open. It is written from their chat, memory and texting style about
+their own pieces and plans ("did you try the espresso trousers with that tie-neck
+top?") or a festival coming up, never a generic "send me tomorrow's outfit".
+Someone who replied to the last one can get one every day; someone who didn't
+hears from us at most every 3 days.
 
 ## Setup
 
@@ -143,7 +238,8 @@ prompt) and then marked done.
 ## Tests
 
 `npm run test:agent` — memory scoring/selection/operations, reminder stages,
-bubbles, reactions, the 24h window, Look URL safety and tracking, and the prompt.
+bubbles, reactions, the 24h window, Look URL safety and tracking, the prompt,
+texting-style mirroring, season mapping, picture prompts and shade cards.
 
 ## Free tier (invite-only), referrals and analytics
 
@@ -160,7 +256,7 @@ free agent knows only what it sees and is told.
   1. The opener (the campaign link's text, an invite code, a hello) gets the
      selfie ask instantly, with no model call (`isOpenerMessage`,
      `selfieAskMessage`). A real question still goes to the model.
-  2. The selfie gets 👀 and "Got it 📸 reading your undertone…" straight away;
+  2. The selfie gets 👀 and a short "looking now" line straight away;
      the card renderer's Chrome starts warming up (`prewarmCardBrowser`) while
      the model reads the photo. The name isn't waited for.
   3. One model call: `send_colour_card` carries the analysis plus the wow and
@@ -168,10 +264,10 @@ free agent knows only what it sees and is told.
      question, paced like typing, without a second model call. The default
      next step is a wardrobe check (cheap, and it starts the wardrobe memory)
      rather than a paid product hunt.
-- **Everyday help** (prompt): wardrobe check, outfit check, screenshot to shop,
-  group colours (family/friends for an occasion, each invited to their own
-  card), beauty and accessories in their palette; most replies end with one easy
-  next step. "Forget …" archives memories (`forget`). Upcoming moments (Diwali,
+- **Everyday help** (prompt): outfit check (with "want to see it?" →
+  `create_image`), wardrobe check, shades by brand (`send_shade_card`), free
+  face analysis, screenshot to shop, group and family looks; most replies leave
+  a natural reason to come back. "Forget …" archives memories (`forget`). Upcoming moments (Diwali,
   wedding season, yearly dates — `upcomingMoments` in `agentGrowth.ts`; add each
   year's lunar festival dates there) feed the prompt and the next-day follow-up.
 - **Growth before revenue**: the free agent mentions the Blueprint only when
@@ -179,13 +275,9 @@ free agent knows only what it sees and is told.
 - **Limits** (`agentGrowth.ts`, env-overridable): 3 shopping runs a month
   (carry over to 10), +2 for both people per referral, 30 messages a day, 150
   free runs a day across everyone. Chat is free; a run is charged once per turn,
-  on the first product search. Blueprint clients are unlimited.
-- **Invite unlock**: 3 friends joining with someone's link unlocks their **Face
-  Analysis** (face shape → necklines, earrings, hair, glasses, makeup placement;
-  `ICONIK_AGENT_FACE_UNLOCK_FRIENDS`). The invite intro after the Colour Card says
-  so with progress ("1/3 so far"); the inviter hears about each join
-  (`friendJoinedMessage`); tapping your own link gets an explanation, not a
-  model call. While locked, the agent gives one quick tip and offers the invite.
+  on the first product search. Blueprint clients are unlimited. Photo checks
+  are unlimited (the monthly cap was removed: outfit checks are the habit), and
+  the **Face Analysis is free** — no invite wall. Pictures: 3 a day (above).
 - **Selfie reminder**: people who got the selfie ask but never sent a photo get
   one reminder 2h+ later, between 9am and 9pm IST, inside the 24h window
   (worker, `runSelfieReminders`). Outfit photos where the face can be read make
@@ -193,11 +285,13 @@ free agent knows only what it sees and is told.
   clear ask for a close selfie, and a code-level safety net adds it if the model
   forgets. A failed card render is retried once; the error is kept on the text
   fallback's metadata (`image_failed`).
-- **Invites**: everyone gets a personal code (5 friends); `share_invite` sends a
-  ready-to-forward message with a wa.me link that opens ICONIK with the code typed
+- **Invites**: everyone gets a personal code (5 friends); each friend who joins
+  gives both people +2 shopping hunts (`friendJoinedMessage` tells the inviter).
+  The agent offers it only when it's natural (they mention someone who'd want
+  their colours). `share_invite` sends a ready-to-forward message with a wa.me link that opens ICONIK with the code typed
   in. Friends who open a shared Look page (`?f=1`) can vote on the options and
   see an invite to get their own stylist.
-- **Costs**: every OpenAI call is logged to `agent_usage_events` with its cost,
+- **Costs**: every OpenAI call (and every picture) is logged to `agent_usage_events` with its cost,
   attributed to the client and kind of work (`withAgentUsage`).
 - **Dashboard**: `/agent/admin` (admin login): users, activity, product hunts,
   click-outs, AI spend and cost per user/hunt, free-user funnel, weekly
@@ -224,7 +318,7 @@ one photo, one card, then the next step — which here is a real outfit and a sh
    one full-length photo, head to feet, standing, something fairly fitted; "your photo stays private".
    Brand-new people join through the same open entry as the colour analysis.
 2. **Photo**: 👀 and "Got it 📸 Reading your proportions now…" at once. While `bodyCardPending`, the
-   photo is a body photo: no Colour Card is made from it, it isn't a photo check, and the one-bubble rule applies.
+   photo is a body photo: no Colour Card is made from it, and the one-bubble rule applies.
 3. **Card** (`send_body_card`, `agentBodyCard.ts`): the shape, proportion chips, a silhouette, what to
    highlight, silhouettes, necklines/collars, what to go easy on, fabrics and a one-line formula. Womenswear:
    hourglass, pear, inverted triangle, rectangle, apple. Menswear: trapezoid, rectangle, inverted triangle,
