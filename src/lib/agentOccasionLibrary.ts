@@ -31,6 +31,8 @@ type AnyRecord = Record<string, unknown>;
 
 const LIBRARY_FILES: Record<string, string> = {
   diwali: 'src/lib/ICONIK_Mens_Library_Diwali.md',
+  // Everyday, office and evening looks: what the Body Card flow picks from for men.
+  board: 'src/lib/ICONIK_Mens_Library_Board.md',
 };
 
 function field(block: string, label: string) {

@@ -41,8 +41,9 @@ const nextConfig: NextConfig = {
     '/api/man-edit/**': ['./src/lib/ICONIK_Mens_Library_Board.md', './src/lib/ICONIK_Mens_Library_100.md'],
     '/api/payment/**': ['./src/lib/ICONIK_Mens_Library_Board.md', './src/lib/ICONIK_Mens_Library_100.md'],
     // Occasion looks (Diwali…) are picked from this library when a client asks to see his.
-    '/api/whatsapp/**': ['./src/lib/ICONIK_Mens_Library_Diwali.md'],
-    '/api/agent/**': ['./src/lib/ICONIK_Mens_Library_Diwali.md'],
+    // The Body Card flow picks an everyday look from the women's library or the men's board library.
+    '/api/whatsapp/**': ['./src/lib/ICONIK_Mens_Library_Diwali.md', './src/lib/ICONIK_Mens_Library_Board.md', './outfitlibrarywomen.md'],
+    '/api/agent/**': ['./src/lib/ICONIK_Mens_Library_Diwali.md', './src/lib/ICONIK_Mens_Library_Board.md', './outfitlibrarywomen.md'],
   },
   async headers() {
     return [

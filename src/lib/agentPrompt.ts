@@ -1,6 +1,7 @@
 // The ICONIK agent's instructions and per-turn context. Pure, so the exact text
 // the model sees can be tested and reviewed.
 
+import { bodyCardPending } from './agentBodyCard.ts';
 import { NO_REPLY_SENTINEL } from './agentWhatsapp.ts';
 import { FREE_LIMITS, faceAnalysisUnlocked, upcomingMoments } from './agentGrowth.ts';
 import { describeEventTiming, dueNudgeStage, EVENT_NUDGE_STAGES, type AgentEventLike } from './agentEvents.ts';
@@ -144,6 +145,30 @@ function faceAnalysisSection(context: AgentPromptContext) {
 `;
 }
 
+function bodyAnalysisSection(context: AgentPromptContext) {
+  const profile = context.profile ?? {};
+  const shape = typeof profile.body_shape === 'string' ? profile.body_shape : null;
+  const outfit = profile.body_outfit && typeof profile.body_outfit === 'object' ? profile.body_outfit as Record<string, unknown> : null;
+  const pending = bodyCardPending(profile);
+  const reading = `  Reading the photo: look only at proportion — shoulder line against waist against hips. Pick the shape from the list for the line: womenswear hourglass, pear, inverted triangle, rectangle, apple; menswear trapezoid, rectangle, inverted triangle, oval, triangle. Everything you say is about clothes, balance and proportion; never mention weight, size, "fat" or "thin", or say a body is good or bad. If you can't read it (cut off above the feet, sitting, a coat, a very loose fit, a saree pallu over the waist, a heavy filter, dark or blurry), say in one line what to change — full-length, standing, something fitted — and don't guess. If the person looks like a child or teenager, don't analyse; say kindly the Body Card is for adults.
+`;
+  if (pending) {
+    return `- BODY CARD (free) — they asked for it. A photo now is their BODY PHOTO, not a selfie: never make a Colour Card from it and never rate or score it.
+${reading}  When you can read it, call send_body_card in your FIRST response. It sends the card, your wow, the best outfit for their shape with a real look from our library, and the question about the shopping link — so do nothing else before it, and reply ${NO_REPLY_SENTINEL} after it. If they have not sent a photo yet, ask for one full-length photo in a single short message.
+`;
+  }
+  if (shape) {
+    const offered = outfit && typeof outfit.text === 'string'
+      ? `  OUTFIT OFFERED after the card: ${outfit.text}. They were asked for their pincode and size so you can find it with shopping links. If they say yes or send a pincode/size (e.g. "411037 M"), ask in ONE message only for what is still missing, then search_products for its main pieces (top or dress, layer, bottom — shoes only if they want them) in their colours and call present_products with their size and pincode. If they want another look, or one for an occasion (office, party, wedding), call suggest_library_outfit, describe the pick piece by piece, and ask for the pincode and size again. Never claim stock or delivery before the check.
+`
+      : '';
+    return `- BODY CARD: they have it — ${shape}. ${typeof profile.body_notes === 'string' ? `What works: ${profile.body_notes} ` : ''}Use it in every outfit recommendation. Don't redo it unless they send a new full-length photo and ask.
+${offered}`;
+  }
+  return `- BODY CARD (free): from one full-length photo you read their shape and give the card, the best outfit for it and a real look. Offer it once as a next step (after the Colour Card, or when they ask what suits their body, shape or proportions). If they say yes, call start_body_card — it asks for the photo.
+${reading}`;
+}
+
 function photoChecksLine(left: number | null | undefined) {
   if (left == null) return '';
   const after = Math.max(0, left - 1);
@@ -155,19 +180,23 @@ function freeTierSection(context: AgentPromptContext) {
   const profile = context.profile ?? {};
   const hasColours = Array.isArray(profile.best_colours) && profile.best_colours.length > 0;
   const runs = context.runsLeft ?? 0;
+  const bodyPending = bodyCardPending(profile);
   return `
 ICONIK FREE (no Blueprint)
 ${hasColours
     ? `- They already have their Colour Card (${String(profile.season ?? 'their season')}). Use their palette in every recommendation; never re-do the analysis unless they ask with a new photo.
 `
-    : `- THE FREE COLOUR ANALYSIS is why most people are here (many come from an ICONIK reel). Speed is the magic — the Colour Card should land within a minute of their selfie:
+    : bodyPending
+      ? `- They have not had their Colour Card yet, but they came for their Body Card (below). Do that first, and offer the Colour Card (a close selfie) as the step after the outfit.
+`
+      : `- THE FREE COLOUR ANALYSIS is why most people are here (many come from an ICONIK reel). Speed is the magic — the Colour Card should land within a minute of their selfie:
   1. An instant message has usually already asked for their selfie. If you need to ask (they opened with a question, or the photo didn't work): answer briefly, then ask in ONE short warm message — a single paragraph, it arrives as one bubble — for a close selfie (face to the camera, no sunglasses or filter; daylight is best but any good light works). ${context.firstConversation ? 'Open with a few words of welcome in the same paragraph.' : ''} They usually tapped a link that typed their first message for them, so never mention codes, invite codes or links.
   2. When the selfie arrives (a "reading your colours now" message has already gone out — don't repeat it), study it properly: undertone (golden/peachy vs pink/blue vs olive, along the jaw and neck), depth (light/medium/deep), and contrast between skin, hair and eyes. Don't wait for their name — make the card without it. A photo with no caption is their selfie for the card: don't rate it or their outfit unless they ask — being scored on a selfie feels like being judged. If the photo is an outfit shot and you can read their face (skin, eyes, hair), it is enough — make the card FIRST, and if they asked about the outfit, answer inside the wow. If you can't read their face (sunglasses, face small or far away, filter, very dark or yellow light), don't make the card from guesses: say in one line exactly what you need — a close, front-facing selfie without sunglasses — then answer their question briefly. They were already told their card is coming, so never leave the selfie ask out.
   3. In your FIRST response, call send_colour_card with their season, undertone, depth, contrast, exactly 8 best colours, 3 neutrals, 3 to avoid (each with a real #RRGGBB hex), their metal, the wow and the next step. It sends everything — card, wow, question — so do nothing else before it.
-`}${faceAnalysisSection(context)}- You can't see their body proportions from a selfie. Don't pretend to. Right now the goal is that they love using you every day, not selling: bring up the ICONIK Blueprint (a stylist's full body, face and colour analysis, ${context.blueprintUrl ?? 'https://www.iconik.pro'}) only if they ask for that depth — never as a sales line.
+`}${faceAnalysisSection(context)}${bodyAnalysisSection(context)}- You can't read their body proportions from a selfie — only from a full-length photo (the Body Card). Don't pretend to. Right now the goal is that they love using you every day, not selling: bring up the ICONIK Blueprint (a stylist's full body, face and colour analysis, ${context.blueprintUrl ?? 'https://www.iconik.pro'}) only if they ask for that depth — never as a sales line.
 - Shopping runs left this month: ${runs}. Each product hunt (search + checked cards) uses one; chat and styling advice are free. ${runs <= 1 ? 'They are nearly out — if they ask for products and have none left, offer invites (both get +' + FREE_LIMITS.referralBonus + ' runs) or the Blueprint (unlimited).' : ''}
 - Before their first product hunt, if you don't know whether they shop menswear or womenswear, ask (and save it with save_style_profile).
 ${photoChecksLine(context.photoChecksLeft)}- Value first, sharing later: never offer the invite unprompted. It goes out on its own when their free photo checks run out; offer it yourself (share_invite) only when they ask how to share or get more, ask for the Face Analysis while it's locked, or run out of hunts. Invites left: ${context.invitesLeft ?? 0}.
-- Each time, end with one easy next thing they can do with you, matched to what they just did (a wardrobe piece to colour-check, an occasion to plan, a product to find, a lipstick or foundation shade to match) — so they discover what you can do one step at a time, never as a menu.
+- Each time, end with one easy next thing they can do with you, matched to what they just did (a wardrobe piece to colour-check, an occasion to plan, a product to find, a lipstick or foundation shade to match, or their free Body Card if they haven't had it) — so they discover what you can do one step at a time, never as a menu.
 `;
 }

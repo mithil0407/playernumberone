@@ -20,6 +20,7 @@ function Feedback({ error, message }: { error?: string; message?: string }) {
 
 export function CampaignForm({ onCreated }: { onCreated: () => void }) {
   const [name, setName] = useState('');
+  const [purpose, setPurpose] = useState<'colour_analysis' | 'body_analysis'>('colour_analysis');
   const [busy, setBusy] = useState(false);
   const [created, setCreated] = useState<Invite | null>(null);
   const [copied, setCopied] = useState(false);
@@ -29,7 +30,7 @@ export function CampaignForm({ onCreated }: { onCreated: () => void }) {
     if (!name.trim()) return;
     setBusy(true); setError('');
     try {
-      const body = await post<{ campaign: Invite }>('/api/agent/admin/invites', { campaign: name.trim() });
+      const body = await post<{ campaign: Invite }>('/api/agent/admin/invites', { campaign: name.trim(), purpose });
       setCreated(body.campaign); setCopied(false); onCreated();
     } catch (error) { setError(error instanceof Error ? error.message : 'Could not create the campaign.'); }
     finally { setBusy(false); }
@@ -43,7 +44,12 @@ export function CampaignForm({ onCreated }: { onCreated: () => void }) {
     <form onSubmit={submit} className="aa-form">
       <label className="ma-label" htmlFor="agent-campaign-name">Campaign name</label>
       <input id="agent-campaign-name" className="ma-input" value={name} onChange={event => setName(event.target.value)} placeholder="e.g. Power colours · October reel" maxLength={80} required />
-      <p className="ma-faint mt-3 text-[12px] leading-relaxed">One link opens WhatsApp with a request for free colour analysis. Everyone using it can join directly.</p>
+      <label className="ma-label mt-4 block" htmlFor="agent-campaign-purpose">What it asks for</label>
+      <select id="agent-campaign-purpose" className="ma-input" value={purpose} onChange={event => setPurpose(event.target.value as 'colour_analysis' | 'body_analysis')}>
+        <option value="colour_analysis">Free colour analysis (selfie → Colour Card)</option>
+        <option value="body_analysis">Free body shape analysis (full-length photo → Body Card)</option>
+      </select>
+      <p className="ma-faint mt-3 text-[12px] leading-relaxed">One link opens WhatsApp with a request for the free {purpose === 'body_analysis' ? 'body shape' : 'colour'} analysis. Everyone using it can join directly.</p>
       <Button type="submit" variant="primary" loading={busy} disabled={!name.trim()} icon={<Plus size={15} />} className="mt-5">Create campaign link</Button>
       {created && <div className="aa-created mt-5"><div className="flex items-center gap-2 mb-2"><span className="aa-success-dot"><Check size={11} /></span><span className="text-[12px] font-semibold">Your campaign link is ready</span></div><p className="aa-created__link">{created.link ?? created.code}</p><Button size="sm" icon={copied ? <Check size={13} /> : <Copy size={13} />} onClick={() => void copy()} className="mt-3">{copied ? 'Copied' : created.link ? 'Copy link' : 'Copy code'}</Button></div>}
       <Feedback error={error} />

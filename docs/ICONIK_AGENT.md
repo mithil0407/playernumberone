@@ -210,6 +210,49 @@ free agent knows only what it sees and is told.
    links work, then `ICONIK_AGENT_FREE_ENABLED=1`. Redeploy.
 3. Create the first wave of codes on `/agent/admin` and send them out.
 
+## Body Card: the free body shape analysis
+
+The second free deliverable after the Colour Card, built the same way: an instant ask,
+one photo, one card, then the next step — which here is a real outfit and a shopping link.
+
+**What people send** (any of these opens it; the words "body shape / type / analysis / card" are enough):
+- the campaign link's text: `Hi ICONIK! I want my free body shape analysis 👗 ICK-XXXXXX`
+- or simply `body shape analysis`, `my body type?`
+
+**Flow**
+1. **Ask** (`handleAgentInbound` marks `body_ask_at`; `isBodyOpenerMessage` → `bodyPhotoAskMessage`, no model call):
+   one full-length photo, head to feet, standing, something fairly fitted; "your photo stays private".
+   Brand-new people join through the same open entry as the colour analysis.
+2. **Photo**: 👀 and "Got it 📸 Reading your proportions now…" at once. While `bodyCardPending`, the
+   photo is a body photo: no Colour Card is made from it, it isn't a photo check, and the one-bubble rule applies.
+3. **Card** (`send_body_card`, `agentBodyCard.ts`): the shape, proportion chips, a silhouette, what to
+   highlight, silhouettes, necklines/collars, what to go easy on, fabrics and a one-line formula. Womenswear:
+   hourglass, pear, inverted triangle, rectangle, apple. Menswear: trapezoid, rectangle, inverted triangle,
+   oval, triangle. Proportion only — never weight or size; an unreadable photo (cropped, sitting, coat, very
+   loose, filter) gets a clear ask for a better one, and apparent minors are not analysed.
+4. **Straight after the card, no second model call**: the wow → **the best outfit for their shape** (written
+   by the model) with **one look from the library** (`agentBodyOutfit.ts`) → "Want me to find this for you with
+   shopping links? Send your pincode and your usual size 📍".
+5. **Library pick**: women from `outfitlibrarywomen.md` (373 looks), men from the board library
+   (`ICONIK_Mens_Library_Board.md`). The libraries aren't tagged by shape, so looks are ranked by what the
+   garments are (wrap, A-line, structured shoulder, wide-leg…) against what flatters the shape, with their
+   colours when known (a colour to avoid near the face rules a look out). Default pool: everyday and work looks.
+   Both files are bundled for the webhook and agent routes in `next.config.ts`.
+6. **Pincode + size** → the normal shopping path (`search_products` for the look's main pieces →
+   `present_products` → checked cards). "Another one" or an occasion calls `suggest_library_outfit`
+   (3 options, never repeating one already shown). The offered look lives in `lite_profile.body_outfit`.
+7. After that, the agent offers the Colour Card (selfie) if they haven't had it.
+
+People who asked but never sent a photo get one reminder (`runSelfieReminders`, type `body_photo_reminder`),
+2h+ later, 9am–9pm IST, inside the 24h window. `start_body_card` lets the agent open the flow when someone says
+yes to its offer ("want your Body Card too?").
+
+**Campaign link**: `/agent/admin` → Create a campaign link → *What it asks for* → body shape analysis.
+The dashboard's "colour cards" column counts Colour Cards only, so a body campaign shows its joins and
+product hunts but not its Body Cards yet.
+
+Blueprint clients already have a body analysis in their report; the Body Card is for the free tier.
+
 ## Occasion looks (Diwali 2026): bringing existing Man clients in
 
 Every man with a delivered Blueprint is told a Diwali look is ready for him.

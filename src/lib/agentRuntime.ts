@@ -31,11 +31,16 @@ import { dueNudgeStage, indiaDateString, isValidEventDate } from '@/lib/agentEve
 import { dispatchAgentWorker } from '@/lib/agentJobs';
 import { AGENT_TEXT_MODEL, agentOpenAI, withAgentUsage } from '@/lib/agentLlm';
 import {
+  BETTER_BODY_PHOTO_ASK,
+  BODY_PHOTO_RECEIVED_MESSAGE,
   FREE_LIMITS,
   SELFIE_RECEIVED_MESSAGE,
+  asksForBodyShapeAnalysis,
   asksForColourAnalysis,
+  bodyPhotoAskMessage,
   forwardableInvite,
   inviteUnlockIntro,
+  isBodyOpenerMessage,
   isOpenerMessage,
   isOverDailyMessageCap,
   outOfPhotoChecksMessage,
@@ -46,8 +51,10 @@ import {
   selfieAskMessage,
   stillOutOfPhotoChecksMessage,
 } from '@/lib/agentGrowth';
+import { BODY_SHAPES, bodyCardPending, bodyProfileFields, bodyShapeKey, parseBodyAnalysis } from '@/lib/agentBodyCard';
+import { BODY_LINK_QUESTION, bodyOutfitMessage, lookBullets, lookText, pickBodyLooks } from '@/lib/agentBodyOutfit';
 import { parseColourAnalysis } from '@/lib/agentColourCard';
-import { prewarmCardBrowser, renderColourCard } from '@/lib/agentProductCards';
+import { prewarmCardBrowser, renderBodyCard, renderColourCard } from '@/lib/agentProductCards';
 import {
   chargeShoppingRun,
   creditBalance,
@@ -236,6 +243,20 @@ function awaitingColourCard(client: AgentClient) {
     && !(Array.isArray(profile.best_colours) && profile.best_colours.length);
 }
 
+/**
+ * They asked for their Body Card: from here until the card goes out, a photo is
+ * their body photo. Only the first request counts; a finished card isn't reopened
+ * by someone mentioning it.
+ */
+async function markBodyShapeAsk(client: AgentClient): Promise<AgentClient> {
+  const profile = { ...(client.lite_profile ?? {}), body_ask_at: new Date().toISOString() };
+  const { error } = await supabaseAdmin.from('agent_clients')
+    .update({ lite_profile: profile, updated_at: new Date().toISOString() })
+    .eq('id', client.id);
+  if (error) console.warn('[agent] could not note the body card request:', error.message);
+  return { ...client, lite_profile: profile };
+}
+
 // Messages that usually need no reply beyond the emoji ("thanks!"): no "typing…"
 // for these, or it would hang on screen with nothing coming.
 const LIKELY_NO_REPLY = /^(?:ok(?:ay)?|k+|thanks+|thank you|thx|ty|tysm|cool|great|nice|done|sure|👍|🙏|❤️|😊|🙂)[\s!.]*$/i;
@@ -260,7 +281,7 @@ export async function handleAgentInbound(message: WhatsappInboundMessage) {
   let client = await resolveAgentClientByPhone(message.from, { allowPreviewReports: access?.previewReports ?? false });
   if (!client && free) {
     let code = parseInviteCode(message.text);
-    if (!code && colourAnalysisOpen() && asksForColourAnalysis(message.text)) code = await ensureDirectCampaignCode();
+    if (!code && colourAnalysisOpen() && (asksForColourAnalysis(message.text) || asksForBodyShapeAnalysis(message.text))) code = await ensureDirectCampaignCode();
     const waitlist = code || freeSignupsOpen() ? null : await joinWaitlist(message.from, message.text);
     const usable = code ?? waitlist?.admittedCode ?? null;
     if (!usable && !freeSignupsOpen()) {
@@ -331,6 +352,12 @@ export async function handleAgentInbound(message: WhatsappInboundMessage) {
     }
   }
 
+  // Asking for the Body Card (the campaign link, or in their own words) opens it.
+  if (client.tier === 'free' && !client.lite_profile?.body_card_at && !bodyCardPending(client.lite_profile)
+    && asksForBodyShapeAnalysis(message.text)) {
+    client = await markBodyShapeAsk(client);
+  }
+
   // People send thoughts in pieces: the pause starts now, while we acknowledge
   // and the photo downloads. If a newer message arrives, its invocation answers all.
   const pause = sleep(DEBOUNCE_MS);
@@ -340,8 +367,18 @@ export async function handleAgentInbound(message: WhatsappInboundMessage) {
     // The reaction first: sending anything hides "typing…", so it goes up after.
     const ack = pickAckReaction({ text: message.text, hasImage: hasPhoto });
     const reacted = await sendWhatsAppReaction(servedClient.phone, message.id, ack).catch(() => null);
+    // The body photo for the Body Card: say straight away that the reading has started.
+    if (hasPhoto && servedClient.tier === 'free' && bodyCardPending(servedClient.lite_profile)) {
+      if (!await sentRecently(servedClient.id, 'body_photo_received', 3 * 60_000)) {
+        const sent = await sendWhatsAppTextMessage(servedClient.phone, BODY_PHOTO_RECEIVED_MESSAGE).catch(() => null);
+        if (sent?.success) {
+          await recordOutboundMessage({
+            clientId: servedClient.id, content: BODY_PHOTO_RECEIVED_MESSAGE, whatsappMessageId: sent.messageId ?? null, metadata: { type: 'body_photo_received' },
+          });
+        }
+      }
     // The selfie for the Colour Card: say straight away that the reading has started.
-    if (hasPhoto && awaitingColourCard(servedClient) && !await sentRecently(servedClient.id, 'selfie_received', 3 * 60_000)) {
+    } else if (hasPhoto && awaitingColourCard(servedClient) && !await sentRecently(servedClient.id, 'selfie_received', 3 * 60_000)) {
       const sent = await sendWhatsAppTextMessage(servedClient.phone, SELFIE_RECEIVED_MESSAGE).catch(() => null);
       if (sent?.success) {
         await recordOutboundMessage({
@@ -608,6 +645,50 @@ export function agentTools(options: { freeTier: boolean; outfitImages: boolean }
         },
       },
     });
+    const textList = (description: string) => ({ type: 'array', description, items: { type: 'string' } });
+    tools.push({
+      type: 'function',
+      name: 'send_body_card',
+      description: "Deliver the free body shape analysis from a clear full-length photo: saves their body profile and sends their ICONIK Body Card image, then your wow, then the best outfit for their shape with a real look from our library, then asks if they want shopping links (pincode and size). Call it in your FIRST response once you have read a full-length photo — before anything else. Everything is about proportion, clothes and balance; never about weight or size.",
+      strict: true,
+      parameters: {
+        type: 'object', additionalProperties: false,
+        required: ['first_name', 'line', 'shape', 'proportions', 'summary', 'highlight', 'silhouettes', 'necklines', 'go_easy', 'fabrics', 'formula', 'caption', 'wow', 'best_outfit'],
+        properties: {
+          first_name: { type: ['string', 'null'] },
+          line: { type: 'string', enum: ['woman', 'man'], description: 'Which shape list you used: womenswear (woman) or menswear (man).' },
+          shape: { type: 'string', enum: ['hourglass', 'pear', 'inverted triangle', 'rectangle', 'apple', 'trapezoid', 'oval', 'triangle'], description: 'Women: hourglass, pear, inverted triangle, rectangle, apple. Men: trapezoid, rectangle, inverted triangle, oval, triangle.' },
+          proportions: textList('2 or 3 short proportion facts, e.g. "Shoulders a touch narrower than hips", "Defined waist". Max 34 characters each.'),
+          summary: { type: 'string', description: 'One warm sentence on what makes their shape work (max 110 characters), about balance and proportion only.' },
+          highlight: textList('3 things to dress to highlight, each a short clothing-focused line (max 56 characters).'),
+          silhouettes: textList('3 or 4 silhouettes that flatter, e.g. "A-line skirts", "Wrap tops", "Straight-leg trousers" (max 32 characters each).'),
+          necklines: textList('3 or 4 necklines and collars that suit, e.g. "Boat neck", "Spread collar" (max 28 characters each).'),
+          go_easy: textList('2 things to go easy on, as clothes (e.g. "Hip-level pockets and patches"), never about their body (max 48 characters each).'),
+          fabrics: textList('2 or 3 fabrics that sit well (max 28 characters each).'),
+          formula: { type: 'string', description: 'Their one-line outfit formula, e.g. "Structure on top, a clean A-line below, one belt to cinch" (max 100 characters).' },
+          caption: { type: 'string', description: 'Short caption under the card, e.g. "Riya, you\'re an Hourglass 👗".' },
+          wow: { type: 'string', description: 'Sent right after the card (max 60 words): what you saw in how they stand and dress (the shoulder, waist and hip balance, never weight) and one surprising, specific insight — a cut they likely wear that works against them, and the swap that works for them.' },
+          best_outfit: { type: 'string', description: 'The best outfit for their shape in one or two sentences (max 40 words): top, bottom, layer and one finishing touch, in their colours if you know them. It is shown right before the library look, so describe the idea, not specific products.' },
+        },
+      },
+    });
+    tools.push({
+      type: 'function',
+      name: 'start_body_card',
+      description: "They agreed to the free Body Card: marks it as open and asks for their full-length photo. Use it when they say yes to your offer, or ask for it in words that did not start it already. Not needed if the BODY CARD section says they already asked.",
+      strict: true,
+      parameters: { type: 'object', additionalProperties: false, required: [], properties: {} },
+    });
+    tools.push({
+      type: 'function',
+      name: 'suggest_library_outfit',
+      description: "Pick other looks from ICONIK's outfit library that suit their body shape (and colours), e.g. when they want another one or one for an occasion. Returns 3 options; present the first as bullets and ask for their pincode and size so you can find it. Needs their Body Card first.",
+      strict: true,
+      parameters: {
+        type: 'object', additionalProperties: false, required: ['occasion'],
+        properties: { occasion: { type: ['string', 'null'], description: 'office, party, casual, wedding… or null for an everyday look.' } },
+      },
+    });
     tools.push({
       type: 'function',
       name: 'save_style_profile',
@@ -698,7 +779,7 @@ async function sendPaced(
 
 /** Tools that message the client or spend money: a superseded turn must not start them. */
 const SIDE_EFFECT_TOOLS = new Set([
-  'send_message', 'react', 'search_products', 'present_products', 'share_invite', 'send_colour_card', 'show_outfit_image', 'forget',
+  'send_message', 'react', 'search_products', 'present_products', 'share_invite', 'send_colour_card', 'send_body_card', 'start_body_card', 'show_outfit_image', 'forget',
 ]);
 
 class TurnSuperseded extends Error {}
@@ -960,6 +1041,108 @@ async function runTool(state: TurnState, call: ResponseFunctionToolCall): Promis
       await state.typing.stop();
       return `Colour Card, your wow message and your next-step question are all sent, and the profile is saved. Your wow already answered any question about their photo, so reply exactly ${NO_REPLY_SENTINEL} — unless a message asked about something unrelated that still needs an answer.`;
     }
+    case 'start_body_card': {
+      if (state.client.tier !== 'free') return 'This client has a Blueprint; their report already covers their body analysis.';
+      if (bodyCardPending(state.client.lite_profile)) return `The Body Card is already open. Ask for their full-length photo in your reply, or reply exactly ${NO_REPLY_SENTINEL} if you just asked.`;
+      state.client = await markBodyShapeAsk(state.client);
+      const ask = bodyPhotoAskMessage(state.client.first_name, false);
+      await sendText(state, ask, { type: 'body_photo_ask' });
+      state.interimSent += 1;
+      state.typing.bump();
+      return `The photo ask is sent and the Body Card is open. Reply exactly ${NO_REPLY_SENTINEL}.`;
+    }
+    case 'send_body_card': {
+      if (state.client.tier !== 'free') return 'This client has a Blueprint; their report already covers their body analysis.';
+      const previous = state.client.lite_profile ?? {};
+      // One card per photo: a retried or overlapping turn must not send a second one.
+      if (!state.newestPhotoWhatsappId) return 'There is no photo in this conversation yet — ask for one full-length photo instead.';
+      if (previous.body_card_at && previous.body_card_for === state.newestPhotoWhatsappId) {
+        return "Their Body Card for this photo was already sent — don't send another. Carry on from it; a new analysis needs a new full-length photo.";
+      }
+      const firstName = nullableString(args.first_name, 40) ?? state.client.first_name;
+      const analysis = parseBodyAnalysis(args, firstName);
+      if (!analysis) return 'The body analysis is incomplete: give the line, a shape from the list for it, a summary, at least 2 highlights, at least 2 silhouettes and a formula.';
+      const bestOutfit = String(args.best_outfit ?? '').replace(/\s+/g, ' ').trim().slice(0, 400);
+      const look = pickBodyLooks({ line: analysis.line, shape: analysis.shape, profile: previous, seed: state.client.id })[0] ?? null;
+      const profile: Record<string, unknown> = {
+        ...previous,
+        ...bodyProfileFields(analysis),
+        body_outfit: { id: look?.id ?? null, text: look ? lookText(look) : bestOutfit, shown_ids: look ? [look.id] : [] },
+        updated_at: new Date().toISOString(),
+      };
+      const line = state.client.line ?? analysis.line;
+      await supabaseAdmin.from('agent_clients')
+        .update({ lite_profile: profile, first_name: firstName, line, updated_at: new Date().toISOString() })
+        .eq('id', state.client.id);
+      state.client = { ...state.client, lite_profile: profile, first_name: firstName, line };
+
+      const dateLabel = new Intl.DateTimeFormat('en-IN', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Asia/Kolkata' }).format(new Date());
+      let renderError: string | null = null;
+      const renderOnce = () => renderBodyCard(state.client.id, analysis, dateLabel)
+        .then(result => {
+          if (!result?.signedUrl) renderError = result ? 'no signed URL for the stored card' : 'card element missing';
+          return result;
+        })
+        .catch(error => {
+          renderError = error instanceof Error ? error.message : String(error);
+          console.error('[agent] body card render failed:', error);
+          return null;
+        });
+      let rendered = await renderOnce();
+      if (!rendered?.signedUrl) rendered = await renderOnce();
+      const shapeLabel = BODY_SHAPES[analysis.line][analysis.shape].label;
+      const caption = String(args.caption ?? '').trim().slice(0, 200) || `${firstName ? `${firstName}, your` : 'Your'} shape is ${shapeLabel} 👗`;
+      const sent = rendered?.signedUrl
+        ? await sendWhatsAppImageInOrder(state.client.phone, rendered.signedUrl, caption, rendered.bytes)
+        : null;
+      const cardSentAt = Date.now();
+      if (rendered?.signedUrl && sent?.success) {
+        state.committed = true;
+        await recordOutboundMessage({
+          clientId: state.client.id, kind: 'image', content: caption, imageUrl: rendered.signedUrl, whatsappMessageId: sent.messageId ?? null,
+          turnId: state.turnId, metadata: { type: 'body_card', shape: shapeLabel },
+        });
+      } else {
+        if (sent) console.error('[agent] body card send failed:', sent.error);
+        await sendText(state, `${caption}\n\nWhat to wear: ${analysis.formula}`, {
+          type: 'body_card', shape: shapeLabel, image_failed: sent ? `send: ${sent.error}` : `render: ${renderError}`,
+        });
+      }
+      // Marked only once it has gone out, so a failed send can be retried.
+      const delivered = { ...profile, body_card_at: new Date().toISOString(), body_card_for: state.newestPhotoWhatsappId };
+      await supabaseAdmin.from('agent_clients').update({ lite_profile: delivered }).eq('id', state.client.id);
+      state.client = { ...state.client, lite_profile: delivered };
+
+      // Straight after the card, without another model call: the wow, the best
+      // outfit for their shape with a real library look, then the question last.
+      const wow = String(args.wow ?? '').trim().slice(0, 600);
+      const followUps: Array<{ text: string; metadata?: Record<string, unknown> }> = [];
+      if (wow) followUps.push({ text: wow, metadata: { type: 'body_wow' } });
+      followUps.push({
+        text: bodyOutfitMessage({ line: analysis.line, shape: analysis.shape, bestOutfit: bestOutfit || analysis.formula, look }),
+        metadata: { type: 'body_outfit', look_id: look?.id ?? null },
+      });
+      followUps.push({ text: BODY_LINK_QUESTION, metadata: { type: 'body_link_question' } });
+      await sendPaced(state, followUps, { previousSendStartedAt: cardSentAt });
+      state.interimSent += 1 + followUps.length;
+      await state.typing.stop();
+      return `Body Card, your wow, the best outfit with a library look, and the question about shopping links are all sent, and the profile is saved. Reply exactly ${NO_REPLY_SENTINEL} — unless a message asked about something unrelated that still needs an answer.`;
+    }
+    case 'suggest_library_outfit': {
+      const profile = state.client.lite_profile ?? {};
+      const line = state.client.line;
+      const shape = line ? bodyShapeKey(typeof profile.body_shape === 'string' ? profile.body_shape : '', line) : null;
+      if (!line || !shape) return 'They have no Body Card yet — offer it first (start_body_card), or suggest an outfit from what you know.';
+      const outfit = profile.body_outfit && typeof profile.body_outfit === 'object' ? profile.body_outfit as Record<string, unknown> : {};
+      const shown = Array.isArray(outfit.shown_ids) ? outfit.shown_ids.map(String) : [];
+      const looks = pickBodyLooks({ line, shape, profile, occasion: nullableString(args.occasion, 60), exclude: shown, count: 3, seed: `${state.client.id}:${shown.length}` });
+      if (!looks.length) return 'No more looks in the library for this — describe one yourself from their Body Card and colours.';
+      const updated = { ...profile, body_outfit: { id: looks[0].id, text: lookText(looks[0]), shown_ids: [...shown, ...looks.map(look => look.id)].slice(-30) }, updated_at: new Date().toISOString() };
+      await supabaseAdmin.from('agent_clients').update({ lite_profile: updated }).eq('id', state.client.id);
+      state.client = { ...state.client, lite_profile: updated };
+      const info = BODY_SHAPES[line][shape];
+      return `Library looks for their ${info.label} shape (option 1 is saved as the one on offer — present it, or option 2 or 3 if their colours or occasion fit better):\n${looks.map((look, index) => `Option ${index + 1} (${look.setting}):\n${lookBullets(look)}${look.styling ? `\nStyling: ${look.styling}` : ''}`).join('\n\n')}\nWhy it works for them: ${info.why}\nPresent the pieces as short bullets, add the why in one line, then ask for their pincode and size so you can find it.`;
+    }
     case 'save_style_profile': {
       if (state.client.tier !== 'free') return 'This client has a Blueprint; their report is the profile.';
       const profile: Record<string, unknown> = { ...(state.client.lite_profile ?? {}) };
@@ -1127,7 +1310,28 @@ async function runAgentTurnInner(client: AgentClient, options: TurnOptions) {
   const latestPending = pending[pending.length - 1];
   const latestWhatsappId = latestPending.whatsapp_message_id ?? '';
   const newestPhoto = [...pending].reverse().find(message => message.kind === 'image' && message.image_url);
-  const awaitingCard = awaitingColourCard(client);
+  const bodyPending = client.tier === 'free' && bodyCardPending(client.lite_profile);
+  // While the Body Card is open, a photo is theirs for that, not a selfie for the Colour Card.
+  const awaitingCard = awaitingColourCard(client) && !bodyPending;
+
+  // The Body Card request that only opens the chat (the campaign link's text):
+  // ask for the full-length photo at once, without a model call.
+  if (bodyPending && !newestPhoto && pending.every(message => message.kind === 'text' && isBodyOpenerMessage(message.content))
+    && !await sentRecently(client.id, 'body_photo_ask', 3 * 60_000)) {
+    const turnId = await startTurn(client.id, pending.map(message => message.id), 'instant');
+    await options.typing?.stop();
+    const ask = bodyPhotoAskMessage(client.first_name, await isFirstConversation(client.id));
+    const sent = await sendWhatsAppTextMessage(client.phone, ask);
+    if (sent.success) {
+      await recordOutboundMessage({ clientId: client.id, content: ask, whatsappMessageId: sent.messageId ?? null, turnId, metadata: { type: 'body_photo_ask' } });
+    }
+    await markMessagesAnswered(pending.map(message => message.id), turnId);
+    await finishTurn(turnId, sent.success ? 'completed' : 'failed', {
+      toolCalls: [{ name: 'instant_body_photo_ask', ok: sent.success, summary: sent.error ?? 'sent' }],
+      error: sent.success ? null : sent.error ?? 'send failed',
+    });
+    return sent.success ? 'replied' as const : 'failed' as const;
+  }
 
   // The first message on the free colour flow (the campaign link's text, an
   // invite code, a hello): ask for the selfie at once, without a model call.
@@ -1148,12 +1352,12 @@ async function runAgentTurnInner(client: AgentClient, options: TurnOptions) {
     return sent.success ? 'replied' as const : 'failed' as const;
   }
   // The selfie is in: start the card renderer now, while the model reads it.
-  if (awaitingCard && newestPhoto) prewarmCardBrowser();
+  if ((awaitingCard || bodyPending) && newestPhoto) prewarmCardBrowser();
 
   // A photo after the Colour Card uses one of this month's free photo checks.
   // When they're used up, the share message goes instead of a model call: the
   // one moment we ask them to invite friends, after they've had the value.
-  const checks = client.tier === 'free' && !awaitingCard && newestPhoto
+  const checks = client.tier === 'free' && !awaitingCard && !bodyPending && newestPhoto
     ? await photoCheckStatus(client).catch(error => {
       console.warn('[agent] photo check count failed:', error);
       return null;
@@ -1283,13 +1487,16 @@ async function runAgentTurnInner(client: AgentClient, options: TurnOptions) {
     // (A turn that already sent something finishes; the newer turn answers what came after.)
     if (await supersededBeforeSending()) throw new TurnSuperseded();
 
-    // Until the Colour Card, every reply is one ask: one bubble.
+    // Until the Colour Card (or the Body Card, when that was asked for), every reply is one ask: one bubble.
+    const bodyStillPending = bodyCardPending(state.client.lite_profile);
     const bubbles = reply.trim() === NO_REPLY_SENTINEL
       ? []
-      : splitIntoBubbles(reply, awaitingColourCard(state.client) ? 1 : MAX_REPLY_BUBBLES);
+      : splitIntoBubbles(reply, (bodyPending ? bodyStillPending : awaitingColourCard(state.client) && !bodyStillPending) ? 1 : MAX_REPLY_BUBBLES);
     // They sent a photo and were told their card is coming. If the model couldn't
     // make one and didn't ask for a better photo, ask for it rather than go quiet.
-    if (awaitingColourCard(state.client) && newestPhoto && !/selfie|photo|pic|picture/i.test(bubbles.join(' '))) {
+    if (bodyPending) {
+      if (bodyStillPending && newestPhoto && !/photo|pic|picture|full[- ]length/i.test(bubbles.join(' '))) bubbles.push(BETTER_BODY_PHOTO_ASK);
+    } else if (awaitingColourCard(state.client) && !bodyStillPending && newestPhoto && !/selfie|photo|pic|picture/i.test(bubbles.join(' '))) {
       bubbles.push(BETTER_SELFIE_ASK);
     }
     if (!bubbles.length && reply.trim() !== NO_REPLY_SENTINEL && !state.interimSent) {

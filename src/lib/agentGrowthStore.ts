@@ -162,11 +162,11 @@ export async function createTeamInvites(count: number, maxUses: number, note: st
 
 /**
  * A campaign link (a reel, an ad): one code many people use, which always gets
- * them in, asks for the free colour analysis, and is attributed on the dashboard.
+ * them in, asks for the free colour analysis (or body shape analysis), and is attributed on the dashboard.
  */
-export async function createCampaign(name: string, maxUses: number) {
+export async function createCampaign(name: string, maxUses: number, purpose: 'colour_analysis' | 'body_analysis' = 'colour_analysis') {
   const code = await insertInvite(null, Math.max(1, maxUses), `${CAMPAIGN_NOTE_PREFIX} ${name.trim().slice(0, 80)}`);
-  return { code, link: inviteLink(code, await getWhatsAppBusinessNumber(), 'colour_analysis') };
+  return { code, link: inviteLink(code, await getWhatsAppBusinessNumber(), purpose) };
 }
 
 /** The always-open campaign for people who message the number asking for a colour analysis. */
