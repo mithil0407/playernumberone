@@ -158,7 +158,7 @@ export default function ConsultationWorkspacePage({ params, adminMode = false }:
   if (!detail) return <div className="rounded-2xl px-4 py-3 text-[14px]" style={{ color: 'var(--ma-red)', background: 'var(--ma-red-soft)' }}>{error || 'Consultation not found'}</div>;
   const consultation = detail.source.consultation;
   const delivered = latest?.status === 'delivered' || latest?.status === 'sent';
-  const alreadyDelivered = consultation.status === 'delivered' || Boolean(consultation.delivered_at);
+  const alreadyDelivered = consultation.status === 'delivered';
   const canRecordManual = !alreadyDelivered && !detail.reports.some(report => report.status === 'generating');
 
   return (

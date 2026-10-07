@@ -24,7 +24,10 @@ export async function POST(
     .eq('id', consultationId)
     .single();
   if (error || !consultation) return NextResponse.json({ error: 'Client not found' }, { status: 404 });
-  if (consultation.delivered_at || consultation.status === 'delivered') {
+  // The status says whether the client was really delivered. A date left on a
+  // client who is still in review is a stray stamp, and the stylist's own date
+  // replaces it.
+  if (consultation.status === 'delivered') {
     return NextResponse.json({ error: 'This report is already marked delivered.' }, { status: 409 });
   }
 
@@ -32,13 +35,13 @@ export async function POST(
   if ('error' in when) return NextResponse.json({ error: when.error }, { status: 400 });
 
   const now = new Date().toISOString();
-  const { data: updated, error: updateError } = await supabaseAdmin
+  let write = supabaseAdmin
     .from('consultations')
     .update({ status: 'delivered', delivered_at: when.at, updated_at: now })
     .eq('id', consultationId)
-    .is('delivered_at', null)
-    .select('id')
-    .maybeSingle();
+    .neq('status', 'delivered');
+  write = consultation.delivered_at ? write.eq('delivered_at', consultation.delivered_at) : write.is('delivered_at', null);
+  const { data: updated, error: updateError } = await write.select('id').maybeSingle();
   if (updateError) return NextResponse.json({ error: updateError.message }, { status: 500 });
   if (!updated) return NextResponse.json({ error: 'This report is already marked delivered.' }, { status: 409 });
 

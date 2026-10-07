@@ -60,7 +60,8 @@ export function workspaceDue(item: WorkspaceQueueItem) {
  * timestamp moves each time a revised version is confirmed.
  */
 export function firstDeliveredAt(item: WorkspaceQueueItem) {
-  return item.deliveredAt ?? item.report?.deliveredAt ?? null;
+  // A date on a client whose status never reached delivered is a stray stamp.
+  return (item.consultationStatus === 'delivered' ? item.deliveredAt : null) ?? item.report?.deliveredAt ?? null;
 }
 
 /**
