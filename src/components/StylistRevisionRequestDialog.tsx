@@ -97,7 +97,9 @@ export default function StylistRevisionRequestDialog({
   const primaryLabel = count ? `Create ${count} revised look${count > 1 ? 's' : ''} and open` : 'Save and open the report';
 
   return <div role="dialog" aria-modal="true" aria-label={`Revise ${clientName}'s report`} onKeyDown={event => { if (event.key === 'Escape') onClose(); }} className="ma-scope ma-sheet-backdrop" style={{ zIndex: 80 }}>
-    <div className="ma-sheet max-w-2xl p-6 md:p-7 overflow-y-auto" style={{ display: 'block' }}>
+    {/* .ma-sheet clips its overflow and sits outside Tailwind's layers, so it beats
+        overflow-y-auto: scroll is set inline, or pasting a message pushes the buttons out of reach. */}
+    <div className="ma-sheet max-w-2xl p-6 md:p-7" style={{ display: 'block', overflowY: 'auto' }}>
       <div className="flex items-start justify-between gap-4">
         <div>
           <p className="ma-eyebrow">Revise report</p>
