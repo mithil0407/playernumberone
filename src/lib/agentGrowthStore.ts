@@ -18,6 +18,7 @@ import {
 } from '@/lib/agentGrowth';
 import { sendProactiveAgentMessage } from '@/lib/agentJobs';
 import { normalizeIndianWhatsappNumber } from '@/lib/indiaPhone';
+import { isActiveMember } from '@/lib/styleMembershipAgentProfile';
 import { supabaseAdmin } from '@/lib/supabase';
 import { getWhatsAppBusinessNumber } from '@/lib/whatsapp';
 
@@ -56,7 +57,7 @@ export type ChargeResult =
 
 /** One product hunt = one run for free clients (charged once per turn). Blueprint clients are unlimited. */
 export async function chargeShoppingRun(client: AgentClient, turnId: string): Promise<ChargeResult> {
-  if (client.tier !== 'free') return { ok: true, remaining: null };
+  if (client.tier !== 'free' || isActiveMember(client.lite_profile)) return { ok: true, remaining: null };
   await ensureMonthlyGrant(client);
   const balance = await creditBalance(client.id);
   if (balance <= 0) return { ok: false, reason: 'no_runs' };

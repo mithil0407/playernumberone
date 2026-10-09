@@ -519,3 +519,13 @@ Full-length. An Indian woman about 35 with fair skin with warm undertone, wearin
 ```prompt
 A capsule wardrobe flat-lay showing two outfits that share pieces. In the centre, a pair of folded ivory straight trousers. On the left, office pieces: a camel blazer, a white cotton shirt and black loafers. On the right, festive pieces: a mustard silk kurta, gold jhumkas and tan embroidered juttis. Clear visual balance between the two sides.
 ```
+
+## Generation log (9 Oct 2026)
+
+- Model: `gemini-nano-banana-2.1` at 1K, through `GOOGLE_AI_API_KEY` (the same client and model as `src/lib/agentImages.ts`).
+- 63 final images, from 73 generations: 62 in 6 batches, plus 10 re-rolls (5 body-shape figures that all copied the first figure's proportions, then pear and inverted triangle once more, and the fair-skin jewellery pair and skin swatch, which read too close to wheatish). The office kurta look is the smoke-test image.
+- Estimated cost: 73 × $0.06 (the app's per-image estimate in agentImages.ts) ≈ **$4.38**.
+- Output: `public/membership/*.webp`, 960 px wide (720 px for square shots), quality 78: **1.9 MB in total**, 15–45 KB each.
+- The personalised look 1 on the result page is generated lazily: once per lead, only after the WhatsApp gate, under a daily cap (`STYLE_MEMBERSHIP_DAILY_LOOKS`, default 200), so about $0.06 per lead who reaches her result.
+
+Images that need a human eye are listed in OWNER-CHECKLIST.md.

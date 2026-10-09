@@ -674,6 +674,10 @@ export const noindexSeoPages: SeoPageInventoryEntry[] = [
   { path: "/us/checkout", status: "noindex" },
   { path: "/monthly/checkout", status: "noindex" },
   { path: "/monthly/indian/checkout", status: "noindex" },
+  // Style Membership: reached from reels, DMs and the bio link while it is
+  // tested organically; the owner can index /style-membership/join after launch.
+  { path: "/style-membership", status: "noindex" },
+  { path: "/style-membership/join", status: "noindex" },
 ];
 
 export const seoPageInventory: SeoPageInventoryEntry[] = [
