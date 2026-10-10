@@ -20,7 +20,10 @@ import {
   readUndertone,
   resolveShape,
   resultLooks,
+  SWIPE_LOOKS,
   styleArchetype,
+  styleHeadline,
+  styleProfile,
   unlockedLook,
   upcomingLabel,
   type QuizAnswers,
@@ -50,7 +53,7 @@ const SAMPLE: QuizAnswers = {
   metal: 'gold',
   veins: 'green',
   compliments: ['mustard'],
-  swipes: { 'office-kurta': 'love', blazer: 'love', maxi: 'skip' },
+  swipes: { 'blazer-column': 'love', 'kurta-shrug': 'love', 'leopard-magenta': 'skip' },
   budgetOccasion: '3-6k',
   size: 'M',
   comingUp: ['wedding'],
@@ -101,8 +104,8 @@ test('every screen has a unique URL-safe id and the quiz is about 34 screens to 
   assert.equal(new Set(ids).size, ids.length);
   for (const id of ids) assert.match(id, /^[a-z0-9-]+$/);
   const toGate = screensBeforeGate({ answers: {} });
-  assert.ok(toGate >= 32 && toGate <= 36, `screens before the gate: ${toGate}`);
-  assert.equal(QUIZ_SCREENS.filter(screen => screen.kind === 'swipe').length, 8);
+  assert.ok(toGate >= 34 && toGate <= 40, `screens before the gate: ${toGate}`);
+  assert.equal(QUIZ_SCREENS.filter(screen => screen.kind === 'swipe').length, 12);
   assert.deepEqual(CHAPTERS.map(chapter => chapter.id), ['life', 'body', 'colours', 'style', 'shopping', 'coming']);
   for (const chapter of CHAPTERS) assert.ok(QUIZ_SCREENS.some(screen => screen.chapter === chapter.id && screen.kind === 'mirror') || chapter.id === 'coming', `${chapter.id} has a mirror`);
 });
@@ -137,8 +140,8 @@ test('screens need an answer unless optional; swipes need a verdict for their lo
   assert.equal(screenAnswered(screenById('dress-for')!, {}), false);
   assert.equal(screenAnswered(screenById('dress-for')!, { dressFor: ['office'] }), true);
   assert.equal(screenAnswered(screenById('body-changed')!, {}), true);
-  assert.equal(screenAnswered(screenById('swipe-blazer')!, { swipes: { maxi: 'love' } }), false);
-  assert.equal(screenAnswered(screenById('swipe-blazer')!, { swipes: { blazer: 'skip' } }), true);
+  assert.equal(screenAnswered(screenById('swipe-waistcoat')!, { swipes: { anarkali: 'love' } }), false);
+  assert.equal(screenAnswered(screenById('swipe-waistcoat')!, { swipes: { waistcoat: 'skip' } }), true);
 });
 
 // ── What the answers mean ───────────────────────────────────────────────────
@@ -174,16 +177,33 @@ test('every likely season is a season the WhatsApp agent knows, with 6 best colo
 test('the colour mirror repeats her answers back, as in the blueprint', () => {
   const mirror = mirrorFor('colour', SAMPLE);
   assert.equal(mirror.eyebrow, 'Likely Warm');
-  assert.match(mirror.title, /^Wheatish, gold and mustard compliments: you’re most likely a warm season\.$/);
+  assert.equal(mirror.title, 'You’re most likely a warm season.');
+  assert.equal(mirror.body, 'Wheatish skin, gold, mustard compliments. A selfie later will confirm it.');
+  assert.equal(mirrorFor('life', SAMPLE).title, 'Office and functions? One wardrobe can do both.');
+  assert.match(mirrorFor('shopping', SAMPLE).title, /cupboard/);
   const body = mirrorFor('body', SAMPLE);
   assert.equal(body.pair?.after.image, SHAPES.pear.after.image);
 });
 
-test('style archetype from the swipes', () => {
+test('every swipe comes from a pin on the Pinterest board, and the style profile reads her in detail', async () => {
+  const { readFileSync } = await import('node:fs');
+  const board = readFileSync(new URL('../../outfitlibrarypinterest.md', import.meta.url), 'utf8');
+  assert.equal(SWIPE_LOOKS.length, 12);
+  for (const look of SWIPE_LOOKS) assert.ok(board.includes(`**${look.pin}.**`), `pin ${look.pin} is on the board`);
+  assert.equal(new Set(SWIPE_LOOKS.map(look => look.wear)).size, 3, 'Indian, Indo-western and western are all tested');
+
   assert.equal(styleArchetype({}).name, 'Open Explorer');
-  assert.equal(styleArchetype({ swipes: { 'office-kurta': 'love', blazer: 'love' } }).name, 'Modern Classic');
-  assert.equal(styleArchetype({ swipes: { 'office-kurta': 'love', 'work-saree': 'love', 'festive-lehenga': 'love' } }).name, 'Graceful Traditional');
-  assert.equal(styleArchetype({ swipes: { indowestern: 'love', 'jeans-kurti': 'love' } }).name, 'Indo-Western Edit');
+  const classic = styleProfile({ swipes: { 'blazer-column': 'love', 'kurta-shrug': 'love', 'chambray-blazer': 'love', 'leopard-magenta': 'skip', 'kurta-jacket-jeans': 'skip' } });
+  assert.equal(classic.archetype.name, 'Modern Classic');
+  assert.equal(classic.wearLine, 'Both Indian and western');
+  assert.equal(classic.colourLine, 'Neutrals: black, cream, camel, brown');
+  assert.equal(classic.avoidLine, 'Not for you: loud prints and bright colour');
+  assert.equal(classic.formulas.length, 3);
+  assert.match(styleHeadline(classic), /^Modern Classic, with a \w+ side$/);
+  const festive = styleProfile({ swipes: { 'festive-sharara': 'love', anarkali: 'love', 'kurta-shrug': 'love' } });
+  assert.ok(['Graceful Traditional', 'Soft Romantic'].includes(festive.archetype.name));
+  assert.equal(festive.wearLine, 'Mostly Indian wear');
+  assert.equal(styleProfile({ swipes: { 'leopard-magenta': 'love', 'cobalt-blouse': 'love', 'kurta-jacket-jeans': 'love' } }).archetype.name, 'Colour Confident');
 });
 
 test('the Style DNA card builds up chip by chip', () => {
@@ -201,7 +221,7 @@ test('the result has 20 looks; look 1 matches her shape and skips what she swipe
   assert.equal(new Set(looks.map(look => look.title)).size, 20);
   assert.ok(looks.some(look => look.title === 'Sangeet'));
   assert.equal(unlockedLook(SAMPLE).image, SHAPES.pear.after.image);
-  assert.notEqual(unlockedLook({ swipes: { maxi: 'skip' }, skinTone: 'dusky' }).image, '/membership/look-maxi.webp');
+  assert.notEqual(unlockedLook({ swipes: { 'linen-kurta': 'skip' }, skinTone: 'dusky' }).image, '/membership/swipe-linen-kurta.webp');
 });
 
 // ── 90 days, tokens, agent hand-off, webhook routing ───────────────────────

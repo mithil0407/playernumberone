@@ -64,7 +64,7 @@ export const SHAPES: Record<ShapeId, ShapeGuide> = {
     illustration: '/membership/shape-pear.webp',
     before: { image: '/membership/ba-pear-before.webp', caption: 'Short straight kurta + wide palazzos' },
     after: { image: '/membership/ba-pear-after.webp', caption: 'A-line kurta + straight pants' },
-    rule: 'Structure and detail up top, clean straight lines below.',
+    rule: 'Detail on top, simple and straight below.',
     modelTone: 'wheatish',
   },
   apple: {
@@ -72,9 +72,9 @@ export const SHAPES: Record<ShapeId, ShapeGuide> = {
     label: 'Apple',
     short: 'Fuller through the middle',
     illustration: '/membership/shape-apple.webp',
-    before: { image: '/membership/ba-apple-before.webp', caption: 'Crop top + belt at the middle' },
-    after: { image: '/membership/ba-apple-after.webp', caption: 'Long V-neck layer + straight trousers' },
-    rule: 'Long vertical lines and V-necks; no belts at the middle.',
+    before: { image: '/membership/ba-apple-before.webp', caption: 'Short top, belt at the tummy' },
+    after: { image: '/membership/ba-apple-after.webp', caption: 'V-neck, one colour, long blazer' },
+    rule: 'V-necks and long, straight lines.',
     modelTone: 'medium',
   },
   hourglass: {
@@ -84,7 +84,7 @@ export const SHAPES: Record<ShapeId, ShapeGuide> = {
     illustration: '/membership/shape-hourglass.webp',
     before: { image: '/membership/ba-hourglass-before.webp', caption: 'Boxy kurta that hides the waist' },
     after: { image: '/membership/ba-hourglass-after.webp', caption: 'Wrap dress tied at the waist' },
-    rule: 'Show the waist: wraps, belts and fitted kurtas.',
+    rule: 'Show your waist.',
     modelTone: 'dusky',
   },
   rectangle: {
@@ -94,7 +94,7 @@ export const SHAPES: Record<ShapeId, ShapeGuide> = {
     illustration: '/membership/shape-rectangle.webp',
     before: { image: '/membership/ba-rectangle-before.webp', caption: 'Shapeless shift dress' },
     after: { image: '/membership/ba-rectangle-after.webp', caption: 'Peplum top + flared trousers' },
-    rule: 'Create a waist: peplums, angrakhas and flares.',
+    rule: 'Add a waist with peplums and flares.',
     modelTone: 'fair',
   },
   'inverted-triangle': {
@@ -104,7 +104,7 @@ export const SHAPES: Record<ShapeId, ShapeGuide> = {
     illustration: '/membership/shape-inverted-triangle.webp',
     before: { image: '/membership/ba-invtri-before.webp', caption: 'Puff sleeves + skinny jeans' },
     after: { image: '/membership/ba-invtri-after.webp', caption: 'V-neck kurta + flared sharara' },
-    rule: 'Soft V-necks up top, volume and colour below.',
+    rule: 'Keep the top simple. Add volume below.',
     modelTone: 'deep',
   },
 };
@@ -214,60 +214,161 @@ export function paletteFor(seasonName: string | null | undefined): SeasonPalette
   return SEASON_PALETTES[seasonName] ?? null;
 }
 
+export type StyleVibe = 'classic' | 'minimal' | 'romantic' | 'bold' | 'glam' | 'relaxed' | 'eclectic' | 'modern' | 'traditional';
+export type WearType = 'indian' | 'fusion' | 'western';
+export type DressLevel = 'casual' | 'smart' | 'dressy';
+export type ColourStory = 'neutral' | 'colour' | 'print';
+
 export interface SwipeLook {
   id: string;
+  /** The pin on the ICONIK Pinterest board (outfitlibrarypinterest.md) this look is taken from. */
+  pin: number;
   label: string;
   detail: string;
   image: string;
-  flatlay: string;
   tone: SkinTone;
-  tags: Array<'indian' | 'western' | 'fusion' | 'polished' | 'relaxed' | 'festive' | 'classic'>;
+  wear: WearType;
+  dress: DressLevel;
+  vibes: StyleVibe[];
+  colour: ColourStory;
+  /** The styling formula, in plain words, for her profile and the stylist. */
+  formula: string;
 }
 
+// Twelve looks from the ICONIK Pinterest board, each chosen to test a different
+// direction (Indian / Indo-western / western; casual to dressed up; neutral,
+// colour or print), so her loves and skips describe her style in detail.
 export const SWIPE_LOOKS: SwipeLook[] = [
-  { id: 'office-kurta', label: 'Office kurta set', detail: 'Rust linen kurta, ivory straight pants', image: '/membership/look-office-kurta.webp', flatlay: '/membership/flat-office-kurta.webp', tone: 'wheatish', tags: ['indian', 'polished'] },
-  { id: 'work-saree', label: 'A saree for work', detail: 'Beige handloom cotton, maroon border', image: '/membership/look-work-saree.webp', flatlay: '/membership/flat-work-saree.webp', tone: 'dusky', tags: ['indian', 'classic', 'polished'] },
-  { id: 'blazer', label: 'Blazer and trousers', detail: 'Camel blazer, ivory shell, black trousers', image: '/membership/look-blazer.webp', flatlay: '/membership/flat-blazer.webp', tone: 'medium', tags: ['western', 'polished'] },
-  { id: 'coord', label: 'Co-ord set', detail: 'Taupe linen shirt and wide trousers', image: '/membership/look-coord.webp', flatlay: '/membership/flat-coord.webp', tone: 'fair', tags: ['western', 'relaxed'] },
-  { id: 'indowestern', label: 'Indo-western dress', detail: 'Mustard angrakha wrap dress', image: '/membership/look-indowestern.webp', flatlay: '/membership/flat-indowestern.webp', tone: 'deep', tags: ['fusion', 'classic'] },
-  { id: 'festive-lehenga', label: 'Light festive lehenga', detail: 'Dusty pink, delicate gota work', image: '/membership/look-festive-lehenga.webp', flatlay: '/membership/flat-festive-lehenga.webp', tone: 'wheatish', tags: ['indian', 'festive'] },
-  { id: 'jeans-kurti', label: 'Jeans and a kurti', detail: 'White chikankari kurti, straight jeans', image: '/membership/look-jeans-kurti.webp', flatlay: '/membership/flat-jeans-kurti.webp', tone: 'medium', tags: ['fusion', 'relaxed'] },
-  { id: 'maxi', label: 'Maxi dress', detail: 'Terracotta cotton maxi, light shirt', image: '/membership/look-maxi.webp', flatlay: '/membership/flat-maxi.webp', tone: 'dusky', tags: ['western', 'relaxed'] },
+  { id: 'blazer-column', pin: 15, label: 'Black with a camel blazer', detail: 'Black top and wide trousers, open camel blazer', image: '/membership/swipe-blazer-column.webp', tone: 'medium', wear: 'western', dress: 'smart', vibes: ['classic', 'modern'], colour: 'neutral', formula: 'one dark colour head to toe, with a camel blazer on top' },
+  { id: 'kurta-shrug', pin: 48, label: 'Cream kurta set with a linen shrug', detail: 'Printed kurta, straight trousers, open linen layer', image: '/membership/swipe-kurta-shrug.webp', tone: 'wheatish', wear: 'indian', dress: 'smart', vibes: ['classic', 'minimal'], colour: 'neutral', formula: 'a tonal kurta set with a light layer worn open' },
+  { id: 'tee-trousers', pin: 2, label: 'White tee and pleated trousers', detail: 'Half-tucked tee, wide trousers, white sneakers', image: '/membership/swipe-tee-trousers.webp', tone: 'fair', wear: 'western', dress: 'casual', vibes: ['minimal', 'relaxed'], colour: 'neutral', formula: 'a plain tee half-tucked into wide trousers with a belt' },
+  { id: 'kurta-jacket-jeans', pin: 218, label: 'Kurta, ikat jacket and jeans', detail: 'Mustard kurta, belted ikat jacket, straight jeans', image: '/membership/swipe-kurta-jacket-jeans.webp', tone: 'dusky', wear: 'fusion', dress: 'casual', vibes: ['eclectic', 'bold'], colour: 'print', formula: 'a short kurta over jeans, with a belted jacket' },
+  { id: 'cobalt-blouse', pin: 12, label: 'Cobalt blouse, cream trousers', detail: 'Flutter-sleeve blouse tucked into pleated trousers', image: '/membership/swipe-cobalt-blouse.webp', tone: 'deep', wear: 'western', dress: 'smart', vibes: ['bold', 'classic'], colour: 'colour', formula: 'one strong colour on top, a soft neutral below' },
+  { id: 'festive-sharara', pin: 89, label: 'Sea-green sharara set', detail: 'Embroidered kurta, net dupatta, sharara', image: '/membership/swipe-festive-sharara.webp', tone: 'wheatish', wear: 'indian', dress: 'dressy', vibes: ['traditional', 'romantic'], colour: 'colour', formula: 'a matching festive set in one colour, gold at the neck' },
+  { id: 'polka-midi', pin: 22, label: 'Polka-dot midi dress', detail: 'Puff sleeves, nipped waist, fluted hem', image: '/membership/swipe-polka-midi.webp', tone: 'medium', wear: 'western', dress: 'dressy', vibes: ['romantic', 'classic'], colour: 'print', formula: 'a feminine midi dress with soft sleeves and a defined waist' },
+  { id: 'linen-kurta', pin: 520, label: 'Brown linen kurta, striped trousers', detail: 'Short-sleeve kurta, striped straight pants, mules', image: '/membership/swipe-linen-kurta.webp', tone: 'dusky', wear: 'indian', dress: 'casual', vibes: ['relaxed', 'minimal'], colour: 'neutral', formula: 'an easy linen kurta over striped trousers, all in browns' },
+  { id: 'leopard-magenta', pin: 32, label: 'Leopard blouse, magenta trousers', detail: 'Print on top, bright wide trousers below', image: '/membership/swipe-leopard-magenta.webp', tone: 'fair', wear: 'western', dress: 'smart', vibes: ['bold', 'eclectic'], colour: 'print', formula: 'a print on one half, a bright colour on the other' },
+  { id: 'anarkali', pin: 158, label: 'Blush embroidered anarkali', detail: 'Fitted bodice, full skirt, sheer sleeves', image: '/membership/swipe-anarkali.webp', tone: 'deep', wear: 'indian', dress: 'dressy', vibes: ['glam', 'romantic', 'traditional'], colour: 'colour', formula: 'one statement festive piece with long earrings' },
+  { id: 'chambray-blazer', pin: 34, label: 'Chambray shirt, camel blazer, jeans', detail: 'Shirt tucked in, blazer, cropped jeans, flats', image: '/membership/swipe-chambray-blazer.webp', tone: 'wheatish', wear: 'western', dress: 'smart', vibes: ['classic', 'relaxed'], colour: 'neutral', formula: 'a shirt and blazer with jeans and flats' },
+  { id: 'waistcoat', pin: 243, label: 'Navy waistcoat as a top', detail: 'Gold buttons, cream wide-leg trousers', image: '/membership/swipe-waistcoat.webp', tone: 'medium', wear: 'western', dress: 'smart', vibes: ['modern', 'bold'], colour: 'neutral', formula: 'a tailored waistcoat worn as the top, with wide trousers' },
+];
+
+/** On-model looks from the first image set, still used for result-page looks. */
+const EXTRA_LOOKS: Array<{ image: string; detail: string; tone: SkinTone; occasions: string[] }> = [
+  { image: '/membership/look-office-kurta.webp', detail: 'Rust linen kurta, ivory straight pants', tone: 'wheatish', occasions: ['office'] },
+  { image: '/membership/look-work-saree.webp', detail: 'Beige handloom saree, maroon border', tone: 'dusky', occasions: ['office'] },
+  { image: '/membership/look-blazer.webp', detail: 'Camel blazer, ivory shell, black trousers', tone: 'medium', occasions: ['office'] },
+  { image: '/membership/look-coord.webp', detail: 'Taupe linen co-ord', tone: 'fair', occasions: ['weekend'] },
+  { image: '/membership/look-indowestern.webp', detail: 'Mustard angrakha wrap dress', tone: 'deep', occasions: ['weekend'] },
+  { image: '/membership/look-festive-lehenga.webp', detail: 'Dusty pink lehenga, gota work', tone: 'wheatish', occasions: ['festive', 'wedding'] },
+  { image: '/membership/look-jeans-kurti.webp', detail: 'White chikankari kurti, straight jeans', tone: 'medium', occasions: ['weekend'] },
+  { image: '/membership/look-maxi.webp', detail: 'Terracotta maxi, light shirt', tone: 'dusky', occasions: ['weekend'] },
 ];
 
 export interface StyleArchetype {
-  id: string;
+  id: StyleVibe | 'explorer';
   name: string;
   line: string;
 }
 
-const ARCHETYPES: Record<string, StyleArchetype> = {
-  modern_classic: { id: 'modern_classic', name: 'Modern Classic', line: 'You like clean Indian and western pieces that mix. Polished, never fussy.' },
-  indo_western: { id: 'indo_western', name: 'Indo-Western Edit', line: 'You love the in-between: angrakhas with sandals, kurtis with jeans, a dupatta over a dress.' },
-  polished_pro: { id: 'polished_pro', name: 'Polished Professional', line: 'Sharp, structured and western-leaning. You want to walk into a room looking sure.' },
-  graceful_traditional: { id: 'graceful_traditional', name: 'Graceful Traditional', line: 'Sarees, kurta sets and festive pieces are home for you. We keep it fresh, not dated.' },
-  relaxed_minimal: { id: 'relaxed_minimal', name: 'Relaxed Minimal', line: 'Easy fabrics, calm colours, nothing that fights you. Comfort that still looks put together.' },
-  explorer: { id: 'explorer', name: 'Open Explorer', line: 'Nothing grabbed you yet, and that’s useful too. Your stylist will try a few directions with you.' },
+const ARCHETYPES: Record<StyleArchetype['id'], StyleArchetype> = {
+  classic: { id: 'classic', name: 'Modern Classic', line: 'Clean, polished pieces that never date.' },
+  minimal: { id: 'minimal', name: 'Quiet Minimal', line: 'Calm colours, simple shapes, nothing fussy.' },
+  romantic: { id: 'romantic', name: 'Soft Romantic', line: 'Soft fabrics, gentle shapes and a feminine touch.' },
+  bold: { id: 'bold', name: 'Colour Confident', line: 'Strong colours and prints, worn with ease.' },
+  glam: { id: 'glam', name: 'Evening Glam', line: 'You love a statement and dressing up.' },
+  relaxed: { id: 'relaxed', name: 'Easy Relaxed', line: 'Comfort first, but always put together.' },
+  eclectic: { id: 'eclectic', name: 'Free-Spirited Mix', line: 'You mix Indian and western, prints and colour, your own way.' },
+  modern: { id: 'modern', name: 'Sharp Modern', line: 'Tailored, current and a little trend-led.' },
+  traditional: { id: 'traditional', name: 'Graceful Traditional', line: 'Indian wear is home. We keep it fresh, not dated.' },
+  explorer: { id: 'explorer', name: 'Open Explorer', line: 'Nothing grabbed you yet. That’s useful too: we’ll try a few directions with you.' },
 };
 
-/** Her style archetype from the 8 swipes. */
-export function styleArchetype(answers: QuizAnswers): StyleArchetype {
+/** Words for the second direction ("…, with a tailored side"); none repeats an archetype name. */
+const VIBE_WORDS: Record<StyleVibe, string> = {
+  classic: 'classic', minimal: 'minimal', romantic: 'feminine', bold: 'colourful', glam: 'glam',
+  relaxed: 'relaxed', eclectic: 'playful', modern: 'tailored', traditional: 'traditional',
+};
+
+export interface StyleProfile {
+  archetype: StyleArchetype;
+  /** Second-strongest direction, e.g. "with a minimal side". */
+  secondVibe: StyleVibe | null;
+  loved: SwipeLook[];
+  skipped: SwipeLook[];
+  /** Plain one-liners for her result and the stylist. */
+  wearLine: string;
+  dressLine: string;
+  colourLine: string;
+  formulas: string[];
+  avoidLine: string | null;
+}
+
+function tally<T extends string>(values: T[]) {
+  const counts = new Map<T, number>();
+  for (const value of values) counts.set(value, (counts.get(value) ?? 0) + 1);
+  return [...counts.entries()].sort((a, b) => b[1] - a[1]);
+}
+
+/** Her style in detail, read from what she loved and skipped. */
+export function styleProfile(answers: QuizAnswers): StyleProfile {
   const loved = SWIPE_LOOKS.filter(look => answers.swipes?.[look.id] === 'love');
-  if (!loved.length) return ARCHETYPES.explorer;
-  const count = (tag: SwipeLook['tags'][number]) => loved.filter(look => look.tags.includes(tag)).length;
-  const indian = count('indian');
-  const western = count('western');
-  const fusion = count('fusion');
-  const relaxed = count('relaxed');
-  const polished = count('polished');
-  if (indian >= 3 && western === 0) return ARCHETYPES.graceful_traditional;
-  if (western >= 3 && indian === 0) return polished >= relaxed ? ARCHETYPES.polished_pro : ARCHETYPES.relaxed_minimal;
-  if (fusion >= 2) return ARCHETYPES.indo_western;
-  if (relaxed >= 2 && polished === 0) return ARCHETYPES.relaxed_minimal;
-  if (indian >= 1 && western >= 1) return ARCHETYPES.modern_classic;
-  if (indian >= 2) return ARCHETYPES.graceful_traditional;
-  if (western >= 2) return polished >= relaxed ? ARCHETYPES.polished_pro : ARCHETYPES.relaxed_minimal;
-  return ARCHETYPES.modern_classic;
+  const skipped = SWIPE_LOOKS.filter(look => answers.swipes?.[look.id] === 'skip');
+  // A look's first vibe counts double: it is what the look is mostly about.
+  const vibes = tally(loved.flatMap(look => [look.vibes[0], ...look.vibes]));
+  const archetype = vibes.length ? ARCHETYPES[vibes[0][0]] : ARCHETYPES.explorer;
+  const secondVibe = vibes.find(([vibe]) => vibe !== vibes[0]?.[0])?.[0] ?? null;
+
+  const wear = tally(loved.map(look => look.wear));
+  const has = (type: WearType) => loved.some(look => look.wear === type);
+  const wearLine = !loved.length
+    ? 'Still open: we’ll show you both Indian and western'
+    : has('indian') && has('western')
+      ? has('fusion') ? 'A real mix: Indian, western and Indo-western' : 'Both Indian and western'
+      : wear[0][0] === 'indian' ? (has('fusion') ? 'Mostly Indian, with some Indo-western' : 'Mostly Indian wear')
+        : wear[0][0] === 'fusion' ? 'Indo-western first'
+          : has('fusion') ? 'Mostly western, with some Indo-western' : 'Mostly western wear';
+
+  const dress = tally(loved.map(look => look.dress))[0]?.[0];
+  const dressLine = dress === 'dressy' ? 'You like to dress up' : dress === 'casual' ? 'Easy and casual' : 'Smart and put-together';
+
+  const colours = tally(loved.map(look => look.colour));
+  const neutrals = loved.filter(look => look.colour === 'neutral').length;
+  const colourLine = !loved.length ? 'We’ll find your colours with you'
+    : colours[0][0] === 'neutral' ? (neutrals === loved.length ? 'Neutrals: black, cream, camel, brown' : 'Neutrals first, with a pop of colour')
+      : colours[0][0] === 'print' ? 'You enjoy prints' : 'You love colour';
+
+  const skippedBold = skipped.filter(look => look.vibes.includes('bold') || look.colour === 'print').length;
+  const skippedIndian = skipped.filter(look => look.wear === 'indian').length;
+  const avoidLine = skippedBold >= 2 && !loved.some(look => look.vibes.includes('bold'))
+    ? 'Not for you: loud prints and bright colour'
+    : skippedIndian >= 3 && !has('indian')
+      ? 'Indian wear mostly for occasions only'
+      : null;
+
+  return {
+    archetype,
+    secondVibe,
+    loved,
+    skipped,
+    wearLine,
+    dressLine,
+    colourLine,
+    formulas: loved.slice(0, 3).map(look => look.formula),
+    avoidLine,
+  };
+}
+
+/** Her style archetype from the swipes. */
+export function styleArchetype(answers: QuizAnswers): StyleArchetype {
+  return styleProfile(answers).archetype;
+}
+
+/** "Modern Classic, with a minimal side" */
+export function styleHeadline(profile: StyleProfile) {
+  return profile.secondVibe && profile.archetype.id !== 'explorer'
+    ? `${profile.archetype.name}, with a ${VIBE_WORDS[profile.secondVibe]} side`
+    : profile.archetype.name;
 }
 
 const OCCASION_LABELS: Record<string, string> = {
@@ -350,6 +451,7 @@ export interface Mirror {
   imageAlt?: string;
   pair?: { before: { image: string; caption: string }; after: { image: string; caption: string } };
   swatches?: Swatch[];
+  style?: StyleProfile;
 }
 
 export type MirrorId = 'life' | 'body' | 'colour' | 'style' | 'shopping';
@@ -362,20 +464,20 @@ export function mirrorFor(id: MirrorId, answers: QuizAnswers): Mirror {
       const work = dressFor.includes('office') || dressFor.includes('wfh');
       const functions = dressFor.includes('family') || dressFor.includes('weddings');
       const title = work && functions
-        ? 'Office plus family functions? You need two wardrobes that share half their pieces.'
+        ? 'Office and functions? One wardrobe can do both.'
         : functions
-          ? 'Functions every other weekend? We plan them so you never repeat a look in the family photos.'
+          ? 'Lots of functions? No more repeating outfits.'
           : work
-            ? 'Work wear that looks considered, without thinking about it every morning.'
-            : 'A wardrobe that fits the life you actually live.';
+            ? 'Work outfits, sorted every morning.'
+            : 'Clothes that fit your real life.';
       return {
-        eyebrow: 'Noted',
+        eyebrow: 'Got it',
         title,
         body: answers.gettingReady === 'change-3-4'
-          ? 'And no more changing three or four times. We build it from pieces you already own, so getting ready takes one try.'
-          : 'That’s exactly what we build: a small set of pieces that work across your week, starting from what’s already in your almirah.',
+          ? 'No more changing 3–4 times. We start with what’s in your cupboard.'
+          : 'We start with what’s already in your cupboard.',
         image: '/membership/capsule-two-wardrobes.webp',
-        imageAlt: 'Ivory trousers shared between an office outfit and a festive outfit',
+        imageAlt: 'The same ivory trousers worn with office pieces and with festive pieces',
       };
     }
     case 'body': {
@@ -383,7 +485,7 @@ export function mirrorFor(id: MirrorId, answers: QuizAnswers): Mirror {
       const guide = SHAPES[shape];
       return {
         eyebrow: `${guide.label} shape`,
-        title: 'Same woman. Same body. A different cut.',
+        title: 'Same woman, different cut.',
         body: guide.rule,
         pair: { before: guide.before, after: guide.after },
       };
@@ -391,36 +493,35 @@ export function mirrorFor(id: MirrorId, answers: QuizAnswers): Mirror {
     case 'colour': {
       const reading = readUndertone(answers);
       const season = likelySeason(answers);
-      const tone = SKIN_TONES.find(item => item.id === answers.skinTone)?.label ?? 'Your tone';
-      const metal = answers.metal === 'gold' ? 'gold' : answers.metal === 'silver' ? 'silver' : 'both metals';
+      const tone = SKIN_TONES.find(item => item.id === answers.skinTone)?.label ?? 'Your skin tone';
+      const metal = answers.metal === 'gold' ? 'gold' : answers.metal === 'silver' ? 'silver' : 'gold and silver';
+      const warmth = season && (season.family === 'spring' || season.family === 'autumn') ? 'warm' : 'cool';
       return {
         eyebrow: reading.label,
-        title: season
-          ? `${tone}, ${metal}${answers.compliments?.length ? ` and ${answers.compliments[0]} compliments` : ''}: you’re most likely a ${season.family === 'spring' || season.family === 'autumn' ? 'warm' : 'cool'} season.`
-          : 'Your colours are taking shape.',
-        body: 'We’ll confirm it with an optional selfie in a minute. A photo reads your undertone far better than any quiz.',
+        title: season ? `You’re most likely a ${warmth} season.` : 'Your colours are taking shape.',
+        body: `${tone} skin, ${metal}${answers.compliments?.length ? `, ${answers.compliments[0]} compliments` : ''}. A selfie later will confirm it.`,
         image: season ? PALETTE_IMAGES[season.family] : undefined,
         imageAlt: season ? `${season.name} fabric swatches` : undefined,
         swatches: season?.best,
       };
     }
     case 'style': {
-      const archetype = styleArchetype(answers);
-      const loved = SWIPE_LOOKS.filter(look => answers.swipes?.[look.id] === 'love');
+      const profile = styleProfile(answers);
+      const lead = profile.loved[0] ?? SWIPE_LOOKS[0];
       return {
         eyebrow: 'Your style',
-        title: `Your style is ${archetype.name}.`,
-        body: archetype.line,
-        image: (loved[0] ?? SWIPE_LOOKS[0]).flatlay,
-        imageAlt: (loved[0] ?? SWIPE_LOOKS[0]).label,
+        title: styleHeadline(profile),
+        body: profile.archetype.line,
+        image: lead.image,
+        imageAlt: lead.label,
+        style: profile,
       };
     }
     case 'shopping': {
-      const budget = budgetLabel(answers.budgetEveryday);
       return {
         eyebrow: 'Shopping, sorted',
-        title: 'We start from what’s already in your almirah.',
-        body: `Then we only suggest pieces in your size${answers.size ? ` (${answers.size})` : ''}${budget ? `, around ${budget} for everyday pieces,` : ''} from stores you already use.`,
+        title: 'We start with your cupboard.',
+        body: `Then we only suggest pieces in your size${answers.size ? ` (${answers.size})` : ''} and budget, from shops you already use.`,
         image: '/membership/flat-office-kurta.webp',
         imageAlt: 'A rust kurta, ivory trousers and tan accessories laid flat',
       };
@@ -454,8 +555,9 @@ const LIBRARY: LibraryLook[] = [
     detail: look.detail,
     tone: look.tone,
     swipe: look.id,
-    occasions: look.tags.includes('festive') ? ['festive', 'wedding'] : look.tags.includes('polished') ? ['office'] : ['weekend'],
+    occasions: look.dress === 'dressy' ? ['festive', 'wedding'] : look.dress === 'smart' ? ['office'] : ['weekend'],
   })),
+  ...EXTRA_LOOKS,
   ...SHAPE_ORDER.map(shape => ({ image: SHAPES[shape].after.image, detail: SHAPES[shape].after.caption, tone: SHAPES[shape].modelTone, shape, occasions: ['office', 'weekend'] })),
   { image: '/membership/occ-sangeet.webp', detail: 'Ivory and gold sharara set', tone: 'deep', occasions: ['wedding', 'festive'] },
   { image: '/membership/occ-diwali.webp', detail: 'Maroon silk kurta set, gold dupatta', tone: 'fair', occasions: ['diwali', 'festive'] },
@@ -504,7 +606,7 @@ export function resultLooks(answers: QuizAnswers): ResultLook[] {
     if (!titles.some(([title]) => title === filler[0])) titles.push(filler);
   }
   const lockedImages = [
-    ...SWIPE_LOOKS.map(look => look.flatlay),
+    ...['office-kurta', 'work-saree', 'blazer', 'coord', 'indowestern', 'festive-lehenga', 'jeans-kurti', 'maxi'].map(id => `/membership/flat-${id}.webp`),
     '/membership/flat-wedding-guest-saree.webp',
     '/membership/flat-wedding-guest-sharara.webp',
     ...LIBRARY.map(look => look.image).filter(image => image !== first.image),
@@ -543,9 +645,14 @@ export function quizSummary(answers: QuizAnswers, selfieSeason?: string | null) 
     undertone_from_quiz: readUndertone(answers).label,
     season: season?.name ?? null,
     season_source: selfieSeason ? 'selfie' : 'quiz',
-    style_archetype: styleArchetype(answers).name,
-    loved_looks: SWIPE_LOOKS.filter(look => answers.swipes?.[look.id] === 'love').map(look => look.label),
-    skipped_looks: SWIPE_LOOKS.filter(look => answers.swipes?.[look.id] === 'skip').map(look => look.label),
+    style_archetype: styleHeadline(styleProfile(answers)),
+    style_wear: styleProfile(answers).wearLine,
+    style_dress_level: styleProfile(answers).dressLine,
+    style_colour: styleProfile(answers).colourLine,
+    style_formulas: styleProfile(answers).formulas,
+    style_avoid: styleProfile(answers).avoidLine,
+    loved_looks: SWIPE_LOOKS.filter(look => answers.swipes?.[look.id] === 'love').map(look => `${look.label} (Pinterest pin ${look.pin})`),
+    skipped_looks: SWIPE_LOOKS.filter(look => answers.swipes?.[look.id] === 'skip').map(look => `${look.label} (Pinterest pin ${look.pin})`),
     stores: answers.stores ?? [],
     budget_everyday: budgetLabel(answers.budgetEveryday),
     budget_occasion: budgetLabel(answers.budgetOccasion),

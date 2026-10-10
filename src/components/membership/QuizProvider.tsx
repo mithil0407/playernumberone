@@ -36,7 +36,13 @@ interface QuizState {
   goBack: (fromId: string) => void;
   goTo: (id: string) => void;
   finish: () => void;
+  /** Call when a screen appears; taps in the next half-second are ignored. */
+  markShown: () => void;
+  /** False for half a second after a screen appears, so a double tap can't answer the next screen. */
+  settled: () => boolean;
 }
+
+const SETTLE_MS = 500;
 
 const QuizStateContext = createContext<QuizState | null>(null);
 
@@ -55,6 +61,9 @@ export function QuizProvider({ children }: { children: ReactNode }) {
   const [lead, setLeadState] = useState<PublicLead | null>(null);
   const [memberSession, setMemberSession] = useState<MemberSession | null>(null);
   const answersRef = useRef<QuizAnswers>({});
+  const shownAt = useRef(0);
+  const markShown = useCallback(() => { shownAt.current = Date.now(); }, []);
+  const settled = useCallback(() => Date.now() - shownAt.current >= SETTLE_MS, []);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -95,16 +104,18 @@ export function QuizProvider({ children }: { children: ReactNode }) {
   }, [member, memberSession, router]);
 
   const goNext = useCallback((fromId: string, answersOverride?: QuizAnswers) => {
+    if (!settled()) return;
     const next = nextScreenId(fromId, { answers: answersOverride ?? answersRef.current, member });
     if (next) router.push(`/style-membership/quiz/${next}`);
     else finish();
-  }, [finish, member, router]);
+  }, [finish, member, router, settled]);
 
   const goBack = useCallback((fromId: string) => {
+    if (!settled()) return;
     const previous = previousScreenId(fromId, { answers: answersRef.current, member });
     if (previous) router.push(`/style-membership/quiz/${previous}`);
     else router.push('/style-membership');
-  }, [member, router]);
+  }, [member, router, settled]);
 
   const goTo = useCallback((id: string) => router.push(`/style-membership/quiz/${id}`), [router]);
 
@@ -122,7 +133,9 @@ export function QuizProvider({ children }: { children: ReactNode }) {
     goBack,
     goTo,
     finish,
-  }), [answers, finish, goBack, goNext, goTo, lead, leadToken, member, memberSession, ready, setAnswer, setLead]);
+    markShown,
+    settled,
+  }), [answers, finish, goBack, goNext, goTo, lead, leadToken, markShown, member, memberSession, ready, setAnswer, setLead, settled]);
 
   return <QuizStateContext.Provider value={value}>{children}</QuizStateContext.Provider>;
 }

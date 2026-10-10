@@ -10,13 +10,13 @@ import {
   likelySeason,
   resolveShape,
   resultLooks,
-  styleArchetype,
+  styleProfile,
   weddingFunctionCount,
 } from '@/lib/styleMembershipLogic';
 import { postJson, readStore, trackAction, trackScreen } from './client';
 import type { PublicLead } from './QuizProvider';
-import { Icon, Photo, Swatches, TopBar, cx } from './ui';
-import { ChatDemo, ClientProof, CohortLine, Guarantee, MembershipFaq, PlanPicker, PriceCompare, usePaywall } from './Paywall';
+import { Icon, Photo, StyleDetail, Swatches, TopBar, cx } from './ui';
+import { ChatDemo, ClientProof, ClientVideos, CohortLine, Guarantee, MembershipFaq, PlanPicker, PriceCompare, usePaywall } from './Paywall';
 import s from './membership.module.css';
 
 export function ResultView() {
@@ -83,7 +83,7 @@ function Result({ lead, token, foundingEligible }: { lead: PublicLead; token: st
   const season = lead.selfieSeason ?? likelySeason(answers);
   const fromSelfie = Boolean(lead.selfieSeason);
   const shape = resolveShape(answers);
-  const archetype = styleArchetype(answers);
+  const profile = styleProfile(answers);
   const looks = resultLooks(answers);
   const chips = dnaChips(answers, lead.selfieSeason?.name);
   const functions = weddingFunctionCount(answers);
@@ -135,19 +135,15 @@ function Result({ lead, token, foundingEligible }: { lead: PublicLead; token: st
                 </p>
               </div>
             ) : null}
-            <div className={s.pairGrid}>
+            <div className={s.stack} style={{ marginTop: 12 }}>
               {shape ? (
                 <div className={s.card}>
                   <p className={s.small} style={{ margin: 0 }}>Body shape</p>
-                  <p className={s.h3} style={{ margin: '4px 0 6px' }}>{SHAPES[shape].label}</p>
+                  <p className={s.h3} style={{ margin: '4px 0 4px' }}>{SHAPES[shape].label}</p>
                   <p className={s.small} style={{ margin: 0 }}>{SHAPES[shape].rule}</p>
                 </div>
               ) : null}
-              <div className={s.card}>
-                <p className={s.small} style={{ margin: 0 }}>Your style</p>
-                <p className={s.h3} style={{ margin: '4px 0 6px' }}>{archetype.name}</p>
-                <p className={s.small} style={{ margin: 0 }}>{archetype.line.split('.')[0]}.</p>
-              </div>
+              <StyleDetail profile={profile} showHeadline />
             </div>
           </section>
 
@@ -164,16 +160,23 @@ function Result({ lead, token, foundingEligible }: { lead: PublicLead; token: st
             </div>
             <p className={s.small} style={{ margin: '10px 0 0' }}>
               {lead.lookStatus === 'ready'
-                ? 'Made for your skin tone, shape and colours. In WhatsApp we show looks on you.'
+                ? 'Made for your skin tone, shape and colours.'
                 : lead.lookStatus === 'generating'
-                  ? 'Making this look in your colours, on a model with your tone and shape…'
+                  ? 'Making this look for your tone and shape…'
                   : firstLook.detail}
             </p>
           </section>
 
+          <section className={s.section} aria-labelledby="videos-title">
+            <h2 id="videos-title" className={s.h2} style={{ marginBottom: 6 }}>Hear it from our clients</h2>
+            <p className={s.small} style={{ margin: '0 0 14px' }}>Real ICONIK clients, in their own words.</p>
+            <ClientVideos />
+          </section>
+
           <section className={s.section} aria-labelledby="plan-title">
             <p className={s.eyebrow}>{name ? `${name}’s` : 'Your'} Style Plan · 20 looks</p>
-            <h2 id="plan-title" className={s.h2}>Already built. It just needs you to walk in.</h2>
+            <h2 id="plan-title" className={s.h2}>Your plan is ready.</h2>
+            <p className={s.small} style={{ margin: '6px 0 0' }}>Join to see all 20 looks.</p>
             <div className={s.chips} style={{ display: 'flex', flexWrap: 'wrap', gap: 8, margin: '14px 0 16px' }}>
               {chips.map(chip => <span key={chip.key} className={s.chip}>{chip.label}</span>)}
             </div>
@@ -196,8 +199,8 @@ function Result({ lead, token, foundingEligible }: { lead: PublicLead; token: st
           </section>
 
           <section className={s.section} ref={pickerRef} id="plans" aria-labelledby="join-title">
-            <h2 id="join-title" className={s.h2}>Unlock all 20 looks and your stylist on WhatsApp</h2>
-            <p className={s.lede} style={{ marginBottom: 20 }}>Your colours and shape in every look, a new drop every month, and “ask before you buy” whenever you shop.</p>
+            <h2 id="join-title" className={s.h2}>Get all 20 looks, and ICONIK on WhatsApp</h2>
+            <p className={s.lede} style={{ marginBottom: 20 }}>Looks in your colours and shape, 8 new ones every month, and help before you buy.</p>
             <PlanPicker state={paywall} id="plans-top" />
           </section>
 
@@ -214,7 +217,7 @@ function Result({ lead, token, foundingEligible }: { lead: PublicLead; token: st
           </section>
 
           <section className={s.section} aria-labelledby="proof-title">
-            <h2 id="proof-title" className={s.h2} style={{ marginBottom: 14 }}>Real ICONIK clients</h2>
+            <h2 id="proof-title" className={s.h2} style={{ marginBottom: 14 }}>What changed for them</h2>
             <ClientProof />
           </section>
 

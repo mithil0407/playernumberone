@@ -371,7 +371,7 @@ export const QUIZ_SCREENS: QuizScreen[] = [
     layout: 'tiles',
     options: ['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL'].map(size => ({ value: size, label: size })),
   },
-  { id: 'your-almirah', kind: 'mirror', chapter: 'shopping', mirror: 'shopping' },
+  { id: 'your-cupboard', kind: 'mirror', chapter: 'shopping', mirror: 'shopping' },
 
   // Chapter 6: coming up
   {

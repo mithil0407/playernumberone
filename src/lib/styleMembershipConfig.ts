@@ -117,16 +117,10 @@ export const PROOF = {
   womenStyledLabel: '1,200+',
 };
 
-/**
- * The stylist who greets her. Placeholder until the owner names the real
- * stylist and supplies her photo; the generated portrait must be replaced
- * before launch (the blueprint promises a real person).
- */
-export const STYLIST = {
-  name: 'Ananya',
-  role: 'Your ICONIK stylist',
-  portrait: '/membership/stylist-portrait.webp',
-  isPlaceholder: true,
+/** The funnel speaks as ICONIK, never as a named persona (owner, 10 Oct). */
+export const BRAND = {
+  name: 'ICONIK',
+  tagline: 'Your stylist on WhatsApp',
 };
 
 /** Razorpay quarterly plan used for the autopay mandate (created by the owner). */

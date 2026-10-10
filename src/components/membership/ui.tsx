@@ -4,7 +4,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
-import type { DnaChip } from '@/lib/styleMembershipLogic';
+import { styleHeadline, type DnaChip, type StyleProfile } from '@/lib/styleMembershipLogic';
 import s from './membership.module.css';
 
 export function cx(...names: Array<string | false | null | undefined>) {
@@ -32,6 +32,21 @@ export function Icon({ name, size = 20 }: { name: 'back' | 'check' | 'heart' | '
         </svg>
       );
   }
+}
+
+/** ICONIK's mark: a serif "I" in a dark circle (no persona, no face). */
+export function Monogram({ size = 40 }: { size?: number }) {
+  return (
+    <span
+      aria-hidden
+      style={{
+        display: 'inline-grid', placeItems: 'center', flex: 'none', width: size, height: size, borderRadius: 999,
+        background: 'var(--ink)', color: '#f7f3ec', fontFamily: 'var(--serif)', fontSize: size * 0.5, lineHeight: 1,
+      }}
+    >
+      I
+    </span>
+  );
 }
 
 // ── Header ──────────────────────────────────────────────────────────────────
@@ -195,5 +210,42 @@ export function Swatches({ swatches, size = 'md' }: { swatches: Array<{ name: st
         </li>
       ))}
     </ul>
+  );
+}
+
+/** Her style in detail: what she wears, how dressed up, colours and go-to formulas. */
+export function StyleDetail({ profile, showHeadline = false }: { profile: StyleProfile; showHeadline?: boolean }) {
+  const rows: Array<[string, string]> = [
+    ['You wear', profile.wearLine],
+    ['Dress level', profile.dressLine],
+    ['Colours', profile.colourLine],
+  ];
+  if (profile.avoidLine) rows.push(['Skip', profile.avoidLine.replace(/^Not for you: /, '')]);
+  return (
+    <div className={s.card}>
+      {showHeadline ? (
+        <>
+          <p className={s.small} style={{ margin: 0 }}>Your style</p>
+          <p className={s.h3} style={{ margin: '4px 0 2px' }}>{styleHeadline(profile)}</p>
+          <p className={s.small} style={{ margin: '0 0 12px' }}>{profile.archetype.line}</p>
+        </>
+      ) : null}
+      <dl className={s.styleRows}>
+        {rows.map(([label, value]) => (
+          <div key={label}>
+            <dt>{label}</dt>
+            <dd>{value}</dd>
+          </div>
+        ))}
+      </dl>
+      {profile.formulas.length ? (
+        <>
+          <p className={s.small} style={{ margin: '14px 0 6px', fontWeight: 600, color: 'var(--ink)' }}>Your go-to outfits</p>
+          <ul className={s.formulaList}>
+            {profile.formulas.map(formula => <li key={formula}>{formula.charAt(0).toUpperCase() + formula.slice(1)}</li>)}
+          </ul>
+        </>
+      ) : null}
+    </div>
   );
 }

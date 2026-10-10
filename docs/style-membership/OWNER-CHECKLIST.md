@@ -22,10 +22,9 @@ All of these live in one file: `src/lib/styleMembershipConfig.ts`. Amounts inclu
 
 **Bump fulfilment is not automated.** Ticked bumps are saved on the membership (`style_memberships.bumps`) and listed in the hand-off, but the festive pack, the men's styling and the Blueprint call still need someone to deliver them.
 
-## 2. The stylist
+## 2. No persona
 
-- `STYLIST` in the config is a placeholder: the name "Ananya" and an AI-generated portrait (`public/membership/stylist-portrait.webp`). The blueprint promises a real ICONIK stylist who signs the reels. **Replace the name and the photo with the real stylist before launch**, or the welcome screen presents a generated face as a real person.
-- The FAQ and the chat demo say plainly that the day-to-day WhatsApp stylist is an AI and that ICONIK stylists check the Style Plan.
+The funnel speaks as **ICONIK** everywhere (owner, 10 Oct): no named AI stylist, no generated face. The mark is a serif "I" monogram. The FAQ and the chat demo say plainly that ICONIK on WhatsApp is AI trained by our stylists, and that real ICONIK stylists check the Style Plan.
 
 ## 3. Supabase migration (not run anywhere)
 
@@ -75,13 +74,13 @@ For members whose quarter ends within 3 days and who have no working autopay, it
 
 ## 8. Images that need a human eye
 
-63 images in `public/membership/` (shot list and prompts in `shot-list.md`). I reviewed every one and re-rolled the ones that failed. These are acceptable but worth your look:
+74 images in `public/membership/` (shot list and prompts in `shot-list.md`). I reviewed every one and re-rolled the ones that failed. These are acceptable but worth your look:
 
 | Image | Why |
 |---|---|
-| `stylist-portrait.webp` | Placeholder for the real stylist (see section 2) |
 | `shape-*.webp` (5) | The figures differ a little in drawing style (the rectangle has thinner outlines). Check that each shape reads clearly at thumbnail size |
-| `ba-apple-before.webp` / `-after` | The model is only mildly apple-shaped |
+| `ba-apple-before.webp` | The model is only mildly apple-shaped (the "after" was redone on 10 Oct as a navy column with a long blazer) |
+| `swipe-*.webp` (12) | New style swipes taken from Pinterest pins 15, 48, 2, 218, 12, 89, 22, 520, 32, 158, 34 and 243. Check that you're happy with the 12 directions |
 | `hero-trio.webp` | The centre model was asked for "deep" skin and reads closer to dusky |
 | `jewel-wheatish-gold` vs `-silver` | The earring shape differs slightly between the pair |
 | `chat-mustard-kurta.webp` | The mandarin collar with buttons reads a little menswear |
@@ -95,6 +94,7 @@ The before/after pairs carry the caption "Illustrative images generated for ICON
 
 - No countdown timer. The cohort close is a real date that removes itself.
 - Renewal terms sit under every pay button. The one-time plan says it does not renew.
+- Testimonial videos have no download, picture-in-picture or right-click options, and keep the landing page's face blur. (Nothing on the web can fully stop a determined person saving a video file.)
 - Bumps start unticked. WhatsApp consent is an unticked box, with STOP to opt out.
 - The selfie is optional and its privacy promise is specific: used only for colouring, never shown or used in ads, deleted after 30 days (the cron enforces this).
 - Founding pricing is checked on the server. Totals are recomputed on the server and a tampered total is refused.

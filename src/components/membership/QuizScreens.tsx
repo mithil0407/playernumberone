@@ -3,7 +3,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
-import { PROOF, STYLIST } from '@/lib/styleMembershipConfig';
+import { PROOF } from '@/lib/styleMembershipConfig';
 import {
   SKIN_TONES,
   dnaChips,
@@ -20,7 +20,7 @@ import {
 } from '@/lib/styleMembershipQuiz';
 import { attribution, newEventId, postJson, sessionId, tapFeedback, trackAction, trackLeadPixel, trackScreen } from './client';
 import { useQuiz, type PublicLead } from './QuizProvider';
-import { ChapterProgress, CtaBar, DnaCard, DnaStrip, Icon, Overlay, Photo, Spinner, Swatches, TopBar, cx } from './ui';
+import { ChapterProgress, CtaBar, DnaCard, DnaStrip, Icon, Monogram, Overlay, Photo, Spinner, StyleDetail, Swatches, TopBar, cx } from './ui';
 import s from './membership.module.css';
 
 let lastChipKeys: string[] | null = null;
@@ -40,6 +40,7 @@ export function QuizScreenView({ id }: { id: string }) {
 
   useEffect(() => {
     if (!quiz.ready || !screen) return;
+    quiz.markShown();
     trackScreen(screen.id, step, screen.chapter, quiz.lead?.id);
     headingRef.current?.focus({ preventScroll: true });
     window.scrollTo({ top: 0 });
@@ -100,7 +101,7 @@ function useAutoAdvance(screen: QuizScreen) {
   useEffect(() => () => { if (timer.current) window.clearTimeout(timer.current); }, []);
   return useCallback((answers?: QuizAnswers) => {
     if (timer.current) window.clearTimeout(timer.current);
-    timer.current = window.setTimeout(() => quiz.goNext(screen.id, answers), 260);
+    timer.current = window.setTimeout(() => quiz.goNext(screen.id, answers), 320);
   }, [quiz, screen.id]);
 }
 
@@ -112,12 +113,10 @@ function WelcomeScreen({ screen, headingRef }: { screen: QuizScreen; headingRef:
   return (
     <>
       <div className={s.row} style={{ marginBottom: 18 }}>
-        <span style={{ position: 'relative', width: 52, height: 52, borderRadius: 999, overflow: 'hidden', flex: 'none', background: 'var(--soft)' }}>
-          <Image src={STYLIST.portrait} alt="" fill sizes="52px" style={{ objectFit: 'cover', objectPosition: 'top' }} priority />
-        </span>
+        <Monogram size={44} />
         <div>
-          <p className={s.h3} style={{ margin: 0 }}>Meet {STYLIST.name}, your ICONIK stylist</p>
-          <p className={s.small} style={{ margin: 0 }}>A free 3-minute style quiz, built for Indian women</p>
+          <p className={s.h3} style={{ margin: 0 }}>Free 3-minute style quiz</p>
+          <p className={s.small} style={{ margin: 0 }}>Made for Indian women</p>
         </div>
       </div>
       <Photo src="/membership/hero-trio.webp" alt="Three Indian women in a camel blazer, a rust kurta set and a black co-ord" ratio="11" priority />
@@ -133,6 +132,7 @@ function WelcomeScreen({ screen, headingRef }: { screen: QuizScreen; headingRef:
             aria-checked={quiz.answers.age === option.value}
             className={cx(s.option, s.tileOption)}
             onClick={() => {
+              if (!quiz.settled()) return;
               tapFeedback();
               quiz.setAnswer('age', option.value as QuizAnswers['age']);
               trackAction('answer', { screen: screen.id, value: option.value });
@@ -227,6 +227,7 @@ function ChoiceScreen({ screen, headingRef }: { screen: QuizScreen; headingRef: 
   const selected = multi ? (Array.isArray(value) ? value as string[] : []) : value;
 
   const choose = (option: QuizOption) => {
+    if (!quiz.settled()) return;
     tapFeedback();
     if (!multi) {
       quiz.setAnswer(field, option.value as never);
@@ -356,6 +357,7 @@ function MetalScreen({ screen, headingRef }: { screen: QuizScreen; headingRef: H
   const tone = quiz.answers.skinTone ?? 'wheatish';
   const toneLabel = SKIN_TONES.find(item => item.id === tone)?.label.toLowerCase();
   const pick = (value: 'gold' | 'silver' | 'both') => {
+    if (!quiz.settled()) return;
     tapFeedback();
     quiz.setAnswer('metal', value);
     trackAction('answer', { screen: screen.id, value });
@@ -398,7 +400,7 @@ function SwipeScreen({ screen, headingRef }: { screen: QuizScreen; headingRef: H
   const start = useRef<{ x: number; y: number; id: number } | null>(null);
 
   const decide = (verdict: 'love' | 'skip') => {
-    if (leaving) return;
+    if (leaving || !quiz.settled()) return;
     tapFeedback();
     setLeaving(verdict);
     const swipes = { ...(quiz.answers.swipes ?? {}), [look.id]: verdict };
@@ -486,6 +488,17 @@ function MirrorScreen({ screen, headingRef }: { screen: QuizScreen; headingRef: 
             <Photo src={mirror.pair.after.image} alt={`After: ${mirror.pair.after.caption}`} sizes="(max-width: 520px) 50vw, 240px" />
             <figcaption className={s.pairLabel}><span className={s.tagGood} aria-hidden>✓</span>{mirror.pair.after.caption}</figcaption>
           </figure>
+        </div>
+      ) : mirror.style ? (
+        <div className={s.stack} style={{ marginTop: 20 }}>
+          <StyleDetail profile={mirror.style} />
+          {mirror.style.loved.length ? (
+            <div className={s.pairGrid} style={{ marginTop: 0 }}>
+              {mirror.style.loved.slice(0, 2).map(look => (
+                <Photo key={look.id} src={look.image} alt={look.label} sizes="(max-width: 520px) 50vw, 240px" />
+              ))}
+            </div>
+          ) : null}
         </div>
       ) : mirror.image ? (
         <div style={{ marginTop: 22 }}>
@@ -620,7 +633,7 @@ function GateScreen({ headingRef, screen }: { screen: QuizScreen; headingRef: He
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (!valid || busy) return;
+    if (!valid || busy || !quiz.settled()) return;
     setBusy(true);
     setError(null);
     const eventId = newEventId('Lead');
@@ -649,7 +662,7 @@ function GateScreen({ headingRef, screen }: { screen: QuizScreen; headingRef: He
     <form id="sm-gate-form" onSubmit={submit} noValidate>
       <DnaCard chips={chips} title="Your Style DNA is ready" />
       <div style={{ marginTop: 26 }}>
-        <Heading headingRef={headingRef} title={`Where should ${STYLIST.name} send it?`} subtitle="Your card, your likely season and your first look, on WhatsApp." />
+        <Heading headingRef={headingRef} title="Where should we send it?" subtitle="Get your Style DNA and first look on WhatsApp." />
       </div>
       <div className={s.stack} style={{ marginTop: 22 }}>
         <label className={s.field}>

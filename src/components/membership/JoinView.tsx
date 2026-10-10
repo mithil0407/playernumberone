@@ -6,16 +6,16 @@
 
 import Image from 'next/image';
 import { useEffect, useRef, useState } from 'react';
-import { MEMBERSHIP_PLANS, STYLIST, perDay, rupees } from '@/lib/styleMembershipConfig';
+import { MEMBERSHIP_PLANS, PROOF, perDay, rupees } from '@/lib/styleMembershipConfig';
 import { postJson, trackAction, trackScreen } from './client';
-import { ChatDemo, ClientProof, CohortLine, Guarantee, MembershipFaq, PlanPicker, PriceCompare, usePaywall, type CheckoutContact } from './Paywall';
+import { ChatDemo, ClientProof, ClientVideos, CohortLine, Guarantee, MembershipFaq, PlanPicker, PriceCompare, usePaywall, type CheckoutContact } from './Paywall';
 import { Icon, Photo, TopBar, cx } from './ui';
 import s from './membership.module.css';
 
 const STEPS = [
-  { title: 'Join, then a 3-minute quiz and a selfie', body: 'Your life, your shape, your occasions. One daylight selfie reads your colour season.', image: '/membership/whatsapp-lifestyle.webp' },
-  { title: 'Your Style Plan within 24 hours', body: 'Your colours, what flatters your shape, and about 20 outfits for your real calendar, checked by an ICONIK stylist.', image: '/membership/flat-office-kurta.webp' },
-  { title: 'Ask anything, any day, on WhatsApp', body: 'Outfit checks before you leave, “should I buy this?”, wedding functions, sale picks. A new drop of 8 looks every month.', image: '/membership/chat-outfit-check.webp' },
+  { title: 'A 3-minute quiz and a selfie', body: 'Tell us about your life and shape. A selfie finds your colours.', image: '/membership/whatsapp-lifestyle.webp' },
+  { title: 'Your Style Plan in 24 hours', body: 'Your colours, your shape and about 20 outfits, checked by an ICONIK stylist.', image: '/membership/flat-office-kurta.webp' },
+  { title: 'Ask anything on WhatsApp', body: 'Outfit checks, “should I buy this?”, and 8 new looks every month.', image: '/membership/chat-outfit-check.webp' },
 ];
 
 export function JoinView() {
@@ -68,7 +68,7 @@ export function JoinView() {
         <div className={s.screen} style={{ paddingBottom: 120 }}>
           <p className={s.eyebrow}>ICONIK Style Membership</p>
           <h1 className={s.h1}>Your personal stylist, on WhatsApp</h1>
-          <p className={s.lede}>Your colours, your body shape and outfits for your real calendar, starting from what’s already in your almirah. Then ask anything, any day.</p>
+          <p className={s.lede}>Your colours, your shape and outfits for your life, starting with your own cupboard.</p>
           <div style={{ marginTop: 18 }}>
             <Photo src="/membership/sales-hero.webp" alt="An Indian woman in an ivory linen co-ord smiling at her phone" ratio="11" priority />
           </div>
@@ -83,21 +83,19 @@ export function JoinView() {
           </div>
           <div style={{ marginTop: 16 }}><CohortLine /></div>
 
-          <section className={s.section} aria-labelledby="stylist-title">
-            <div className={s.row} style={{ alignItems: 'flex-start' }}>
-              <span style={{ position: 'relative', width: 72, height: 72, borderRadius: 999, overflow: 'hidden', flex: 'none', background: 'var(--soft)' }}>
-                <Image src={STYLIST.portrait} alt={`${STYLIST.name}, ICONIK stylist`} fill sizes="72px" style={{ objectFit: 'cover', objectPosition: 'top' }} />
-              </span>
-              <div>
-                <h2 id="stylist-title" className={s.h2} style={{ fontSize: 24 }}>Hi, I’m {STYLIST.name}</h2>
-                <p className={s.small} style={{ margin: '4px 0 0' }}>{STYLIST.role}</p>
-              </div>
-            </div>
-            <p style={{ margin: '14px 0 0' }}>
-              Most women I style don’t need more clothes. They need to know which of their clothes work, and why. I’ll never push you into trends that aren’t you, or into dressing “older” or “safer” than you want.
+          <section className={s.section} aria-labelledby="videos-title">
+            <h2 id="videos-title" className={s.h2} style={{ marginBottom: 6 }}>Hear it from our clients</h2>
+            <p className={s.small} style={{ margin: '0 0 14px' }}>Real ICONIK clients, in their own words.</p>
+            <ClientVideos />
+          </section>
+
+          <section className={s.section} aria-labelledby="who-title">
+            <h2 id="who-title" className={s.h2} style={{ fontSize: 24 }}>Who styles you</h2>
+            <p style={{ margin: '10px 0 0' }}>
+              ICONIK has styled {PROOF.womenStyledLabel} Indian women. We don’t push trends or ask you to buy more. We show you what works on you, and why.
             </p>
             <p className={s.small} style={{ margin: '10px 0 0' }}>
-              Your day-to-day stylist on WhatsApp is an AI trained on the ICONIK method, so she answers in minutes. Our human stylists check your Style Plan and step in whenever you need a person.
+              ICONIK on WhatsApp is AI trained by our stylists, so it replies in minutes. Real ICONIK stylists check your Style Plan.
             </p>
           </section>
 
@@ -151,7 +149,7 @@ export function JoinView() {
           <section className={s.section} ref={plansRef} id="plans" aria-labelledby="plans-title">
             <h2 id="plans-title" className={s.h2} style={{ marginBottom: 16 }}>Choose your plan</h2>
             <PlanPicker state={paywall} id="join-plans" contact={{ value: contact, onChange: setContact }} ctaLabel="Join" />
-            <p className={s.fine} style={{ marginTop: 10 }}>After paying you’ll take the 3-minute quiz, then meet your stylist on WhatsApp.</p>
+            <p className={s.fine} style={{ marginTop: 10 }}>After you pay: a 3-minute quiz, then ICONIK on WhatsApp.</p>
           </section>
 
           <section className={s.section}><Guarantee /></section>
@@ -160,7 +158,7 @@ export function JoinView() {
             <PriceCompare planId={paywall.plan} />
           </section>
           <section className={s.section} aria-labelledby="proof-title">
-            <h2 id="proof-title" className={s.h2} style={{ marginBottom: 14 }}>Real ICONIK clients</h2>
+            <h2 id="proof-title" className={s.h2} style={{ marginBottom: 14 }}>What changed for them</h2>
             <ClientProof />
           </section>
           <section className={s.section} aria-labelledby="faq-title">

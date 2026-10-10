@@ -46,6 +46,9 @@ Three Indian women standing together, relaxed and smiling at each other, full le
 ```
 
 ### stylist-portrait
+
+Removed 10 Oct: the funnel speaks as ICONIK, with no named persona or face.
+
 - aspect: 4:5
 - style: photo
 ```prompt
@@ -135,6 +138,9 @@ Full-length. An Indian woman about 38 with medium brown skin and an apple-shaped
 ```
 
 ### ba-apple-after
+
+Replaced 10 Oct by `ba-apple-after-v2a` (the owner didn't like this one); the published `ba-apple-after.webp` is v2a.
+
 - aspect: 4:5
 - style: photo
 - ref: ba-apple-before
@@ -243,6 +249,113 @@ Full-length. An Indian woman about 24 with medium brown skin and a high ponytail
 - style: photo
 ```prompt
 Full-length. An Indian woman about 32 with dusky brown skin and long open hair, wearing a flowing terracotta cotton maxi dress with thin straps under a light ivory open shirt, tan flat sandals, thin gold bangles. Relaxed, mid-step.
+```
+
+## 4b. Style swipes from the ICONIK Pinterest board (v2, 10 Oct)
+
+The owner asked for elevated swipe looks taken from the Pinterest board
+(`outfitlibrarypinterest.md`, which he has reviewed), chosen so each one tests a
+different style direction. Each shot names its pin. These replace the eight
+v1 swipes in the quiz; the v1 looks stay in the result-page library.
+
+### swipe-blazer-column
+- aspect: 4:5
+- style: photo
+```prompt
+Full-length. Pinterest pin 15, worn by an Indian woman about 32 with medium brown skin and a sleek low bun: a black sleeveless surplice-neck top, a camel double-breasted blazer worn open with the sleeves long, black high-waisted wide-leg trousers, black pointed pumps, a black structured top-handle bag, a delicate gold necklace. Black column head to toe with the camel blazer as the only contrast; one hand in a trouser pocket.
+```
+
+### swipe-kurta-shrug
+- aspect: 4:5
+- style: photo
+```prompt
+Full-length. Pinterest pin 48, worn by an Indian woman about 30 with wheatish skin and hair in a low bun: a cream printed straight kurta with a finely embroidered neckline, a beige linen shrug-jacket worn open and unbuttoned over it, matching cream straight trousers, tan flat leather slides, gold jhumka earrings. Full tonal cream look, quietly elegant.
+```
+
+### swipe-tee-trousers
+- aspect: 4:5
+- style: photo
+```prompt
+Full-length. Pinterest pin 2, worn by an Indian woman about 27 with fair skin with a warm undertone and loose shoulder-length hair: a plain white crew-neck tee half-tucked at the front so a slim black belt with a gold buckle shows, taupe pleated high-waisted wide-leg trousers falling over the shoe, clean white leather sneakers, a black oversized tote on the shoulder, sunglasses pushed up on her head. Effortless and minimal.
+```
+
+### swipe-kurta-jacket-jeans
+- aspect: 4:5
+- style: photo
+```prompt
+Full-length. Pinterest pin 218, worn by an Indian woman about 29 with dusky brown skin and wavy hair: a mustard-yellow sleeveless A-line kurta to mid-thigh, a blue ikat-print sleeveless jacket worn over it, mid-blue straight jeans, brown flat sandals, a wide brown leather belt cinched over the jacket at the waist, a silver statement necklace, a small brown crossbody bag. Confident Indo-western layering.
+```
+
+### swipe-cobalt-blouse
+- aspect: 4:5
+- style: photo
+```prompt
+Full-length. Pinterest pin 12, worn by an Indian woman about 34 with deep brown skin and natural curls tied back: a cobalt-blue V-neck flutter-sleeve blouse fully tucked into cream high-waisted pleated wide-leg trousers with a paper-bag waist, nude ballet flats, a natural woven tote, gold hoop earrings. A strong blue-on-cream colour block.
+```
+
+### swipe-festive-sharara
+- aspect: 4:5
+- style: photo
+```prompt
+Full-length. Pinterest pin 89, worn by an Indian woman about 28 with wheatish skin and her hair pulled back: a sea-green embroidered kurta with three-quarter sleeves, a matching sea-green net dupatta draped over one shoulder and pinned, a matching flared gharara-sharara, cream embroidered juttis, a gold choker necklace. Full tonal Indian festive set, graceful.
+```
+
+### swipe-polka-midi
+- aspect: 4:5
+- style: photo
+```prompt
+Full-length. Pinterest pin 22, worn by an Indian woman about 31 with medium brown skin and soft waves: a cream midi dress with small black polka dots, a modest V-neckline, puff-shouldered three-quarter sleeves ending just below the elbow, nipped at the natural waist by the cut, a fluted fishtail hem, black pointed pumps, a small black clutch tucked under one arm. Romantic and polished.
+```
+
+### swipe-linen-kurta
+- aspect: 4:5
+- style: photo
+```prompt
+Full-length. Pinterest pin 520, worn by an Indian woman about 36 with dusky brown skin and a loose braid: a chocolate-brown linen kurta with short sleeves and a curved hem worn long and untucked, brown-and-cream striped straight trousers, brown flat leather mules, a slim watch. Relaxed, tonal brown, easy weekend elegance.
+```
+
+### swipe-leopard-magenta
+- aspect: 4:5
+- style: photo
+```prompt
+Full-length. Pinterest pin 32, worn by an Indian woman about 30 with fair skin with a warm undertone and a high top knot: an opaque leopard-print high-neck cap-sleeve blouse fully tucked into magenta-pink high-waisted wide-leg trousers, snakeskin pointed heels, a navy quilted mini bag on a chain, sunglasses in one hand. Bold print against a bright colour.
+```
+
+### swipe-anarkali
+- aspect: 4:5
+- style: photo
+```prompt
+Full-length. Pinterest pin 158, worn by an Indian woman about 27 with deep brown skin and a sleek bun: a blush-pink embroidered anarkali gown with a V-neck, a fitted embroidered bodice, a gathered waist seam, a full flared floor-length skirt and sheer bishop sleeves gathered into embellished cuffs, long gold chandelier earrings. Soft festive glamour, not bridal.
+```
+
+### swipe-chambray-blazer
+- aspect: 4:5
+- style: photo
+```prompt
+Full-length. Pinterest pin 34, worn by an Indian woman about 38 with wheatish skin and shoulder-length hair: a light-blue chambray button-down shirt tucked in with the collar and cuffs folded out over a camel blazer, mid-blue straight-leg jeans slightly cropped at the ankle, nude ballet flats, a brown belt, a blush quilted tote, small gold jewellery. Smart, easy weekday polish.
+```
+
+### swipe-waistcoat
+- aspect: 4:5
+- style: photo
+```prompt
+Full-length. Pinterest pin 243, worn by an Indian woman about 29 with medium brown skin and a sleek low ponytail: a navy sleeveless tailored waistcoat with oversized gold buttons worn buttoned as the top, left over the waistband, cream high-waisted wide-leg trousers, nude pointed heels, gold statement earrings and a gold cuff. Sharp, modern and trend-led, navy and cream with gold.
+```
+
+### ba-apple-after-v2a
+- aspect: 4:5
+- style: photo
+- ref: ba-apple-before
+```prompt
+Full-length. The same woman as the reference (same face, hair, skin tone, apple-shaped body and pose), now in a flattering, elevated outfit for an apple shape: a deep navy single-colour column: a navy V-neck silk shell and navy straight-leg trousers, with a longline single-breasted navy blazer worn open so it falls past the hips and draws a long vertical line, tan pointed flats, a long fine gold pendant. Confident smile.
+```
+
+### ba-apple-after-v2b
+- aspect: 4:5
+- style: photo
+- ref: ba-apple-before
+```prompt
+Full-length. The same woman as the reference (same face, hair, skin tone, apple-shaped body and pose), now in a flattering, elevated outfit for an apple shape: an emerald-green empire-line midi dress with a soft V-neckline, a seam just under the bust and a skirt that skims straight past the tummy, elbow-length sleeves, nude block heels, small gold drop earrings. Confident smile.
 ```
 
 ## 5. Outfit flat-lays
@@ -529,3 +642,9 @@ A capsule wardrobe flat-lay showing two outfits that share pieces. In the centre
 - The personalised look 1 on the result page is generated lazily: once per lead, only after the WhatsApp gate, under a daily cap (`STYLE_MEMBERSHIP_DAILY_LOOKS`, default 200), so about $0.06 per lead who reaches her result.
 
 Images that need a human eye are listed in OWNER-CHECKLIST.md.
+
+### Update, 10 Oct 2026
+
+- 14 more generations: the 12 Pinterest-board swipes (section 4b) and two candidates for a new apple "after". v2a (navy column with a long open blazer) is published as `ba-apple-after.webp`; v2b (emerald empire dress) was not used.
+- `stylist-portrait.webp` deleted (no persona).
+- Totals: **87 generations, about $5.22**, and 74 published images (the 8 v1 swipe looks stay as result-page looks).

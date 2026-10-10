@@ -8,7 +8,7 @@
 
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { trackPurchase } from '@/lib/metaPixel';
 import {
   DEFAULT_PLAN,
@@ -20,7 +20,6 @@ import {
   MEMBERSHIP_FUNNEL_CATEGORY,
   MEMBERSHIP_NOTES_PRODUCT,
   MEMBERSHIP_PLANS,
-  STYLIST,
   STYLIST_SESSION_RANGE,
   cohortOpen,
   membershipContentIds,
@@ -33,7 +32,7 @@ import {
   type MembershipPlanId,
 } from '@/lib/styleMembershipConfig';
 import { attribution, newEventId, openRazorpay, postJson, trackAction, trackInitiateCheckoutPixel, writeStore } from './client';
-import { Icon, Spinner, cx } from './ui';
+import { Icon, Monogram, Spinner, cx } from './ui';
 import s from './membership.module.css';
 
 export interface CheckoutContact {
@@ -279,11 +278,9 @@ export function ChatDemo() {
   return (
     <div>
       <div className={s.row} style={{ marginBottom: 10 }}>
-        <span style={{ position: 'relative', width: 36, height: 36, borderRadius: 999, overflow: 'hidden', background: 'var(--soft)' }}>
-          <Image src={STYLIST.portrait} alt="" fill sizes="36px" style={{ objectFit: 'cover', objectPosition: 'top' }} />
-        </span>
+        <Monogram size={36} />
         <span>
-          <span className={s.h3} style={{ display: 'block', fontSize: 15 }}>ICONIK · {STYLIST.name}</span>
+          <span className={s.h3} style={{ display: 'block', fontSize: 15 }}>ICONIK</span>
           <span className={s.small} style={{ display: 'block', fontSize: 12 }}>WhatsApp</span>
         </span>
       </div>
@@ -299,7 +296,7 @@ export function ChatDemo() {
         </div>
         <p className={cx(s.bubble, s.bubbleMe)} style={{ margin: 0 }}>Wait that’s so good. Ordering now</p>
       </div>
-      <p className={s.fine} style={{ marginTop: 8 }}>An example conversation. Your stylist is an AI trained on ICONIK’s method, and an ICONIK stylist checks your Style Plan.</p>
+      <p className={s.fine} style={{ marginTop: 8 }}>An example chat. ICONIK on WhatsApp is AI trained by our stylists, and a real ICONIK stylist checks your Style Plan.</p>
     </div>
   );
 }
@@ -328,15 +325,101 @@ const CLIENT_CARDS = [
   { name: 'Shreya, 26, Bangalore', image: '/testimonial-shreya.webp', quote: 'I used to save so many outfits and then buy nothing because I was confused. Now shopping feels much more straightforward.', stars: 4 },
 ];
 
-const CLIENT_VIDEOS = [
-  { name: 'Tina', src: '/testimonialvideo2.mp4', poster: '/testimonialvideo2-poster.webp', quote: 'They helped me get styled for my events. It was absolutely worth it.' },
-  { name: 'Priya', src: '/testimonialvideo1.mp4', poster: '/testimonialvideo1-poster.webp', quote: 'I was very insecure about my tummy. ICONIK suggested outfits that helped me get my confidence back.' },
-  { name: 'Gayathri', src: '/testimonialvideo3.mp4', poster: '/testimonialvideo3-poster.webp', quote: 'Jazz was very helpful in finding what actually suited me.' },
+interface ClientVideo {
+  name: string;
+  src: string;
+  poster: string;
+  quote: string;
+  /** Same face blur as the landing page, for clients who asked for it. */
+  faceBlur?: { left: string; top: string; width: string; height: string };
+}
+
+const CLIENT_VIDEOS: ClientVideo[] = [
+  { name: 'Tina', src: '/testimonialvideo2.mp4', poster: '/testimonialvideo2-poster.webp', quote: 'They helped me get styled for my events. Absolutely worth it.' },
+  { name: 'Priya', src: '/testimonialvideo1.mp4', poster: '/testimonialvideo1-poster.webp', quote: 'I was insecure about my tummy. ICONIK’s outfits got my confidence back.', faceBlur: { left: '40.5%', top: '32.3%', width: '22.5%', height: '20.3%' } },
+  { name: 'Gayathri', src: '/testimonialvideo3.mp4', poster: '/testimonialvideo3-poster.webp', quote: 'They found what actually suited me.', faceBlur: { left: '28.5%', top: '34.3%', width: '23%', height: '18.5%' } },
 ];
 
+/**
+ * A quiet player: poster, one frosted play button, a thin progress line. No
+ * native controls, no download, no picture-in-picture, no right-click menu.
+ */
+function VideoCard({ video }: { video: ClientVideo }) {
+  const ref = useRef<HTMLVideoElement>(null);
+  const [playing, setPlaying] = useState(false);
+  const [progress, setProgress] = useState(0);
+
+  const toggle = () => {
+    const element = ref.current;
+    if (!element) return;
+    if (element.paused) {
+      document.querySelectorAll<HTMLVideoElement>('video[data-sm-testimonial]').forEach(other => { if (other !== element) other.pause(); });
+      void element.play();
+      trackAction('testimonial_play', { screen: 'proof', name: video.name });
+    } else {
+      element.pause();
+    }
+  };
+
+  return (
+    <figure className={s.videoCard}>
+      <div className={s.videoFrame} onContextMenu={event => event.preventDefault()}>
+        <video
+          ref={ref}
+          data-sm-testimonial
+          className={s.video}
+          poster={video.poster}
+          preload="none"
+          playsInline
+          disablePictureInPicture
+          disableRemotePlayback
+          controlsList="nodownload noplaybackrate noremoteplayback nofullscreen"
+          onPlay={() => setPlaying(true)}
+          onPause={() => setPlaying(false)}
+          onEnded={() => { setPlaying(false); setProgress(0); }}
+          onTimeUpdate={event => {
+            const element = event.currentTarget;
+            if (element.duration) setProgress(element.currentTime / element.duration);
+          }}
+          onClick={toggle}
+          aria-label={`${video.name}, ICONIK client`}
+        >
+          <source src={video.src} type="video/mp4" />
+        </video>
+        {video.faceBlur ? <span aria-hidden className={s.faceBlur} style={video.faceBlur} /> : null}
+        <button type="button" className={cx(s.videoPlay, playing && s.videoPlayHidden)} onClick={toggle} aria-label={`${playing ? 'Pause' : 'Play'} ${video.name}’s story`}>
+          {playing ? <PauseGlyph /> : <PlayGlyph />}
+        </button>
+        <span className={s.videoProgress} aria-hidden><span style={{ transform: `scaleX(${progress})` }} /></span>
+      </div>
+      <figcaption className={s.videoCaption}>
+        <span className={s.videoQuote}>“{video.quote}”</span>
+        <span className={s.small}>{video.name} · ICONIK client</span>
+      </figcaption>
+    </figure>
+  );
+}
+
+function PlayGlyph() {
+  return <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden fill="currentColor"><path d="M8 5.5v13a1 1 0 001.5.86l10.5-6.5a1 1 0 000-1.72L9.5 4.64A1 1 0 008 5.5z" /></svg>;
+}
+
+function PauseGlyph() {
+  return <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1.2" /><rect x="14" y="5" width="4" height="14" rx="1.2" /></svg>;
+}
+
+export function ClientVideos() {
+  return (
+    <div className={s.scroller} aria-label="Client videos">
+      {CLIENT_VIDEOS.map(video => <VideoCard key={video.name} video={video} />)}
+    </div>
+  );
+}
+
+/** Client stories (photos and quotes) from the ₹2,699 page. */
 export function ClientProof() {
   return (
-    <div className={s.stack} style={{ gap: 18 }}>
+    <div className={s.stack} style={{ gap: 12 }}>
       <div className={s.scroller} aria-label="Client stories">
         {CLIENT_CARDS.map(card => (
           <figure key={card.name} className={s.testimonial} style={{ margin: 0 }}>
@@ -351,30 +434,18 @@ export function ClientProof() {
           </figure>
         ))}
       </div>
-      <div className={s.scroller} aria-label="Client videos">
-        {CLIENT_VIDEOS.map(video => (
-          <figure key={video.name} className={s.testimonial} style={{ margin: 0, width: '62%' }}>
-            <video controls preload="none" playsInline poster={video.poster} style={{ display: 'block', width: '100%', aspectRatio: '9 / 16', objectFit: 'cover', background: '#171411' }} aria-label={`${video.name}, ICONIK client video`}>
-              <source src={video.src} type="video/mp4" />
-            </video>
-            <figcaption style={{ padding: 14 }}>
-              <p className={s.small} style={{ margin: 0 }}>“{video.quote}” · {video.name}</p>
-            </figcaption>
-          </figure>
-        ))}
-      </div>
       <p className={s.fine} style={{ margin: 0 }}>Real ICONIK clients from our Blueprint service. Some faces are blurred at their request.</p>
     </div>
   );
 }
 
 export const MEMBERSHIP_FAQ = [
-  { q: 'Is my stylist a real person?', a: `Your day-to-day stylist on WhatsApp is an AI trained on ICONIK’s styling method, so she answers in minutes, any time. ICONIK’s human stylists check your Style Plan before it reaches you, and step in when something needs a person.` },
+  { q: 'Is it a real stylist?', a: 'ICONIK on WhatsApp is AI trained by our stylists, so it replies in minutes, any time. Real ICONIK stylists check your Style Plan and step in when you need a person.' },
   { q: 'What happens to my photos?', a: 'Your selfie is used only to read your colouring. It is stored privately, never shown to anyone or used in ads, and deleted after 30 days. Photos you send in WhatsApp are used only to style you.' },
   { q: 'How does renewal work?', a: 'The subscription renews every 3 months. After paying, you can choose to set up autopay; if you don’t, we send a payment link on WhatsApp before your renewal. Either way you get a WhatsApp reminder 3 days before.' },
   { q: 'How do I cancel?', a: 'Message “cancel” to us on WhatsApp. No calls, no forms. You keep your looks and the rest of the quarter you paid for.' },
   { q: 'What if I don’t like my looks?', a: `${GUARANTEE.body}` },
-  { q: 'Do I need to buy new clothes?', a: 'No. We start from what’s already in your almirah, and only suggest new pieces when they fill a real gap, in your size, budget and favourite stores.' },
+  { q: 'Do I need to buy new clothes?', a: 'No. We start with what’s already in your cupboard. We only suggest new pieces when you really need them, in your size, budget and favourite shops.' },
 ];
 
 export function MembershipFaq() {
