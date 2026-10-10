@@ -75,6 +75,8 @@ export interface ManRecommendationProfile {
   white_preference?: string;
   /** Net 👍 minus 👎 per library look across every client, when the profile was built. */
   look_feedback?: Record<string, number>;
+  /** Which outfit picker reads this profile. Absent on profiles built before v5, which keep the v4 picker. */
+  picker?: 'v5';
   built_at: string;
 }
 
@@ -182,7 +184,7 @@ export const MAN_STYLE_PIECES: Array<{ id: string; label: string; pattern: RegEx
   { id: 'layered_knit', label: 'Knits over shirts', pattern: /sweater over|collar (?:just )?visible|visible at collar|cardigan|sweater vest/i },
   { id: 'vest', label: 'Vests & gilets', pattern: /\bvest\b|gilet/i },
   { id: 'pleated', label: 'Pleated trousers', pattern: /pleated/i },
-  { id: 'white_trousers', label: 'White or cream trousers', pattern: /(white|cream|ivory)\b[^,;]*\b(trousers|chinos)/i },
+  { id: 'white_trousers', label: 'White or cream trousers', pattern: /(white|cream|ivory|ecru|off-white)\b[^,;]*\b(trousers|chinos|shorts|jeans)/i },
   { id: 'coloured_trousers', label: 'Coloured trousers', pattern: /(burgundy|olive|green|red|blue)\b[^,;]*\b(trousers|chinos)\b/i },
   { id: 'jeans', label: 'Jeans', pattern: /\bjeans\b|denim/i },
   { id: 'shorts', label: 'Shorts', pattern: /\bshorts\b/i },
@@ -359,6 +361,7 @@ export function buildManRecommendationProfile(
   const experimentation = answers?.experimentation ?? deriveExperimentation(source, tribes);
   return {
     version: 1,
+    picker: 'v5',
     source: answers ? 'intake' : 'derived',
     tribes,
     poles: {

@@ -49,8 +49,11 @@ const intake = {
   white_test: 'bright_white',
 };
 
+/** A profile as v4 built it (no picker flag), so these tests keep covering the v4 picker that older reports use. */
 function withProfile(styleProfile?: unknown, extra: Record<string, string> = {}): ClassificationResult {
-  return { ...baseClassification, recommendation_profile: buildManRecommendationProfile({ ...intake, ...extra, style_profile: styleProfile }) };
+  const profile = buildManRecommendationProfile({ ...intake, ...extra, style_profile: styleProfile });
+  delete profile.picker;
+  return { ...baseClassification, recommendation_profile: profile };
 }
 
 test('colour lock: drifted colours are caught and restored, precise names inside a colour are fine', () => {

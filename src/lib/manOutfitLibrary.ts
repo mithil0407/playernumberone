@@ -4,9 +4,12 @@ import { join } from 'path';
 import type { ClassificationResult } from './manReportGenerator';
 import {
   findManColourMentions,
+  isManColourAvoided,
+  isManNeutralColour,
   readManClientColouring,
   scoreManColourAwayFromFace,
   scoreManColourNearFace,
+  scoreManColourSuitability,
   type ManClientColouring,
 } from './manOutfitColour';
 import {
@@ -28,7 +31,12 @@ export const MAN_OUTFIT_LIBRARY_LEGACY_VERSION = 'v3-board-first' as const;
 // v4: picks follow the client's recommendation profile (style tribes, boldness
 // ladder, occasion split, taste test, palette fit) and keep each look's colours.
 export const MAN_OUTFIT_LIBRARY_VERSION = 'v4-taste-led' as const;
-export type ManOutfitLibraryVersion = typeof MAN_OUTFIT_LIBRARY_VERSION | typeof MAN_OUTFIT_LIBRARY_LEGACY_VERSION;
+// v5: a stylist's portfolio (safe / signature / stretch roles, colour judged by
+// depth and brightness rather than palette membership, no colour leading more
+// than three looks). Chosen by profiles built with picker 'v5'; older v4
+// reports keep the v4 picker so their stored picks still line up.
+export const MAN_OUTFIT_LIBRARY_PORTFOLIO_VERSION = 'v5-portfolio' as const;
+export type ManOutfitLibraryVersion = typeof MAN_OUTFIT_LIBRARY_PORTFOLIO_VERSION | typeof MAN_OUTFIT_LIBRARY_VERSION | typeof MAN_OUTFIT_LIBRARY_LEGACY_VERSION;
 
 /** Silhouette families assigned to board looks by the conversion rules (see the board file header). */
 export type ManBoardSilhouette =
@@ -49,13 +57,15 @@ export type ManBoardSilhouette =
   | 'indian-formal';
 
 /** Library versions whose reports go through the outfit portfolio quality gate (v2 reports are still stored). */
-export const MAN_LIBRARY_PORTFOLIO_VERSIONS = ['v2-9plus', MAN_OUTFIT_LIBRARY_LEGACY_VERSION, MAN_OUTFIT_LIBRARY_VERSION] as const;
+export const MAN_LIBRARY_PORTFOLIO_VERSIONS = ['v2-9plus', MAN_OUTFIT_LIBRARY_LEGACY_VERSION, MAN_OUTFIT_LIBRARY_VERSION, MAN_OUTFIT_LIBRARY_PORTFOLIO_VERSION] as const;
 /** Reports whose outfits keep their board look's colours (v4 onwards). */
 export function usesManColourLock(version: string | null | undefined): boolean {
-  return version === MAN_OUTFIT_LIBRARY_VERSION;
+  return version === MAN_OUTFIT_LIBRARY_VERSION || version === MAN_OUTFIT_LIBRARY_PORTFOLIO_VERSION;
 }
 export function getManOutfitLibraryVersion(classification: Pick<ClassificationResult, 'recommendation_profile'>): ManOutfitLibraryVersion {
-  return classification.recommendation_profile ? MAN_OUTFIT_LIBRARY_VERSION : MAN_OUTFIT_LIBRARY_LEGACY_VERSION;
+  const profile = classification.recommendation_profile;
+  if (!profile) return MAN_OUTFIT_LIBRARY_LEGACY_VERSION;
+  return profile.picker === 'v5' ? MAN_OUTFIT_LIBRARY_PORTFOLIO_VERSION : MAN_OUTFIT_LIBRARY_VERSION;
 }
 export function usesManLibraryPortfolio(version: string | null | undefined): boolean {
   return (MAN_LIBRARY_PORTFOLIO_VERSIONS as readonly string[]).includes(version ?? '');
@@ -119,6 +129,8 @@ export interface ManOutfitLibraryAssignment {
   silhouetteFamily?: string;
   /** v4 picks only: where the look sits on the client's boldness ladder and why it was chosen. */
   ladder?: ManOutfitLadderStep;
+  /** v5 picks only: safe classic, signature or stretch. */
+  role?: ManOutfitRole;
   boldness?: number;
   targetBoldness?: number;
   tribes?: string[];
@@ -134,6 +146,8 @@ export interface ManOutfitSelectionOverrides {
   pinned?: Record<string, number>;
   /** Library look ids never to pick for this client. */
   excluded?: number[];
+  /** v5: the head stylist's one-line reason per outfit number, passed to the Section 4 writer. */
+  stylistNotes?: Record<string, string>;
 }
 
 const HEADER_CONTEXTS: Record<string, ManOutfitLibraryContext> = {
@@ -749,6 +763,7 @@ export function selectManOutfitLibraryReferences(
 
 export interface ManOutfitLibraryPick {
   entry: ManOutfitLibraryEntry;
+  role?: ManOutfitRole;
   ladder?: ManOutfitLadderStep;
   targetBoldness?: number;
   paletteFit?: number;
@@ -763,9 +778,9 @@ export function selectManOutfitLibraryPicks(
   selectionSalt = '',
   overrides: ManOutfitSelectionOverrides = {},
 ): ManOutfitLibraryPick[] {
-  if (classification.recommendation_profile) {
-    return selectTasteLedPicks(classification, classification.recommendation_profile, library, now, selectionSalt, overrides);
-  }
+  const profile = classification.recommendation_profile;
+  if (profile?.picker === 'v5') return selectPortfolioPicks(classification, profile, library, now, selectionSalt, overrides);
+  if (profile) return selectTasteLedPicks(classification, profile, library, now, selectionSalt, overrides);
   return selectLegacyReferences(classification, library, now, selectionSalt).map(entry => ({ entry }));
 }
 
@@ -789,6 +804,7 @@ const RELATED_TRIBES: Record<string, string[]> = {
 
 /** Most outfits that may lead with a black top or layer; past this the report reads as one black uniform. */
 const MAX_BLACK_LED = 4;
+export const MAN_MAX_BLACK_LED = MAX_BLACK_LED;
 /** v4 lets a silhouette he likes appear four times across the 20 (still at most twice per occasion). */
 const MAX_FAMILY_TASTE_LED = 4;
 const MAX_WHITE_SNEAKERS = 5;
@@ -805,6 +821,7 @@ function isBlackLed(entry: ManOutfitLibraryEntry): boolean {
   const { top, layer } = nearFaceColours(entry);
   return top[0]?.family === 'black' || layer[0]?.family === 'black';
 }
+export const isManBlackLed = isBlackLed;
 
 function hasWhiteSneakers(entry: ManOutfitLibraryEntry): boolean {
   return /\bwhite\b[^,;|]*sneakers?/i.test(entry.footwear);
@@ -1091,6 +1108,413 @@ function selectTasteLedPicks(
   return picks;
 }
 
+// ── v5: a stylist's portfolio ───────────────────────────────────────────────
+//
+// A stylist doesn't hand a man twenty looks at his comfort level. About one in
+// five is the safe classic, done well; most are his signature (the colours and
+// textures that suit him best); and a few are a considered step forward. "Minimal"
+// limits how many colours one look carries, never whether it has any colour.
+// His palette guides the shades but doesn't fence them in: no colour leads more
+// than three looks, so a warm palette doesn't turn into twenty rust-and-olive outfits.
+
+export type ManOutfitRole = 'anchor' | 'signature' | 'stretch';
+
+const ROLE_LADDER: Record<ManOutfitRole, ManOutfitLadderStep> = { anchor: 'comfort', signature: 'step-up', stretch: 'stretch' };
+/** Contexts that take a safe look first, and those that take a stretch first. */
+const ANCHOR_ORDER: ManOutfitLibraryContext[] = ['Office / Formal', 'Relaxed Casual', 'Smart Casual', 'Evening Wear'];
+const STRETCH_ORDER: ManOutfitLibraryContext[] = ['Evening Wear', 'Smart Casual', 'Relaxed Casual', 'Office / Formal'];
+
+export interface ManPortfolioSlot {
+  context: ManOutfitLibraryContext;
+  role: ManOutfitRole;
+}
+
+/**
+ * How many safe, signature and stretch looks he gets, spread across his
+ * occasions. A cautious man gets a few more anchors; one who likes to
+ * experiment gets more stretch. Every occasion keeps at least one signature.
+ */
+export function planManPortfolioRoles(split: Array<[ManOutfitLibraryContext, number]>, experimentation: number): ManPortfolioSlot[] {
+  const total = split.reduce((sum, [, count]) => sum + count, 0);
+  const anchorShare = experimentation <= 3 ? 0.3 : experimentation >= 7 ? 0.15 : 0.2;
+  const stretchShare = experimentation <= 3 ? 0.1 : experimentation >= 7 ? 0.25 : 0.2;
+  const counts = new Map(split.map(([context, count]) => [context, { count, anchor: 0, stretch: 0 }]));
+  const share = (role: 'anchor' | 'stretch', wanted: number, order: ManOutfitLibraryContext[]) => {
+    const contexts = [...order.filter(context => counts.has(context)), ...split.map(([context]) => context).filter(context => !order.includes(context))];
+    let left = wanted;
+    for (let guard = 0; left > 0 && guard < 50; guard += 1) {
+      let placed = false;
+      for (const context of contexts) {
+        const slot = counts.get(context)!;
+        // Keep at least one signature, and never more than half of an occasion in one role.
+        if (left > 0 && slot.anchor + slot.stretch < slot.count - 1 && slot[role] < Math.max(1, Math.floor(slot.count / 2))) {
+          slot[role] += 1;
+          left -= 1;
+          placed = true;
+        }
+      }
+      if (!placed) break;
+    }
+  };
+  share('stretch', Math.max(1, Math.round(total * stretchShare)), STRETCH_ORDER);
+  share('anchor', Math.max(1, Math.round(total * anchorShare)), ANCHOR_ORDER);
+  const slots: ManPortfolioSlot[] = [];
+  for (const [context, count] of split) {
+    const { anchor, stretch } = counts.get(context)!;
+    // Open on a signature, put the safe look second and the stretch in the middle or last.
+    const roles: ManOutfitRole[] = Array.from({ length: count }, () => 'signature');
+    let anchorsLeft = anchor;
+    let stretchLeft = stretch;
+    for (const index of [1, 4, 6, 3, 5, 7]) if (anchorsLeft > 0 && index < count) { roles[index] = 'anchor'; anchorsLeft -= 1; }
+    for (const index of [2, count - 1, 5, 3, 6]) if (stretchLeft > 0 && index > 0 && index < count && roles[index] === 'signature') { roles[index] = 'stretch'; stretchLeft -= 1; }
+    slots.push(...roles.map(role => ({ context, role })));
+  }
+  return slots;
+}
+
+function leadNearFace(entry: ManOutfitLibraryEntry) {
+  const { top, layer } = nearFaceColours(entry);
+  return layer[0] ?? top[0] ?? null;
+}
+
+/** 0-1: how good the colours near his face look on him, by their depth, brightness and temperature. */
+export function manLookColourSuitability(entry: ManOutfitLibraryEntry, colouring: ManClientColouring): number {
+  const { top, layer } = nearFaceColours(entry);
+  const near = [...layer, ...top];
+  // "Dark shirt": the library gives no colour, so it is judged as a neutral.
+  const scores = near.length ? near.map(info => scoreManColourSuitability(info, colouring)) : [0.35];
+  const lead = scores[0];
+  const second = scores[1] ?? lead;
+  const worst = Math.min(...scores);
+  const away = [entry.bottom, entry.footwear]
+    .flatMap(text => findManColourMentions(text).map(mention => isManColourAvoided(mention.info, colouring) ? -0.5 : 0))
+    .reduce((sum: number, value) => sum + value, 0);
+  return Math.max(0, Math.min(1, ((0.5 * lead + 0.3 * second + 0.2 * worst) + 1) / 2 + away * 0.3));
+}
+
+/** Colour families a look carries besides neutrals, top to bottom. */
+function nonNeutralFamilies(entry: ManOutfitLibraryEntry): Set<string> {
+  const layer = /^(none|no layer)\b/i.test(entry.layer.trim()) ? '' : entry.layer;
+  return new Set([entry.top, layer, entry.bottom]
+    .flatMap(text => findManColourMentions(text).map(mention => mention.info))
+    .filter(info => !isManNeutralColour(info))
+    .map(info => info.family));
+}
+
+/**
+ * Minimal means a calm look, not a colourless one: two colours and a neutral are
+ * fine, three competing colours or colour plus a busy pattern are not. An
+ * expressive man is nudged toward looks that have something to say.
+ */
+function expressionFit(entry: ManOutfitLibraryEntry, profile: ManRecommendationProfile): number {
+  const colours = nonNeutralFamilies(entry).size;
+  if (profile.poles.expression === 'minimal') {
+    let fit = 0;
+    if (colours > 2) fit -= 0.3;
+    if (entry.patternFamily !== 'solid' && colours > 1) fit -= 0.15;
+    if (/graphic|pendant|necklace|chain|crossbody/i.test(manLookPieceText(entry))) fit -= 0.1;
+    return fit;
+  }
+  if (profile.poles.expression === 'expressive') return colours >= 1 || entry.patternFamily !== 'solid' ? 0.1 : -0.05;
+  return 0;
+}
+
+const LIGHT_OR_LOUD_BOTTOM = /\b(white|cream|ivory|ecru|off-white|beige|stone|sand|khaki|light|pale|pastel)\b/i;
+
+/**
+ * Weight carried on the hips and thighs: the eye should go up. Dark, plain
+ * trousers with room through the thigh; no shorts, no light or coloured bottoms;
+ * a jacket or overshirt adds width up top.
+ */
+function bottomHeavyFit(entry: ManOutfitLibraryEntry, classification: ClassificationResult, profile: ManRecommendationProfile): number {
+  const body = `${classification.body.silhouette_type} ${classification.body.fat_storage_zone} ${classification.body.minimise_zone}`.toLowerCase();
+  const bottomHeavy = /triangle|pear|hips?|thighs?/.test(body) && !/inverted triangle/.test(body);
+  const noColourOnLegs = profile.taste['258'] === 'never';
+  if (!bottomHeavy && !noColourOnLegs) return 0;
+  const bottomColours = findManColourMentions(entry.bottom).map(mention => mention.info);
+  const colouredBottom = bottomColours.some(info => !isManNeutralColour(info));
+  let fit = 0;
+  if (colouredBottom) fit -= 0.25;
+  if (!bottomHeavy) return fit;
+  if (/\bshorts\b/i.test(entry.bottom)) fit -= 0.35;
+  if (LIGHT_OR_LOUD_BOTTOM.test(entry.bottom) || bottomColours.some(info => info.depth === 'light')) fit -= 0.3;
+  if (/skinny|slim|tapered|cropped/i.test(entry.bottom)) fit -= 0.1;
+  if (/blazer|jacket|overshirt|bomber|coat|shirt, worn open/i.test(entry.layer) && !/^(none|no layer)\b/i.test(entry.layer.trim())) fit += 0.08;
+  return fit;
+}
+
+function roleFit(entry: ManOutfitLibraryEntry, role: ManOutfitRole, comfort: number, colouring: ManClientColouring, selected: ManOutfitLibraryEntry[]): number {
+  const lead = leadNearFace(entry);
+  const neutralLead = !lead || isManNeutralColour(lead);
+  const b = entry.boldness;
+  if (role === 'anchor') {
+    return 1 - 0.25 * Math.max(0, b - comfort) + (neutralLead ? 0.15 : 0) + (entry.patternFamily === 'solid' ? 0.05 : 0);
+  }
+  if (role === 'signature') {
+    const low = Math.max(3, comfort);
+    const fit = 1 - 0.3 * Math.max(0, low - b) - 0.2 * Math.max(0, b - (low + 1));
+    const showsColour = lead && !isManNeutralColour(lead) && scoreManColourSuitability(lead, colouring) >= 0.5;
+    const texture = ['knit', 'overshirt', 'statement-jacket', 'coat'].includes(layerType(entry) ?? '');
+    return fit + (showsColour || texture ? 0.15 : 0);
+  }
+  const low = Math.max(4, comfort + 1);
+  const fresh = (lead && !selected.some(chosen => leadNearFace(chosen)?.family === lead.family))
+    || (layerType(entry) && !selected.some(chosen => layerType(chosen) === layerType(entry)));
+  return 1 - 0.3 * Math.max(0, low - b) + (fresh ? 0.1 : 0);
+}
+
+const ROLE_GUIDANCE: Record<ManOutfitRole, string> = {
+  anchor: 'his safe classic — familiar enough to wear tomorrow, but executed so well it never reads basic: exact fit, one quality fabric, one considered detail',
+  signature: 'his signature — the colour or texture that suits him best, the look people compliment him in',
+  stretch: 'a considered step forward — the anchor sentence acknowledges it is a step outside his usual rotation and says why it works on him',
+};
+
+interface PortfolioSetup {
+  classification: ClassificationResult;
+  profile: ManRecommendationProfile;
+  climate: ManReportClimateProfile;
+  suppressPatterns: boolean;
+  waivers: string[];
+  wantsIndianCasual: boolean;
+  wantsIndoWestern: boolean;
+  colouring: ManClientColouring;
+  taste: TasteLookups;
+  comfort: number;
+  excluded: Set<number>;
+  relaxedWorkplace: boolean;
+  bottomHeavy: boolean;
+}
+
+function portfolioSetup(
+  classification: ClassificationResult,
+  profile: ManRecommendationProfile,
+  library: ManOutfitLibraryEntry[],
+  now: Date,
+  overrides: ManOutfitSelectionOverrides,
+): PortfolioSetup {
+  const taste = readTaste(profile, library);
+  const body = `${classification.body.silhouette_type} ${classification.body.fat_storage_zone} ${classification.body.minimise_zone}`.toLowerCase();
+  return {
+    classification,
+    profile,
+    climate: getManReportClimateProfile(classification, now),
+    suppressPatterns: explicitPatternAversion(classification),
+    waivers: getManOutfitSelectionWaivers(classification),
+    wantsIndianCasual: requiresIndianCasual(classification) || profile.try_pieces.includes('kurta'),
+    wantsIndoWestern: !profile.never_pieces.includes('bandhgala') && (profile.try_pieces.includes('bandhgala')
+      || profile.tribes.some(tribe => ['indo_authority', 'royal_edit'].includes(tribe))
+      || profile.taste['343'] === 'love'),
+    colouring: readManClientColouring(classification.colour, profile.white_preference),
+    taste,
+    comfort: manClientComfortBoldness(profile, library),
+    excluded: new Set([...(overrides.excluded ?? []), ...taste.rejected.map(entry => entry.id)]),
+    relaxedWorkplace: NO_SUIT_DRESS_CODES.has(profile.dress_code),
+    bottomHeavy: /triangle|pear|hips?|thighs?/.test(body) && !/inverted triangle/.test(body),
+  };
+}
+
+/** The looks an occasion may draw from (the office borrows office-safe smart-casual looks in a relaxed workplace). */
+function portfolioContextPool(library: ManOutfitLibraryEntry[], context: ManOutfitLibraryContext, setup: PortfolioSetup) {
+  const borrowOfficeLooks = context === 'Office / Formal' && setup.profile.dress_code !== 'suit_tie';
+  return library.flatMap(entry => {
+    if (entry.context === context) return [entry];
+    if (borrowOfficeLooks && entry.context === 'Smart Casual' && entry.tier === 'board' && isOfficeSafe(entry)) return [{ ...entry, context }];
+    return [];
+  });
+}
+
+/** Things he can't or won't wear: never relaxed, whatever else is left. */
+function portfolioHardEligible(entry: ManOutfitLibraryEntry, context: ManOutfitLibraryContext, setup: PortfolioSetup, indianSlot: boolean): boolean {
+  const indianOk = indianSlot
+    ? entry.archetype === 'indian-casual'
+    : !INDIAN_ARCHETYPES.has(entry.archetype) || (context === 'Evening Wear' && entry.archetype === 'indian-formal' && setup.wantsIndoWestern);
+  return indianOk
+    && entry.climateModes.includes(setup.climate.mode)
+    && !antiPreferenceConflict(entry, setup.classification)
+    && (!setup.waivers.includes('ties') || !hasTie(entry))
+    && (!setup.waivers.includes('suits') || !isSuit(entry))
+    && (entry.patternFamily === 'solid' || !setup.suppressPatterns)
+    && !setup.excluded.has(entry.id);
+}
+
+/** Soft rules: dropped only when an occasion has nothing else left. */
+function portfolioPreferred(entry: ManOutfitLibraryEntry, setup: PortfolioSetup): boolean {
+  return !neverPieceConflict(entry, setup.profile)
+    && !(setup.bottomHeavy && /\bshorts\b/i.test(entry.bottom))
+    && !/flip-flops?/i.test(entry.footwear);
+}
+
+/** How right a look is for him before the portfolio is considered: style, colour, body and taste. */
+function portfolioLookScore(entry: ManOutfitLibraryEntry, setup: PortfolioSetup): number {
+  return 0.3 * manLookStyleMatch(entry, setup.profile)
+    + 0.3 * manLookColourSuitability(entry, setup.colouring)
+    + 0.08 * bodyCompatibilityScore(entry, setup.classification)
+    + bellyFit(entry, setup.classification)
+    + bottomHeavyFit(entry, setup.classification, setup.profile)
+    + expressionFit(entry, setup.profile)
+    + tasteAffinity(entry, setup.taste)
+    + feedbackWeight(entry, setup.profile);
+}
+
+/** Most looks one colour may lead near his face: three in a 20-look Blueprint. */
+export function manPortfolioLeadCap(total: number) {
+  return Math.max(2, Math.ceil(total / 7));
+}
+
+export interface ManPortfolioCandidate {
+  entry: ManOutfitLibraryEntry;
+  score: number;
+  /** The colour family nearest his face (a layer if there is one, otherwise the top). */
+  leadFamily: string | null;
+}
+
+/**
+ * The best looks for each of his occasions, for the head stylist to choose from:
+ * everything he can wear, ranked by how right it is for him, with no colour
+ * family taking more than a third of an occasion's list.
+ */
+export function getManPortfolioCandidates(
+  classification: ClassificationResult,
+  library = getManOutfitLibrary(),
+  now = new Date(),
+  perContext = 14,
+): { slots: ManPortfolioSlot[]; candidates: Map<ManOutfitLibraryContext, ManPortfolioCandidate[]> } {
+  const profile = classification.recommendation_profile;
+  if (!profile) throw new Error('The head stylist needs a recommendation profile');
+  const setup = portfolioSetup(classification, profile, library, now, {});
+  const split = computeManContextSplit(profile);
+  const candidates = new Map<ManOutfitLibraryContext, ManPortfolioCandidate[]>();
+  for (const [context, count] of split) {
+    const indian = setup.wantsIndianCasual && context === 'Relaxed Casual';
+    const eligible = portfolioContextPool(library, context, setup)
+      .filter(entry => portfolioHardEligible(entry, context, setup, false) || (indian && portfolioHardEligible(entry, context, setup, true)));
+    const preferred = eligible.filter(entry => portfolioPreferred(entry, setup));
+    const pool = (preferred.length >= count ? preferred : eligible)
+      .map(entry => ({ entry, score: portfolioLookScore(entry, setup), leadFamily: leadNearFace(entry)?.family ?? null }))
+      .sort((a, b) => b.score - a.score || a.entry.id - b.entry.id);
+    const limit = Math.max(perContext, count * 3);
+    const perFamily = Math.max(2, Math.ceil(limit / 3));
+    const chosen: ManPortfolioCandidate[] = [];
+    const families = new Map<string, number>();
+    for (const candidate of pool) {
+      if (chosen.length >= limit) break;
+      const family = candidate.leadFamily ?? 'unknown';
+      if ((families.get(family) ?? 0) >= perFamily) continue;
+      families.set(family, (families.get(family) ?? 0) + 1);
+      chosen.push(candidate);
+    }
+    candidates.set(context, chosen);
+  }
+  return { slots: planManPortfolioRoles(split, profile.experimentation), candidates };
+}
+
+function selectPortfolioPicks(
+  classification: ClassificationResult,
+  profile: ManRecommendationProfile,
+  library: ManOutfitLibraryEntry[],
+  now: Date,
+  selectionSalt: string,
+  overrides: ManOutfitSelectionOverrides,
+): ManOutfitLibraryPick[] {
+  const fingerprint = `${clientFingerprint(classification)}|${selectionSalt}`;
+  const setup = portfolioSetup(classification, profile, library, now, overrides);
+  const { climate, colouring, comfort, relaxedWorkplace } = setup;
+  const split = computeManContextSplit(profile);
+  const slots = planManPortfolioRoles(split, profile.experimentation);
+  const maxPerLeadFamily = manPortfolioLeadCap(slots.length);
+  const pinned = overrides.pinned ?? {};
+  const slotPicks: Array<ManOutfitLibraryPick | undefined> = slots.map(() => undefined);
+  const selected = () => slotPicks.flatMap(pick => pick ? [pick.entry] : []);
+  const topFamily = (entry?: ManOutfitLibraryEntry) => entry ? getManOutfitPrimaryColourFamily(entry.top) : null;
+  const layerFamily = (entry?: ManOutfitLibraryEntry) => !entry || /^no layer$/i.test(entry.layer) ? null : getManOutfitPrimaryColourFamily(entry.layer);
+  const leadCount = (family: string) => selected().filter(entry => leadNearFace(entry)?.family === family).length;
+  let indianPlaced = 0;
+  // Pinned slots first, then stretch (bold looks are scarce), then signature, then anchors.
+  const rolePriority: Record<ManOutfitRole, number> = { stretch: 0, signature: 1, anchor: 2 };
+  const fillOrder = slots
+    .map((slot, index) => ({ slot, index }))
+    .sort((a, b) => Number(Boolean(pinned[String(b.index + 1)])) - Number(Boolean(pinned[String(a.index + 1)]))
+      || rolePriority[a.slot.role] - rolePriority[b.slot.role]
+      || a.index - b.index);
+
+  for (const { slot, index } of fillOrder) {
+    const { context, role } = slot;
+    const pinnedSource = library.find(entry => entry.id === pinned[String(index + 1)]);
+    const pinnedEntry = pinnedSource && pinnedSource.context !== context ? { ...pinnedSource, context } : pinnedSource;
+    let chosen = pinnedEntry && !selected().some(item => item.id === pinnedEntry.id) ? pinnedEntry : undefined;
+
+    if (!chosen) {
+      const indianSlot = setup.wantsIndianCasual && context === 'Relaxed Casual' && indianPlaced < 2;
+      const inContext = selected().filter(entry => entry.context === context);
+      const silhouetteCount = (family: string, scope: ManOutfitLibraryEntry[]) => scope.filter(entry => entry.silhouetteFamily === family).length;
+      const patternedSoFar = selected().filter(entry => entry.patternFamily !== 'solid').length;
+      const blackLedSoFar = selected().filter(isBlackLed).length;
+      const whiteSneakersSoFar = selected().filter(hasWhiteSneakers).length;
+      const eligibleBeforeCaps = portfolioContextPool(library, context, setup)
+        .filter(entry => portfolioHardEligible(entry, context, setup, indianSlot))
+        .filter(entry => entry.patternFamily === 'solid' || patternedSoFar < MAX_PATTERNED)
+        .filter(entry => !selected().some(chosenEntry => chosenEntry.id === entry.id));
+      const withinCaps = eligibleBeforeCaps
+        .filter(entry => silhouetteCount(entry.silhouetteFamily, inContext) < 2)
+        .filter(entry => silhouetteCount(entry.silhouetteFamily, selected()) < MAX_FAMILY_TASTE_LED);
+      const base = withinCaps.length ? withinCaps : eligibleBeforeCaps;
+      const preferred = base
+        .filter(entry => portfolioPreferred(entry, setup))
+        .filter(entry => { const lead = leadNearFace(entry); return !lead || leadCount(lead.family) < maxPerLeadFamily; })
+        .filter(entry => !isBlackLed(entry) || blackLedSoFar < MAX_BLACK_LED)
+        .filter(entry => !hasWhiteSneakers(entry) || whiteSneakersSoFar < MAX_WHITE_SNEAKERS);
+      const pool = preferred.length ? preferred : base;
+      const tier = pool.some(entry => entry.tier === 'board') ? pool.filter(entry => entry.tier === 'board') : pool;
+      const current = selected();
+      const score = (entry: ManOutfitLibraryEntry) => {
+        const lead = leadNearFace(entry);
+        const newColour = lead && !isManNeutralColour(lead) && leadCount(lead.family) === 0 ? 0.06 : 0;
+        const officeTone = context === 'Office / Formal' && profile.dress_code === 'smart_no_tie' ? (hasTie(entry) ? -0.2 : 0) - (isSuit(entry) ? 0.1 : 0) : 0;
+        return portfolioLookScore(entry, setup)
+          + 0.3 * roleFit(entry, role, comfort, colouring, current)
+          + tryPieceBonus(entry, profile, current)
+          + lightVarietyBonus(entry, current)
+          + newColour
+          + officeTone
+          + (relaxedWorkplace && context === 'Office / Formal' && /blazer/i.test(entry.layer) && profile.poles.structure !== 'structured' ? -0.05 : 0)
+          + (stableHash(`${fingerprint}|${entry.context}|${entry.id}`) / 0xffffffff) * 0.03;
+      };
+      const ranked = [...tier].sort((a, b) => score(b) - score(a) || a.id - b.id);
+      const neighbours = [slotPicks[index - 1]?.entry, slotPicks[index + 1]?.entry].filter((entry): entry is ManOutfitLibraryEntry => Boolean(entry));
+      const clashesTop = (entry: ManOutfitLibraryEntry) => neighbours.some(other => topFamily(other) === topFamily(entry));
+      const clashesLayer = (entry: ManOutfitLibraryEntry) => Boolean(layerFamily(entry)) && neighbours.some(other => layerFamily(other) === layerFamily(entry));
+      const floor = ranked.length ? score(ranked[0]) - 0.1 : 0;
+      const close = ranked.filter(entry => score(entry) >= floor);
+      chosen = close.find(entry => !clashesTop(entry) && !clashesLayer(entry))
+        ?? close.find(entry => !clashesTop(entry))
+        ?? ranked[0];
+
+      if (!chosen && indianSlot) {
+        const fallbackBase = library.find(entry => entry.context === 'Relaxed Casual' && !INDIAN_ARCHETYPES.has(entry.archetype) && !selected().some(item => item.id === entry.id));
+        if (fallbackBase) chosen = indianCasualFallback(fallbackBase, indianPlaced === 0, setup.suppressPatterns);
+      }
+      if (chosen && indianSlot) indianPlaced += 1;
+    }
+    if (!chosen) throw new Error(`ICONIK library cannot fill a ${context} look for ${climate.label}.`);
+
+    slotPicks[index] = {
+      entry: chosen,
+      role,
+      ladder: ROLE_LADDER[role],
+      targetBoldness: role === 'anchor' ? comfort : role === 'signature' ? Math.max(3, comfort) : Math.max(4, comfort + 1),
+      paletteFit: Math.round(manLookColourSuitability(chosen, colouring) * 100) / 100,
+      styleMatch: Math.round(manLookStyleMatch(chosen, profile) * 100) / 100,
+    };
+  }
+
+  const picks = slotPicks.filter((pick): pick is ManOutfitLibraryPick => Boolean(pick));
+  const counted = new Map<string, number>();
+  for (const pick of picks) counted.set(pick.entry.context, (counted.get(pick.entry.context) ?? 0) + 1);
+  const missing = split.filter(([context, count]) => counted.get(context) !== count);
+  if (missing.length) throw new Error(`ICONIK portfolio selection failed: ${missing.map(([context, count]) => `${context} needs ${count} looks`).join('; ')}.`);
+  return picks;
+}
+
 function selectLegacyReferences(
   classification: ClassificationResult,
   library = getManOutfitLibrary(),
@@ -1239,6 +1663,7 @@ export function getManOutfitLibraryAssignments(
     archetype: pick.entry.archetype,
     silhouetteFamily: pick.entry.silhouetteFamily,
     ...(pick.ladder ? {
+      ...(pick.role ? { role: pick.role } : {}),
       ladder: pick.ladder,
       boldness: pick.entry.boldness,
       targetBoldness: pick.targetBoldness,
@@ -1287,11 +1712,13 @@ function formatTasteLedLibraryPrompt(
   classification: ClassificationResult,
   picks: ManOutfitLibraryPick[],
   climate: ManReportClimateProfile,
+  stylistNotes: Record<string, string> = {},
 ): string {
   const references = picks.map((pick, index) => {
     const entry = pick.entry;
+    const note = stylistNotes[String(index + 1)];
     return `### MANDATORY SOURCE FOR FINAL OUTFIT ${index + 1}: LIBRARY LOOK ${entry.id} — ${entry.context.toUpperCase()}
-LADDER: ${pick.ladder ? LADDER_GUIDANCE[pick.ladder] : 'comfort zone'}
+${pick.role ? `ROLE: ${ROLE_GUIDANCE[pick.role]}` : `LADDER: ${pick.ladder ? LADDER_GUIDANCE[pick.ladder] : 'comfort zone'}`}
 SILHOUETTE FAMILY: ${entry.silhouetteFamily}
 STYLE TRIBES: ${entry.tribes.join(', ')}
 TOP: ${entry.top}
@@ -1299,7 +1726,8 @@ LAYER: ${entry.layer}
 BOTTOM: ${entry.bottom}
 FOOTWEAR: ${entry.footwear}
 ACCESSORY: ${entry.accessories}${entry.styling ? `
-STYLING: ${entry.styling}` : ''}`;
+STYLING: ${entry.styling}` : ''}${note ? `
+WHY THE HEAD STYLIST CHOSE IT: ${note}` : ''}`;
   }).join('\n\n');
   const split = describeManContextSplit(classification, '–').join('; ');
   const waivers = getManOutfitSelectionWaivers(classification);
@@ -1314,7 +1742,7 @@ SOURCE LOCK — non-negotiable, and it outranks every older rule about colour:
 - Keep each source's garment types, layer or no-layer decision, bottom silhouette and footwear category exactly. Climate may change a fabric (wool → cotton, suede → smooth leather), never a colour or a category.
 - Keep the source's STYLING line (tucked, sleeves rolled, worn open, draped) and its accessories. If the source accessory is "None", add one that suits his face shape.
 - Your job is execution: give every garment a real fabric, a fit for his body and one precise styling instruction, so each line reads as a buyable product. That is where the elevation comes from — fabric, texture, proportion and styling — not from new colours.
-- Respect the LADDER line: comfort looks stay wearable, stretch looks stay bold. Do not tone a stretch look down.
+- Respect the ${picks.some(pick => pick.role) ? 'ROLE' : 'LADDER'} line: comfort looks stay wearable, stretch looks stay bold. Do not tone a stretch look down.
 - Never introduce satin or any shiny fabric; silk only as matte raw silk or cotton-silk in wedding-function looks. ${waivers.includes('ties') ? 'No ties for this client.' : 'Add a tie only where the source has one.'} ${waivers.includes('suits') ? 'No suits for this client.' : ''}
 
 Occasion split for this client: ${split}.${classification.recommendation_profile?.occasion_mode === 'groom'
@@ -1337,7 +1765,7 @@ export function formatManOutfitLibraryForPrompt(
 ): string {
   const climate = getManReportClimateProfile(classification, now);
   if (classification.recommendation_profile) {
-    return formatTasteLedLibraryPrompt(classification, selectManOutfitLibraryPicks(classification, library, now, selectionSalt, overrides), climate);
+    return formatTasteLedLibraryPrompt(classification, selectManOutfitLibraryPicks(classification, library, now, selectionSalt, overrides), climate, overrides.stylistNotes);
   }
   const selected = selectManOutfitLibraryReferences(classification, library, now, selectionSalt);
   const references = selected.map((entry, index) => `### MANDATORY SOURCE FOR FINAL OUTFIT ${index + 1}: LIBRARY LOOK ${entry.id} — ${entry.context.toUpperCase()}

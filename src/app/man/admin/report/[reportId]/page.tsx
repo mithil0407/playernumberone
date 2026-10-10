@@ -1179,7 +1179,7 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
   const outfitQuality = report?.report_data?.qa?.section4?.quality;
   const outfitQaErrors = (report?.report_data?.qa?.section4?.issues ?? []).filter(item => item.severity === 'error');
   // v2-9plus, v3-board-first and v4-taste-led reports were picked from the library; inline because this page cannot load the library module.
-  const qualityGateRequired = ['v2-9plus', 'v3-board-first', 'v4-taste-led'].includes(report?.report_data?.outfit_library?.version ?? '');
+  const qualityGateRequired = ['v2-9plus', 'v3-board-first', 'v4-taste-led', 'v5-portfolio'].includes(report?.report_data?.outfit_library?.version ?? '');
   const qualityGatePassed = !qualityGateRequired || Boolean(outfitQuality?.passed);
   const ready        = allPagesApproved(approvals, slideMeta);
   const isGenerating = report?.status === 'generating';
