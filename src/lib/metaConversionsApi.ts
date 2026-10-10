@@ -54,13 +54,40 @@ function resolveGraphApiVersion() {
 }
 
 export async function sendMetaPurchaseEvent(input: MetaPurchaseInput) {
+  if (!input.eventId || !Number.isFinite(input.amount)) return;
+  const identity = buildMetaPurchaseServerIdentity(input.eventId);
+  await sendMetaServerEvent({
+    ...input,
+    eventName: identity.event_name,
+    customData: {
+      currency: input.currency,
+      value: input.amount,
+      content_name: input.contentName,
+      content_ids: input.contentIds,
+      content_type: 'product',
+      num_items: input.numItems,
+      content_category: input.contentCategory,
+      order_id: input.externalId || undefined,
+    },
+  });
+}
+
+type MetaServerEventInput = Omit<MetaPurchaseInput, 'amount' | 'currency' | 'contentName' | 'contentIds' | 'numItems' | 'contentCategory'> & {
+  /** Standard (Lead, InitiateCheckout, Purchase…) or custom event name; the browser pixel must use the same name and event ID. */
+  eventName: string;
+  customData: Record<string, unknown>;
+};
+
+/** Any server-side event, deduplicated against the browser pixel by event ID. */
+export async function sendMetaServerEvent(input: MetaServerEventInput) {
   const accessToken = process.env.META_ACCESS_TOKEN;
+  const eventName = input.eventName;
   if (!accessToken) {
-    console.warn('Skipping Meta CAPI Purchase: META_ACCESS_TOKEN is not configured.');
+    console.warn(`Skipping Meta CAPI ${eventName}: META_ACCESS_TOKEN is not configured.`);
     return;
   }
 
-  if (!input.eventId || !Number.isFinite(input.amount)) return;
+  if (!input.eventId) return;
 
   const { firstName, lastName } = splitMetaName(input.customerName);
   const userData: Record<string, string | undefined> = {
@@ -79,21 +106,13 @@ export async function sendMetaPurchaseEvent(input: MetaPurchaseInput) {
   const body = JSON.stringify({
     data: [
       {
-        ...buildMetaPurchaseServerIdentity(input.eventId),
+        event_name: eventName,
+        event_id: input.eventId,
         event_time: Math.floor(Date.now() / 1000),
         action_source: 'website',
         event_source_url: input.eventSourceUrl || input.attribution?.landing_page || undefined,
         user_data: Object.fromEntries(Object.entries(userData).filter(([, value]) => value)),
-        custom_data: {
-          currency: input.currency,
-          value: input.amount,
-          content_name: input.contentName,
-          content_ids: input.contentIds,
-          content_type: 'product',
-          num_items: input.numItems,
-          content_category: input.contentCategory,
-          order_id: input.externalId || undefined,
-        },
+        custom_data: Object.fromEntries(Object.entries(input.customData).filter(([, value]) => value !== undefined)),
       },
     ],
     ...(process.env.META_TEST_EVENT_CODE ? { test_event_code: process.env.META_TEST_EVENT_CODE } : {}),
@@ -121,7 +140,7 @@ export async function sendMetaPurchaseEvent(input: MetaPurchaseInput) {
         // confirm the event was received rather than just that the POST left.
         if (process.env.META_TEST_EVENT_CODE) {
           const ack = await response.text().catch(() => '');
-          console.log('Meta CAPI Purchase accepted:', input.eventId, ack);
+          console.log(`Meta CAPI ${eventName} accepted:`, input.eventId, ack);
         }
         return;
       }
@@ -129,16 +148,16 @@ export async function sendMetaPurchaseEvent(input: MetaPurchaseInput) {
       const text = await response.text().catch(() => '');
       // 4xx means the payload is wrong — retrying sends the same bad payload.
       if (response.status < 500) {
-        console.error('Meta CAPI Purchase rejected:', response.status, text);
+        console.error(`Meta CAPI ${eventName} rejected:`, response.status, text);
         return;
       }
-      console.error(`Meta CAPI Purchase failed (attempt ${attempt}):`, response.status, text);
+      console.error(`Meta CAPI ${eventName} failed (attempt ${attempt}):`, response.status, text);
     } catch (error) {
-      console.error(`Meta CAPI Purchase unavailable (attempt ${attempt}):`, error);
+      console.error(`Meta CAPI ${eventName} unavailable (attempt ${attempt}):`, error);
     } finally {
       clearTimeout(timeout);
     }
   }
 
-  console.error('Meta CAPI Purchase permanently failed for event', input.eventId);
+  console.error(`Meta CAPI ${eventName} permanently failed for event`, input.eventId);
 }
