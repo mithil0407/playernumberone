@@ -29,7 +29,7 @@ import {
   SHAPES,
   SKIN_TONES,
   SWIPE_LOOKS,
-  likelySeason,
+  lookForHer,
   paletteFor,
   resolveShape,
   type QuizAnswers,
@@ -277,17 +277,22 @@ export async function readSelfie(lead: MembershipLead, bytes: Buffer) {
 
 // ── The one personalised look, made only when she reaches her result ───────
 
-function lookPrompt(answers: QuizAnswers, seasonName: string | null) {
+/**
+ * Her look 1 is drawn, not designed: the outfit is a pin from the ICONIK
+ * Pinterest board picked by rules (lookForHer), copied garment by garment, in
+ * the pin's own colours. The model only puts it on a woman with her skin tone,
+ * shape and age.
+ */
+export function lookPrompt(answers: QuizAnswers) {
   const tone = SKIN_TONES.find(item => item.id === answers.skinTone)?.label.toLowerCase() ?? 'wheatish';
   const shape = resolveShape(answers);
-  const season = paletteFor(seasonName) ?? likelySeason(answers);
-  const loved = SWIPE_LOOKS.find(look => answers.swipes?.[look.id] === 'love') ?? SWIPE_LOOKS[0];
-  const colours = season ? season.best.slice(0, 3).map(swatch => swatch.name.toLowerCase()).join(', ') : 'rust, ivory and camel';
+  const look = lookForHer(answers);
   const ageHint = answers.age === '45+' ? 'about 48' : answers.age === '35-44' ? 'about 38' : answers.age === '18-24' ? 'about 23' : 'about 30';
   return [
-    'Editorial fashion photograph for a premium, calm style-coaching app. Warm cream seamless studio backdrop (#F3EEE6), soft diffused natural window light, gentle realistic shadows, generous negative space.',
-    `Full-length. An Indian woman ${ageHint} years old with ${tone} skin${shape ? ` and a ${SHAPES[shape].label.toLowerCase()}-shaped figure` : ''}, natural Indian features, relaxed confident smile.`,
-    `She wears a ${loved.label.toLowerCase()} in the spirit of "${loved.detail}", recoloured in ${colours}, cut to flatter her shape: ${shape ? SHAPES[shape].rule : 'clean, balanced lines.'}`,
+    'Editorial fashion photograph for a premium, calm style app. Warm cream seamless studio backdrop (#F3EEE6), soft diffused natural window light, gentle realistic shadows, generous negative space.',
+    `Full-length, standing, relaxed and confident. An Indian woman ${ageHint} years old with ${tone} skin${shape ? ` and a ${SHAPES[shape].label.toLowerCase()}-shaped figure` : ''}, natural Indian features, hair neatly styled, warm smile.`,
+    `She wears exactly this outfit and nothing else: ${look.outfit}.`,
+    'Every garment is tailored to her figure, pressed and sitting perfectly: clean necklines, no extra layers, no T-shirt, vest or undershirt showing under any collar or neckline, no oversized or baggy fit unless stated, colours exactly as described.',
     'Photorealistic, natural skin texture, anatomically correct hands. No text, no logos, no watermarks, no extra people.',
   ].join(' ');
 }
@@ -302,7 +307,7 @@ export async function ensurePersonalLook(lead: MembershipLead): Promise<Membersh
   try {
     const response = await gemini().models.generateContent({
       model: IMAGE_MODEL,
-      contents: [{ role: 'user', parts: [{ text: lookPrompt(lead.answers, lead.selfie_season) }] }],
+      contents: [{ role: 'user', parts: [{ text: lookPrompt(lead.answers) }] }],
       config: { responseModalities: ['IMAGE'], imageConfig: { imageSize: '1K', aspectRatio: '4:5' }, httpOptions: { timeout: 90_000 } },
     });
     const image = response.candidates?.[0]?.content?.parts?.find(part => part.inlineData?.data);

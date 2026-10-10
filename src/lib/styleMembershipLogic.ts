@@ -233,24 +233,30 @@ export interface SwipeLook {
   colour: ColourStory;
   /** The styling formula, in plain words, for her profile and the stylist. */
   formula: string;
+  /** The pin's outfit, garment by garment, as the image model must draw it (no invention). */
+  outfit: string;
+  /** Body shapes this look flatters, by ICONIK's shape rules. */
+  suits: ShapeId[];
 }
+
+const ALL_SHAPES: ShapeId[] = ['apple', 'pear', 'hourglass', 'rectangle', 'inverted-triangle'];
 
 // Twelve looks from the ICONIK Pinterest board, each chosen to test a different
 // direction (Indian / Indo-western / western; casual to dressed up; neutral,
 // colour or print), so her loves and skips describe her style in detail.
 export const SWIPE_LOOKS: SwipeLook[] = [
-  { id: 'blazer-column', pin: 15, label: 'Black with a camel blazer', detail: 'Black top and wide trousers, open camel blazer', image: '/membership/swipe-blazer-column.webp', tone: 'medium', wear: 'western', dress: 'smart', vibes: ['classic', 'modern'], colour: 'neutral', formula: 'one dark colour head to toe, with a camel blazer on top' },
-  { id: 'kurta-shrug', pin: 48, label: 'Cream kurta set with a linen shrug', detail: 'Printed kurta, straight trousers, open linen layer', image: '/membership/swipe-kurta-shrug.webp', tone: 'wheatish', wear: 'indian', dress: 'smart', vibes: ['classic', 'minimal'], colour: 'neutral', formula: 'a tonal kurta set with a light layer worn open' },
-  { id: 'tee-trousers', pin: 2, label: 'White tee and pleated trousers', detail: 'Half-tucked tee, wide trousers, white sneakers', image: '/membership/swipe-tee-trousers.webp', tone: 'fair', wear: 'western', dress: 'casual', vibes: ['minimal', 'relaxed'], colour: 'neutral', formula: 'a plain tee half-tucked into wide trousers with a belt' },
-  { id: 'kurta-jacket-jeans', pin: 218, label: 'Kurta, ikat jacket and jeans', detail: 'Mustard kurta, belted ikat jacket, straight jeans', image: '/membership/swipe-kurta-jacket-jeans.webp', tone: 'dusky', wear: 'fusion', dress: 'casual', vibes: ['eclectic', 'bold'], colour: 'print', formula: 'a short kurta over jeans, with a belted jacket' },
-  { id: 'cobalt-blouse', pin: 12, label: 'Cobalt blouse, cream trousers', detail: 'Flutter-sleeve blouse tucked into pleated trousers', image: '/membership/swipe-cobalt-blouse.webp', tone: 'deep', wear: 'western', dress: 'smart', vibes: ['bold', 'classic'], colour: 'colour', formula: 'one strong colour on top, a soft neutral below' },
-  { id: 'festive-sharara', pin: 89, label: 'Sea-green sharara set', detail: 'Embroidered kurta, net dupatta, sharara', image: '/membership/swipe-festive-sharara.webp', tone: 'wheatish', wear: 'indian', dress: 'dressy', vibes: ['traditional', 'romantic'], colour: 'colour', formula: 'a matching festive set in one colour, gold at the neck' },
-  { id: 'polka-midi', pin: 22, label: 'Polka-dot midi dress', detail: 'Puff sleeves, nipped waist, fluted hem', image: '/membership/swipe-polka-midi.webp', tone: 'medium', wear: 'western', dress: 'dressy', vibes: ['romantic', 'classic'], colour: 'print', formula: 'a feminine midi dress with soft sleeves and a defined waist' },
-  { id: 'linen-kurta', pin: 520, label: 'Brown linen kurta, striped trousers', detail: 'Short-sleeve kurta, striped straight pants, mules', image: '/membership/swipe-linen-kurta.webp', tone: 'dusky', wear: 'indian', dress: 'casual', vibes: ['relaxed', 'minimal'], colour: 'neutral', formula: 'an easy linen kurta over striped trousers, all in browns' },
-  { id: 'leopard-magenta', pin: 32, label: 'Leopard blouse, magenta trousers', detail: 'Print on top, bright wide trousers below', image: '/membership/swipe-leopard-magenta.webp', tone: 'fair', wear: 'western', dress: 'smart', vibes: ['bold', 'eclectic'], colour: 'print', formula: 'a print on one half, a bright colour on the other' },
-  { id: 'anarkali', pin: 158, label: 'Blush embroidered anarkali', detail: 'Fitted bodice, full skirt, sheer sleeves', image: '/membership/swipe-anarkali.webp', tone: 'deep', wear: 'indian', dress: 'dressy', vibes: ['glam', 'romantic', 'traditional'], colour: 'colour', formula: 'one statement festive piece with long earrings' },
-  { id: 'chambray-blazer', pin: 34, label: 'Chambray shirt, camel blazer, jeans', detail: 'Shirt tucked in, blazer, cropped jeans, flats', image: '/membership/swipe-chambray-blazer.webp', tone: 'wheatish', wear: 'western', dress: 'smart', vibes: ['classic', 'relaxed'], colour: 'neutral', formula: 'a shirt and blazer with jeans and flats' },
-  { id: 'waistcoat', pin: 243, label: 'Navy waistcoat as a top', detail: 'Gold buttons, cream wide-leg trousers', image: '/membership/swipe-waistcoat.webp', tone: 'medium', wear: 'western', dress: 'smart', vibes: ['modern', 'bold'], colour: 'neutral', formula: 'a tailored waistcoat worn as the top, with wide trousers' },
+  { id: 'blazer-column', pin: 15, label: 'Black with a camel blazer', detail: 'Black top and wide trousers, open camel blazer', image: '/membership/swipe-blazer-column.webp', tone: 'medium', wear: 'western', dress: 'smart', vibes: ['classic', 'modern'], colour: 'neutral', formula: 'one dark colour head to toe, with a camel blazer on top', outfit: 'a black sleeveless surplice-neck top, a camel double-breasted blazer worn open with the sleeves long, black high-waisted wide-leg trousers, black pointed pumps, a black structured top-handle bag, a delicate gold necklace', suits: ALL_SHAPES },
+  { id: 'kurta-shrug', pin: 48, label: 'Cream kurta set with a linen shrug', detail: 'Printed kurta, straight trousers, open linen layer', image: '/membership/swipe-kurta-shrug.webp', tone: 'wheatish', wear: 'indian', dress: 'smart', vibes: ['classic', 'minimal'], colour: 'neutral', formula: 'a tonal kurta set with a light layer worn open', outfit: 'a cream printed straight kurta with a finely embroidered neckline, a beige linen shrug-jacket worn open over it, matching cream straight trousers, tan flat leather slides, gold jhumka earrings', suits: ALL_SHAPES },
+  { id: 'tee-trousers', pin: 2, label: 'White tee and pleated trousers', detail: 'Half-tucked tee, wide trousers, white sneakers', image: '/membership/swipe-tee-trousers.webp', tone: 'fair', wear: 'western', dress: 'casual', vibes: ['minimal', 'relaxed'], colour: 'neutral', formula: 'a plain tee half-tucked into wide trousers with a belt', outfit: 'a plain white crew-neck tee half-tucked at the front so a slim black belt with a gold buckle shows, taupe pleated high-waisted wide-leg trousers, clean white leather sneakers, a black oversized tote', suits: ['pear', 'hourglass', 'rectangle', 'inverted-triangle'] },
+  { id: 'kurta-jacket-jeans', pin: 218, label: 'Kurta, ikat jacket and jeans', detail: 'Mustard kurta, belted ikat jacket, straight jeans', image: '/membership/swipe-kurta-jacket-jeans.webp', tone: 'dusky', wear: 'fusion', dress: 'casual', vibes: ['eclectic', 'bold'], colour: 'print', formula: 'a short kurta over jeans, with a belted jacket', outfit: 'a mustard-yellow sleeveless A-line kurta to mid-thigh, a blue ikat-print sleeveless jacket over it, a wide brown leather belt over the jacket at the waist, mid-blue straight jeans, brown flat sandals, a silver statement necklace', suits: ['pear', 'hourglass', 'rectangle', 'inverted-triangle'] },
+  { id: 'cobalt-blouse', pin: 12, label: 'Cobalt blouse, cream trousers', detail: 'Flutter-sleeve blouse tucked into pleated trousers', image: '/membership/swipe-cobalt-blouse.webp', tone: 'deep', wear: 'western', dress: 'smart', vibes: ['bold', 'classic'], colour: 'colour', formula: 'one strong colour on top, a soft neutral below', outfit: 'a cobalt-blue V-neck flutter-sleeve blouse fully tucked into cream high-waisted pleated wide-leg trousers, nude ballet flats, a natural woven tote, gold hoop earrings', suits: ['pear', 'hourglass', 'rectangle'] },
+  { id: 'festive-sharara', pin: 89, label: 'Sea-green sharara set', detail: 'Embroidered kurta, net dupatta, sharara', image: '/membership/swipe-festive-sharara.webp', tone: 'wheatish', wear: 'indian', dress: 'dressy', vibes: ['traditional', 'romantic'], colour: 'colour', formula: 'a matching festive set in one colour, gold at the neck', outfit: 'a sea-green embroidered kurta with three-quarter sleeves, a matching sea-green net dupatta draped over one shoulder, a matching flared sharara, cream embroidered juttis, a gold choker necklace', suits: ['apple', 'hourglass', 'rectangle', 'inverted-triangle'] },
+  { id: 'polka-midi', pin: 22, label: 'Polka-dot midi dress', detail: 'Puff sleeves, nipped waist, fluted hem', image: '/membership/swipe-polka-midi.webp', tone: 'medium', wear: 'western', dress: 'dressy', vibes: ['romantic', 'classic'], colour: 'print', formula: 'a feminine midi dress with soft sleeves and a defined waist', outfit: 'a cream midi dress with small black polka dots, a modest V-neckline, puff-shouldered three-quarter sleeves, a waist defined by the cut and a fluted hem, black pointed pumps, a small black clutch', suits: ['pear', 'hourglass', 'rectangle'] },
+  { id: 'linen-kurta', pin: 520, label: 'Brown linen kurta, striped trousers', detail: 'Short-sleeve kurta, striped straight pants, mules', image: '/membership/swipe-linen-kurta.webp', tone: 'dusky', wear: 'indian', dress: 'casual', vibes: ['relaxed', 'minimal'], colour: 'neutral', formula: 'an easy linen kurta over striped trousers, all in browns', outfit: 'a chocolate-brown linen kurta with short sleeves and a curved hem worn long, brown-and-cream striped straight trousers, brown flat leather mules, a slim watch', suits: ALL_SHAPES },
+  { id: 'leopard-magenta', pin: 32, label: 'Leopard blouse, magenta trousers', detail: 'Print on top, bright wide trousers below', image: '/membership/swipe-leopard-magenta.webp', tone: 'fair', wear: 'western', dress: 'smart', vibes: ['bold', 'eclectic'], colour: 'print', formula: 'a print on one half, a bright colour on the other', outfit: 'an opaque leopard-print high-neck cap-sleeve blouse fully tucked into magenta-pink high-waisted wide-leg trousers, snakeskin pointed heels, a navy quilted mini bag on a chain', suits: ['pear', 'hourglass', 'rectangle'] },
+  { id: 'anarkali', pin: 158, label: 'Blush embroidered anarkali', detail: 'Fitted bodice, full skirt, sheer sleeves', image: '/membership/swipe-anarkali.webp', tone: 'deep', wear: 'indian', dress: 'dressy', vibes: ['glam', 'romantic', 'traditional'], colour: 'colour', formula: 'one statement festive piece with long earrings', outfit: 'a blush-pink embroidered anarkali gown with a V-neck, a fitted embroidered bodice, a full flared floor-length skirt and sheer bishop sleeves with embellished cuffs, long gold chandelier earrings', suits: ALL_SHAPES },
+  { id: 'chambray-blazer', pin: 34, label: 'Chambray shirt, camel blazer, jeans', detail: 'Shirt tucked in, blazer, cropped jeans, flats', image: '/membership/swipe-chambray-blazer.webp', tone: 'wheatish', wear: 'western', dress: 'smart', vibes: ['classic', 'relaxed'], colour: 'neutral', formula: 'a shirt and blazer with jeans and flats', outfit: 'a light-blue chambray button-down shirt tucked in with the collar and cuffs folded out over a camel blazer, a brown belt, mid-blue straight-leg jeans cropped at the ankle, nude ballet flats, a blush quilted tote', suits: ['pear', 'hourglass', 'rectangle', 'inverted-triangle'] },
+  { id: 'waistcoat', pin: 243, label: 'Navy waistcoat as a top', detail: 'Gold buttons, cream wide-leg trousers', image: '/membership/swipe-waistcoat.webp', tone: 'medium', wear: 'western', dress: 'smart', vibes: ['modern', 'bold'], colour: 'neutral', formula: 'a tailored waistcoat worn as the top, with wide trousers', outfit: 'a navy sleeveless tailored waistcoat with gold buttons worn buttoned as the top, cream high-waisted wide-leg trousers, nude pointed heels, gold statement earrings', suits: ['pear', 'hourglass', 'rectangle', 'inverted-triangle'] },
 ];
 
 /** On-model looks from the first image set, still used for result-page looks. */
@@ -563,19 +569,35 @@ const LIBRARY: LibraryLook[] = [
   { image: '/membership/occ-diwali.webp', detail: 'Maroon silk kurta set, gold dupatta', tone: 'fair', occasions: ['diwali', 'festive'] },
 ];
 
-function scoreLook(look: LibraryLook, answers: QuizAnswers, shape: ShapeId | null) {
-  let score = 0;
-  if (shape && look.shape === shape) score += 3;
-  if (answers.skinTone && look.tone === answers.skinTone) score += 2;
-  if (look.swipe && answers.swipes?.[look.swipe] === 'love') score += 2;
-  if (look.swipe && answers.swipes?.[look.swipe] === 'skip') score -= 3;
-  return score;
+/**
+ * Her look 1, by rules, never by the image model: the first look she loved that
+ * flatters her shape; failing that, a look that flatters her shape and that she
+ * didn't skip, closest to how she dresses; failing that, the safest look.
+ */
+export function lookForHer(answers: QuizAnswers): SwipeLook {
+  const shape = resolveShape(answers);
+  const fits = (look: SwipeLook) => !shape || look.suits.includes(shape);
+  const loved = SWIPE_LOOKS.filter(look => answers.swipes?.[look.id] === 'love');
+  const lovedFit = loved.find(fits);
+  if (lovedFit) return lovedFit;
+  const profile = styleProfile(answers);
+  const wears = new Set(loved.map(look => look.wear));
+  const candidates = SWIPE_LOOKS.filter(look => fits(look) && answers.swipes?.[look.id] !== 'skip');
+  const ranked = candidates.sort((a, b) => {
+    const score = (look: SwipeLook) => (wears.has(look.wear) ? 2 : 0)
+      + (profile.archetype.id !== 'explorer' && look.vibes.includes(profile.archetype.id as StyleVibe) ? 2 : 0)
+      + (look.suits.length === ALL_SHAPES.length ? 1 : 0);
+    return score(b) - score(a);
+  });
+  return ranked[0] ?? SWIPE_LOOKS.find(look => look.id === 'kurta-shrug')!;
 }
 
 /** The unlocked look: the library picture that best matches her. */
-export function unlockedLook(answers: QuizAnswers): LibraryLook {
-  const shape = resolveShape(answers);
-  return [...LIBRARY].sort((a, b) => scoreLook(b, answers, shape) - scoreLook(a, answers, shape))[0];
+export function unlockedLook(answers: QuizAnswers): LibraryLook & { title: string } {
+  const look = lookForHer(answers);
+  const title = look.dress === 'dressy' ? (answers.comingUp?.includes('wedding') ? 'Sangeet night' : 'Festive evening')
+    : look.dress === 'smart' ? 'Office day' : 'Weekend';
+  return { image: look.image, detail: look.detail, tone: look.tone, swipe: look.id, occasions: [], title };
 }
 
 /** The 20 looks on her plan: the first unlocked, the rest shown blurred. */
@@ -601,6 +623,8 @@ export function resultLooks(answers: QuizAnswers): ResultLook[] {
     ['Birthday dinner', 'weekend'], ['Lunch with in-laws', 'festive'], ['Market day', 'weekend'], ['Video call ready', 'office'],
     ['Sunday reset', 'weekend'], ['Gallery visit', 'weekend'], ['Airport look', 'weekend'], ['Festive brunch', 'festive'],
   ];
+  // Look 1 is titled for the outfit she actually gets.
+  titles.unshift([first.title, 'look-1']);
   for (const filler of fillers) {
     if (titles.length >= 20) break;
     if (!titles.some(([title]) => title === filler[0])) titles.push(filler);

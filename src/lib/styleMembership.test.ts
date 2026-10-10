@@ -24,6 +24,7 @@ import {
   styleArchetype,
   styleHeadline,
   styleProfile,
+  lookForHer,
   unlockedLook,
   upcomingLabel,
   type QuizAnswers,
@@ -220,8 +221,25 @@ test('the result has 20 looks; look 1 matches her shape and skips what she swipe
   assert.equal(looks.length, 20);
   assert.equal(new Set(looks.map(look => look.title)).size, 20);
   assert.ok(looks.some(look => look.title === 'Sangeet'));
-  assert.equal(unlockedLook(SAMPLE).image, SHAPES.pear.after.image);
+  assert.equal(unlockedLook(SAMPLE).image, '/membership/swipe-blazer-column.webp');
   assert.notEqual(unlockedLook({ swipes: { 'linen-kurta': 'skip' }, skinTone: 'dusky' }).image, '/membership/swipe-linen-kurta.webp');
+});
+
+test('look 1 is picked by rules: a loved look that flatters her shape, never an invented outfit', () => {
+  for (const look of SWIPE_LOOKS) {
+    assert.ok(look.outfit.length > 60, `${look.id} has a full outfit description`);
+    assert.ok(look.suits.length > 0);
+    assert.doesNotMatch(look.outfit, /in the spirit of|recolou?red/);
+  }
+  // Apple: the tucked tee and tucked blouse don't suit her, so her loved anarkali wins.
+  assert.equal(lookForHer({ shape: 'apple', swipes: { 'tee-trousers': 'love', 'cobalt-blouse': 'love', anarkali: 'love' } }).id, 'anarkali');
+  // Pear: a flared sharara adds hip volume, so her next loved look is used.
+  assert.equal(lookForHer({ shape: 'pear', swipes: { 'festive-sharara': 'love', 'blazer-column': 'love' } }).id, 'blazer-column');
+  // Nothing loved: a look that flatters her shape and that she didn't skip.
+  const fallback = lookForHer({ shape: 'apple', swipes: { 'blazer-column': 'skip' } });
+  assert.ok(fallback.suits.includes('apple') && fallback.id !== 'blazer-column');
+  assert.equal(unlockedLook({ shape: 'pear', swipes: { 'festive-sharara': 'love', 'blazer-column': 'love' } }).title, 'Office day');
+  assert.equal(resultLooks({ shape: 'apple', swipes: { anarkali: 'love' } })[0].title, 'Festive evening');
 });
 
 // ── 90 days, tokens, agent hand-off, webhook routing ───────────────────────
