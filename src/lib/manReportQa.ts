@@ -655,3 +655,93 @@ export function manReportOutfitQualityGatePassed(reportData: ReportData | null |
   const section4 = reportData.qa?.section4;
   return Boolean(section4?.quality?.passed) && !(section4?.issues ?? []).some(item => item.severity === 'error');
 }
+
+// ── v5: variety check on chosen looks, before Section 4 is written ──────────
+
+export interface ManPortfolioLook {
+  /** Outfit number, 1-based, in report order. */
+  number: number;
+  context: string;
+  top: string;
+  layer: string;
+  bottom: string;
+  footwear: string;
+}
+
+export interface ManPortfolioVarietyIssue {
+  code: string;
+  message: string;
+  /** The outfits involved, in report order; the later ones are the ones to change. */
+  outfits: number[];
+  /** How many of those outfits the rule allows (caps only). */
+  limit?: number;
+}
+
+/**
+ * The same variety rules the Section 4 QA warns about, run on the chosen looks
+ * so the head stylist's portfolio can be fixed before anything is written:
+ * no silhouette more than twice per occasion or three times overall, no colour
+ * dominating more than three looks, no two neighbouring looks with the same top
+ * or layer colour, and an evening with some outerwear.
+ */
+export function findManPortfolioVarietyIssues(looks: ManPortfolioLook[]): ManPortfolioVarietyIssue[] {
+  const outfits: ParsedQaOutfit[] = looks.map(look => ({
+    number: look.number, rawLabel: '', context: look.context, block: '',
+    fields: { top: look.top, layer: look.layer, bottom: look.bottom, footwear: look.footwear },
+  }));
+  const issues: ManPortfolioVarietyIssue[] = [];
+  const group = <T,>(items: ParsedQaOutfit[], key: (outfit: ParsedQaOutfit) => T | null) => {
+    const map = new Map<T, number[]>();
+    for (const outfit of items) {
+      const value = key(outfit);
+      if (value !== null) map.set(value, [...(map.get(value) ?? []), outfit.number]);
+    }
+    return map;
+  };
+
+  for (const [family, numbers] of group(outfits, outfitSilhouetteFamily)) {
+    if (numbers.length > 3) issues.push({ code: 'silhouette_global_cap', message: `${family.split(':')[1]} appears ${numbers.length} times; at most 3.`, outfits: numbers, limit: 3 });
+  }
+  for (const context of new Set(outfits.map(outfit => outfit.context))) {
+    const local = outfits.filter(outfit => outfit.context === context);
+    for (const [family, numbers] of group(local, outfitSilhouetteFamily)) {
+      if (numbers.length > 2) issues.push({ code: 'silhouette_context_cap', message: `${context} repeats ${family.split(':')[1]} ${numbers.length} times; at most 2.`, outfits: numbers, limit: 2 });
+    }
+    if (context === 'Evening Wear' && local.length >= 3) {
+      if (!local.some(outfit => STATEMENT_EVENING_LAYER_PATTERN.test(outfit.fields.layer))) {
+        issues.push({ code: 'evening_statement_quota', message: 'Evening has no statement jacket (leather, suede, bomber, varsity).', outfits: local.map(outfit => outfit.number) });
+      }
+      const flat = local.filter(hasNoLayer).map(outfit => outfit.number);
+      if (flat.length > 3) issues.push({ code: 'evening_no_layer_cap', message: `Evening has ${flat.length} looks with no layer; at most 3.`, outfits: flat, limit: 3 });
+    }
+    if (context === 'Relaxed Casual') {
+      const tees = local.filter(outfit => /\b(tee|t-shirt)\b/i.test(outfit.fields.top) && !isPatterned(outfit)).map(outfit => outfit.number);
+      if (tees.length > 3) issues.push({ code: 'relaxed_plain_tee_cap', message: `Relaxed has ${tees.length} plain tee-led looks; at most 3.`, outfits: tees, limit: 3 });
+    }
+  }
+  // The colour a look leads with near his face (the layer, else the top); shoes and a tee under a jacket don't count.
+  const leadCap = Math.max(3, Math.ceil(outfits.length / 5));
+  const dominant = group(outfits, outfit => getManOutfitPrimaryColourFamily(hasNoLayer(outfit) ? outfit.fields.top : outfit.fields.layer)?.replace(/^patterned-/, '') ?? null);
+  for (const [colour, numbers] of dominant) {
+    if (numbers.length > leadCap) issues.push({ code: 'repeated_colour', message: `${colour} leads near his face in ${numbers.length} looks; at most ${leadCap}.`, outfits: numbers, limit: leadCap });
+  }
+  for (let index = 1; index < outfits.length; index += 1) {
+    const [previous, current] = [outfits[index - 1], outfits[index]];
+    const topFamily = getManOutfitPrimaryColourFamily(current.fields.top);
+    if (topFamily && topFamily === getManOutfitPrimaryColourFamily(previous.fields.top)) {
+      issues.push({ code: 'consecutive_top_colour', message: `Outfits ${previous.number} and ${current.number} both have a ${topFamily.replace(/^patterned-/, '')} top.`, outfits: [previous.number, current.number] });
+    }
+    if (!hasNoLayer(previous) && !hasNoLayer(current)) {
+      const layerFamily = getManOutfitPrimaryColourFamily(current.fields.layer);
+      if (layerFamily && layerFamily === getManOutfitPrimaryColourFamily(previous.fields.layer)) {
+        issues.push({ code: 'consecutive_layer_colour', message: `Outfits ${previous.number} and ${current.number} both have a ${layerFamily.replace(/^patterned-/, '')} layer.`, outfits: [previous.number, current.number] });
+      }
+    }
+  }
+  return issues;
+}
+
+/** The silhouette label the variety rules count ("shirt-tailored-bottom", "statement-jacket-column" …). */
+export function manPortfolioLookShape(look: Pick<ManPortfolioLook, 'top' | 'layer' | 'bottom'>): string {
+  return outfitSilhouetteFamily({ number: 0, rawLabel: '', context: '', block: '', fields: { top: look.top, layer: look.layer, bottom: look.bottom, footwear: '' } }).replace(/^:/, '');
+}

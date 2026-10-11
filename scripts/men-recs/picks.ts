@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars -- local debugging script */
 // Prints v4 and v5 outfit picks for a saved classification (no model calls, no writes).
 // node --experimental-strip-types --import ./scripts/node-test-hooks.mjs scripts/men-recs/picks.ts <submission-id>
 import { readFileSync } from 'node:fs';

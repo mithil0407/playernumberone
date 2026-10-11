@@ -3,8 +3,12 @@ import 'server-only';
 // The head stylist: one model call that chooses a man's v5 portfolio from the
 // rule-built shortlist, before Section 4 is written. Its choices become pinned
 // slots (so every later pick, QA pass and redo sees the same looks) and its
-// one-line reasons go to the Section 4 writer. If the call fails or a choice
-// breaks a rule, the rule-based picker fills that slot as before.
+// one-line reasons go to the Section 4 writer.
+//
+// Its answer goes through the same variety rules as Section 4 QA. Looks are
+// first reordered inside each occasion so neighbours differ; whatever still
+// breaks a rule goes back to the stylist once; anything left after that is
+// unpinned, and the rule-based picker fills those slots within its own caps.
 
 import { GoogleGenAI } from '@google/genai';
 import { manGenerateText } from './manAi';
@@ -12,9 +16,18 @@ import {
   getManPortfolioCandidates,
   getManReportClimateProfile,
   manPortfolioLeadCap,
+  type ManOutfitLibraryEntry,
   type ManOutfitSelectionOverrides,
 } from './manOutfitLibrary';
-import { buildManHeadStylistPrompt, parseManHeadStylistChoices } from './manHeadStylistPrompt';
+import {
+  buildManHeadStylistPrompt,
+  buildManHeadStylistRepairPrompt,
+  manPortfolioLooks,
+  orderManPortfolioChoices,
+  parseManHeadStylistChoices,
+  type ManHeadStylistChoice,
+} from './manHeadStylistPrompt';
+import { findManPortfolioVarietyIssues, type ManPortfolioVarietyIssue } from './manReportQa';
 import type { ClassificationResult } from './manReportGenerator';
 
 const STYLIST_MODEL = process.env.GEMINI_MAN_STYLIST_MODEL || process.env.GEMINI_MAN_TEXT_MODEL || process.env.GEMINI_TEXT_MODEL || 'gemini-3-flash-preview';
@@ -25,11 +38,40 @@ function gemini() {
   return ai;
 }
 
+async function ask(prompt: string) {
+  return manGenerateText({ label: 'man-head-stylist', prompt }, async () => {
+    const response = await gemini().models.generateContent({
+      model: STYLIST_MODEL,
+      contents: [{ parts: [{ text: prompt }] }],
+      config: { responseMimeType: 'application/json' },
+    });
+    return response.text ?? '';
+  });
+}
+
+/**
+ * After the repair round, only a repeated silhouette is worth losing a
+ * stylist's pick over: the rule-based picker's fill is plainer than what it
+ * replaces, so a colour one over its cap or two similar neighbours stay as
+ * chosen (QA still notes them for the admin).
+ */
+function looksToRelease(issues: ManPortfolioVarietyIssue[]): Set<number> {
+  const release = new Set<number>();
+  for (const issue of issues) {
+    if (!['silhouette_context_cap', 'silhouette_global_cap'].includes(issue.code) || issue.limit === undefined) continue;
+    issue.outfits.slice(issue.limit).forEach(number => release.add(number));
+  }
+  return release;
+}
+
 export async function runManHeadStylist(
   classification: ClassificationResult,
   now = new Date(),
-): Promise<{ overrides: ManOutfitSelectionOverrides; dropped: string[]; prompt: string; raw: string }> {
-  const { slots, candidates } = getManPortfolioCandidates(classification, undefined, now);
+  options: { excluded?: number[] } = {},
+): Promise<{ overrides: ManOutfitSelectionOverrides; dropped: string[]; issues: string[]; released: number[]; prompt: string; raw: string }> {
+  const { slots, candidates } = getManPortfolioCandidates(classification, undefined, now, undefined, options.excluded);
+  const entries = new Map<number, ManOutfitLibraryEntry>();
+  for (const list of candidates.values()) for (const { entry } of list) entries.set(entry.id, entry);
   const maxPerLeadFamily = manPortfolioLeadCap(slots.length);
   const prompt = buildManHeadStylistPrompt({
     classification,
@@ -38,22 +80,42 @@ export async function runManHeadStylist(
     climateLabel: getManReportClimateProfile(classification, now).label,
     maxPerLeadFamily,
   });
-  const raw = await manGenerateText({ label: 'man-head-stylist', prompt }, async () => {
-    const response = await gemini().models.generateContent({
-      model: STYLIST_MODEL,
-      contents: [{ parts: [{ text: prompt }] }],
-      config: { responseMimeType: 'application/json' },
-    });
-    return response.text ?? '';
-  });
-  const { choices, dropped } = parseManHeadStylistChoices(raw, slots, candidates, maxPerLeadFamily);
+
+  const attempt = (raw: string) => {
+    const parsed = parseManHeadStylistChoices(raw, slots, candidates, maxPerLeadFamily);
+    const choices = orderManPortfolioChoices(parsed.choices, slots, entries);
+    const issues = choices.length === slots.length ? findManPortfolioVarietyIssues(manPortfolioLooks(choices, slots, entries)) : [];
+    return { choices, dropped: parsed.dropped, issues };
+  };
+
+  let raw = await ask(prompt);
+  let result = attempt(raw);
+  const firstProblems = [...result.dropped, ...result.issues.map(issue => issue.message)];
+  if (firstProblems.length) {
+    const repairRaw = await ask(buildManHeadStylistRepairPrompt(prompt, result.choices, firstProblems));
+    const repaired = attempt(repairRaw);
+    // Keep the repair unless it came back worse.
+    if (repaired.choices.length >= result.choices.length
+      && repaired.dropped.length + repaired.issues.length <= result.dropped.length + result.issues.length) {
+      result = repaired;
+      raw = repairRaw;
+    }
+  }
+
+  const released = looksToRelease(result.issues);
+  const kept: ManHeadStylistChoice[] = result.choices.filter(choice => !released.has(choice.slot));
   return {
     overrides: {
-      pinned: Object.fromEntries(choices.map(choice => [String(choice.slot), choice.id])),
-      stylistNotes: Object.fromEntries(choices.filter(choice => choice.why).map(choice => [String(choice.slot), choice.why])),
+      ...(options.excluded?.length ? { excluded: options.excluded } : {}),
+      pinned: Object.fromEntries(kept.map(choice => [String(choice.slot), choice.id])),
+      roles: Object.fromEntries(kept.flatMap(choice => choice.role ? [[String(choice.slot), choice.role]] : [])),
+      stylistNotes: Object.fromEntries(kept.filter(choice => choice.why).map(choice => [String(choice.slot), choice.why])),
     },
-    dropped,
+    dropped: result.dropped,
+    issues: result.issues.map(issue => issue.message),
+    released: [...released],
     prompt,
     raw,
   };
 }
+

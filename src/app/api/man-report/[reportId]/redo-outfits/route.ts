@@ -13,7 +13,12 @@ import type { ManIntakeSubmission } from '@/lib/supabaseMan';
 import type { ManReportImagePaths } from '@/lib/manImageGenerator';
 import { extractOutfitBlock, normaliseSequentialManOutfitNumbers, replaceOutfitBlock } from '@/lib/manOutfitSection';
 import { invalidateChangedOutfitImages } from '@/lib/manOutfitConsistency';
-import { usesManColourLock, type ManOutfitSelectionOverrides } from '@/lib/manOutfitLibrary';
+import {
+  MAN_OUTFIT_LIBRARY_PORTFOLIO_VERSION,
+  getManOutfitLibraryVersion,
+  usesManColourLock,
+  type ManOutfitSelectionOverrides,
+} from '@/lib/manOutfitLibrary';
 import { withManReportSection4Qa } from '@/lib/manReportQa';
 import { downvotedOutfitNumbers, loadManLookFeedbackTotals, loadManReportOutfitFeedback } from '@/lib/manOutfitFeedback';
 import { revalidateManReportCache } from '@/lib/manReportCache';
@@ -125,8 +130,17 @@ export async function POST(
       .filter(item => !downvoted.includes(item.outfitNumber))
       .map(item => [String(item.outfitNumber), item.libraryLookId]));
   }
-  const overrides: ManOutfitSelectionOverrides = { excluded, ...(Object.keys(pinned).length ? { pinned } : {}) };
+  let overrides: ManOutfitSelectionOverrides = { excluded, ...(Object.keys(pinned).length ? { pinned } : {}) };
   const selectionSalt = mode === 'downvoted' ? reportData.outfit_library?.selectionProfile?.selectionSalt ?? '' : '';
+  // v5 "rewrite all": the head stylist chooses a fresh portfolio (never the 👎 looks).
+  if (mode === 'all' && getManOutfitLibraryVersion(classification) === MAN_OUTFIT_LIBRARY_PORTFOLIO_VERSION) {
+    try {
+      const { runManHeadStylist } = await import('@/lib/manHeadStylist');
+      overrides = (await runManHeadStylist(classification, new Date(), { excluded })).overrides;
+    } catch (err) {
+      console.error(`[man-report] head stylist failed for ${reportId}; using the rule-based picks:`, err);
+    }
+  }
 
   let repaired;
   let comboGridText = reportData.sections?.s4_combo_grids ?? '';

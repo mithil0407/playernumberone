@@ -148,6 +148,8 @@ export interface ManOutfitSelectionOverrides {
   excluded?: number[];
   /** v5: the head stylist's one-line reason per outfit number, passed to the Section 4 writer. */
   stylistNotes?: Record<string, string>;
+  /** v5: the role each pinned look was chosen for, when the head stylist reordered an occasion. */
+  roles?: Record<string, ManOutfitRole>;
 }
 
 const HEADER_CONTEXTS: Record<string, ManOutfitLibraryContext> = {
@@ -1378,10 +1380,11 @@ export function getManPortfolioCandidates(
   library = getManOutfitLibrary(),
   now = new Date(),
   perContext = 14,
+  excluded: number[] = [],
 ): { slots: ManPortfolioSlot[]; candidates: Map<ManOutfitLibraryContext, ManPortfolioCandidate[]> } {
   const profile = classification.recommendation_profile;
   if (!profile) throw new Error('The head stylist needs a recommendation profile');
-  const setup = portfolioSetup(classification, profile, library, now, {});
+  const setup = portfolioSetup(classification, profile, library, now, { excluded });
   const split = computeManContextSplit(profile);
   const candidates = new Map<ManOutfitLibraryContext, ManPortfolioCandidate[]>();
   for (const [context, count] of split) {
@@ -1438,7 +1441,9 @@ function selectPortfolioPicks(
       || a.index - b.index);
 
   for (const { slot, index } of fillOrder) {
-    const { context, role } = slot;
+    const { context } = slot;
+    const pinnedRole = pinned[String(index + 1)] ? overrides.roles?.[String(index + 1)] : undefined;
+    const role = pinnedRole ?? slot.role;
     const pinnedSource = library.find(entry => entry.id === pinned[String(index + 1)]);
     const pinnedEntry = pinnedSource && pinnedSource.context !== context ? { ...pinnedSource, context } : pinnedSource;
     let chosen = pinnedEntry && !selected().some(item => item.id === pinnedEntry.id) ? pinnedEntry : undefined;
@@ -1742,7 +1747,8 @@ SOURCE LOCK — non-negotiable, and it outranks every older rule about colour:
 - Keep each source's garment types, layer or no-layer decision, bottom silhouette and footwear category exactly. Climate may change a fabric (wool → cotton, suede → smooth leather), never a colour or a category.
 - Keep the source's STYLING line (tucked, sleeves rolled, worn open, draped) and its accessories. If the source accessory is "None", add one that suits his face shape.
 - Your job is execution: give every garment a real fabric, a fit for his body and one precise styling instruction, so each line reads as a buyable product. That is where the elevation comes from — fabric, texture, proportion and styling — not from new colours.
-- Respect the ${picks.some(pick => pick.role) ? 'ROLE' : 'LADDER'} line: comfort looks stay wearable, stretch looks stay bold. Do not tone a stretch look down.
+- Respect the ${picks.some(pick => pick.role) ? 'ROLE' : 'LADDER'} line: comfort looks stay wearable, stretch looks stay bold. Do not tone a stretch look down.${picks.some(pick => pick.role) ? `
+- Write every outfit fresh: no fit or styling phrase (for example "worn open below the belly" or "room through the waist") may appear in more than two outfits. Say how a look flatters his body only where it matters, in different words each time.` : ''}
 - Never introduce satin or any shiny fabric; silk only as matte raw silk or cotton-silk in wedding-function looks. ${waivers.includes('ties') ? 'No ties for this client.' : 'Add a tie only where the source has one.'} ${waivers.includes('suits') ? 'No suits for this client.' : ''}
 
 Occasion split for this client: ${split}.${classification.recommendation_profile?.occasion_mode === 'groom'

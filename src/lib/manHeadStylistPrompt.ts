@@ -10,6 +10,7 @@
 import type { ClassificationResult } from './manReportGenerator';
 import {
   MAN_MAX_BLACK_LED,
+  getManOutfitPrimaryColourFamily,
   isManBlackLed,
   manLookPieceText,
   type ManOutfitLibraryContext,
@@ -18,6 +19,7 @@ import {
   type ManPortfolioSlot,
 } from './manOutfitLibrary';
 import { MAN_TASTE_LOOKS, describeManRecommendationProfile } from './manRecommendationProfile';
+import { manPortfolioLookShape, type ManPortfolioLook } from './manReportQa';
 
 const ROLE_BRIEF = {
   anchor: 'SAFE CLASSIC: a look he could wear tomorrow, but it must still be good: clean, well-proportioned, never filler',
@@ -74,7 +76,12 @@ ${tasteLines(classification) || '- He did not take the taste test.'}
 4. His palette tells you which shades suit him; it does not fence him in. Blues, greys, greens, burgundy and black can all work if the depth and brightness suit his skin. No colour may lead near his face in more than ${input.maxPerLeadFamily} looks, no more than ${MAN_MAX_BLACK_LED} looks may have black at the neckline, and don't let the portfolio turn into one season's clichés (rust, olive, mustard, maroon again and again).
 5. Lean on what he LOVED and his style reference. Stay well away from anything resembling what he REJECTED, even if it scores well on paper.
 6. Dress his body: ${bodyNote(classification)}
-7. Within one occasion, every look needs a different silhouette or colour story; across the whole Blueprint he should see range.
+7. Range, the way a stylist checks a rail before it goes out. Each look's [shape] and [top] colour are given; these limits are checked and anything over them is sent back:
+   - no shape more than twice within one occasion, or more than three times across the Blueprint (four office shirts with trousers is a uniform, not a wardrobe: use a knit, a blazer, an overshirt, a polo);
+   - no two looks next to each other (in slot order) with the same [top] colour, or the same layer colour;
+   - no colour group (blues, browns, greys, whites, greens, reds…) leading near his face in more than a fifth of the looks;
+   - evening needs at least one statement jacket (leather, suede, bomber) and at most three looks with no layer;
+   - relaxed has at most three plain-tee looks.
 
 ## THE SLOTS
 ${slotLines}
@@ -87,7 +94,70 @@ Return ONLY JSON, no markdown: {"outfits":[{"slot":1,"id":215,"why":"one plain s
 }
 
 function lookLine(entry: ManOutfitLibraryEntry) {
-  return `#${entry.id}: ${manLookPieceText(entry).replace(/\s*\|\s*/g, ' | ')}${entry.styling ? ` (${entry.styling})` : ''} [boldness ${entry.boldness}/5]`;
+  const top = getManOutfitPrimaryColourFamily(entry.top)?.replace(/^patterned-/, 'patterned ') ?? 'unnamed';
+  return `#${entry.id}: ${manLookPieceText(entry).replace(/\s*\|\s*/g, ' | ')}${entry.styling ? ` (${entry.styling})` : ''} [shape ${manPortfolioLookShape(entry)}] [top ${top}] [boldness ${entry.boldness}/5]`;
+}
+
+/** The chosen looks in the shape the variety check reads. */
+export function manPortfolioLooks(choices: ManHeadStylistChoice[], slots: ManPortfolioSlot[], entries: Map<number, ManOutfitLibraryEntry>): ManPortfolioLook[] {
+  return [...choices].sort((a, b) => a.slot - b.slot).flatMap(choice => {
+    const entry = entries.get(choice.id);
+    return entry ? [{ number: choice.slot, context: slots[choice.slot - 1].context, top: entry.top, layer: entry.layer, bottom: entry.bottom, footwear: entry.footwear }] : [];
+  });
+}
+
+/**
+ * Reorders the looks inside each occasion so neighbours differ in top and layer
+ * colour, the way a stylist would hang them. Roles and reasons move with their
+ * look. A complete answer only; partial answers keep their order.
+ */
+export function orderManPortfolioChoices(choices: ManHeadStylistChoice[], slots: ManPortfolioSlot[], entries: Map<number, ManOutfitLibraryEntry>): ManHeadStylistChoice[] {
+  if (choices.length !== slots.length) return choices;
+  const bySlot = new Map(choices.map(choice => [choice.slot, choice]));
+  const top = (choice?: ManHeadStylistChoice) => choice ? getManOutfitPrimaryColourFamily(entries.get(choice.id)?.top ?? '') : null;
+  const layer = (choice?: ManHeadStylistChoice) => {
+    const text = choice ? entries.get(choice.id)?.layer ?? '' : '';
+    return /^(none|no layer)\b/i.test(text.trim()) ? null : getManOutfitPrimaryColourFamily(text);
+  };
+  const clash = (a?: ManHeadStylistChoice, b?: ManHeadStylistChoice) => Boolean(a && b)
+    && ((top(a) !== null && top(a) === top(b)) || (layer(a) !== null && layer(a) === layer(b)));
+  const ordered: ManHeadStylistChoice[] = [];
+  let start = 0;
+  while (start < slots.length) {
+    const context = slots[start].context;
+    let end = start;
+    while (end < slots.length && slots[end].context === context) end += 1;
+    const group = slots.slice(start, end).map((_, offset) => bySlot.get(start + offset + 1)!);
+    const before = ordered.at(-1);
+    // Small occasions (at most 8 looks): try orders until one has no clashing neighbours.
+    let best = group;
+    let bestClashes = Infinity;
+    let tries = 0;
+    const permute = (rest: ManHeadStylistChoice[], path: ManHeadStylistChoice[], clashes: number) => {
+      if (clashes >= bestClashes || tries > 20000) return;
+      if (!rest.length) { best = path; bestClashes = clashes; return; }
+      for (let index = 0; index < rest.length; index += 1) {
+        tries += 1;
+        const next = rest[index];
+        permute([...rest.slice(0, index), ...rest.slice(index + 1)], [...path, next], clashes + (clash(path.at(-1) ?? before, next) ? 1 : 0));
+      }
+    };
+    permute(group, [], 0);
+    best.forEach((choice, offset) => ordered.push({ ...choice, slot: start + offset + 1, role: choice.role ?? slots[choice.slot - 1].role }));
+    start = end;
+  }
+  return ordered;
+}
+
+export function buildManHeadStylistRepairPrompt(prompt: string, previous: ManHeadStylistChoice[], problems: string[]) {
+  return `${prompt}
+
+## YOUR FIRST ANSWER BROKE THESE RULES
+${problems.map(problem => `- ${problem}`).join('\n')}
+
+Your first answer was: ${JSON.stringify({ outfits: previous.map(({ slot, id, why }) => ({ slot, id, why })) })}
+
+Fix every problem by swapping as few looks as you need (use other shortlist looks for that occasion), keep the good choices, and return the full corrected answer in the same JSON format.`;
 }
 
 function bodyNote(classification: ClassificationResult) {
@@ -105,6 +175,8 @@ export interface ManHeadStylistChoice {
   slot: number;
   id: number;
   why: string;
+  /** The role the look was chosen for; it stays with the look if the occasion is reordered. */
+  role?: ManPortfolioSlot['role'];
 }
 
 /**
@@ -146,7 +218,7 @@ export function parseManHeadStylistChoices(
     if (black) blackLed += 1;
     used.add(id);
     if (family) leads.set(family, (leads.get(family) ?? 0) + 1);
-    choices.push({ slot, id, why });
+    choices.push({ slot, id, why, role: target.role });
   }
   return { choices, dropped };
 }

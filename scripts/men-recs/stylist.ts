@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars -- local debugging script */
 // Runs the v5 head stylist for a saved classification and prints the final portfolio (one model call, no writes).
 // node --experimental-strip-types --import ./scripts/node-test-hooks.mjs --env-file=.env.local scripts/men-recs/stylist.ts <submission-id>
 import { readFileSync, writeFileSync } from 'node:fs';

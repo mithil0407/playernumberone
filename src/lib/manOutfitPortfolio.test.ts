@@ -5,13 +5,15 @@ import { buildManRecommendationProfile, computeManContextSplit } from './manReco
 import {
   getManOutfitLibrary,
   getManOutfitLibraryVersion,
+  getManOutfitPrimaryColourFamily,
   getManPortfolioCandidates,
   isManBlackLed,
   manPortfolioLeadCap,
   planManPortfolioRoles,
   selectManOutfitLibraryPicks,
 } from './manOutfitLibrary';
-import { buildManHeadStylistPrompt, parseManHeadStylistChoices } from './manHeadStylistPrompt';
+import { buildManHeadStylistPrompt, orderManPortfolioChoices, parseManHeadStylistChoices } from './manHeadStylistPrompt';
+import { findManPortfolioVarietyIssues } from './manReportQa';
 import type { ClassificationResult } from './manReportGenerator';
 
 const now = new Date('2026-10-10T12:00:00Z');
@@ -164,4 +166,40 @@ test('head stylist pins flow through the picker in their slots', () => {
   const choice = candidates.get('Evening Wear')!.at(-1)!.entry.id;
   const picks = selectManOutfitLibraryPicks(v5, getManOutfitLibrary(), now, '', { pinned: { [String(evening)]: choice } });
   assert.equal(picks[evening - 1].entry.id, choice);
+});
+
+test('variety check catches a uniform office block, a flat evening and neighbouring tops', () => {
+  const shirt = (number: number, top: string, context = 'Office / Formal') => ({ number, context, top, layer: 'None', bottom: 'Grey tailored trousers', footwear: 'Brown loafers' });
+  const issues = findManPortfolioVarietyIssues([
+    shirt(1, 'Blue striped shirt'), shirt(2, 'White poplin shirt'), shirt(3, 'Pale blue shirt'), shirt(4, 'Navy shirt'),
+    shirt(5, 'Black knit polo', 'Evening Wear'), shirt(6, 'Burgundy crewneck', 'Evening Wear'), shirt(7, 'Black shirt', 'Evening Wear'), shirt(8, 'Grey knit', 'Evening Wear'),
+  ]);
+  const codes = issues.map(issue => issue.code);
+  assert.ok(codes.includes('silhouette_context_cap'));
+  assert.ok(codes.includes('evening_statement_quota'));
+  assert.ok(codes.includes('evening_no_layer_cap'));
+  assert.deepEqual(issues.find(issue => issue.code === 'consecutive_top_colour')?.outfits, [3, 4]);
+});
+
+test('reordering an occasion separates neighbouring colours and keeps each look with its role and reason', () => {
+  const { slots, candidates } = getManPortfolioCandidates(v5, undefined, now);
+  const entries = new Map(getManOutfitLibrary().map(entry => [entry.id, entry]));
+  const library = getManOutfitLibrary();
+  const byTop = (family: string) => library.filter(entry => getManOutfitPrimaryColourFamily(entry.top) === family && /^(none|no layer)$/i.test(entry.layer.trim()));
+  const blues = byTop('blue');
+  const others = library.filter(entry => !['blue', null].includes(getManOutfitPrimaryColourFamily(entry.top)) && /^(none|no layer)$/i.test(entry.layer.trim()));
+  // Fill every slot, with the first occasion's blues bunched together.
+  const first = slots.filter(slot => slot.context === slots[0].context).length;
+  const used = [...blues.slice(0, 2), ...others.slice(0, slots.length - 2)];
+  const choices = slots.map((slot, index) => ({ slot: index + 1, id: used[index].id, why: `look ${used[index].id}`, role: slot.role }));
+  assert.ok(first >= 3);
+  const ordered = orderManPortfolioChoices(choices, slots, entries);
+  const tops = ordered.slice(0, first).map(choice => getManOutfitPrimaryColourFamily(entries.get(choice.id)!.top));
+  for (let index = 1; index < tops.length; index += 1) assert.ok(!(tops[index] === 'blue' && tops[index - 1] === 'blue'), tops.join(','));
+  for (const choice of ordered) {
+    const original = choices.find(item => item.id === choice.id)!;
+    assert.equal(choice.why, original.why);
+    assert.equal(choice.role, original.role);
+  }
+  void candidates;
 });
