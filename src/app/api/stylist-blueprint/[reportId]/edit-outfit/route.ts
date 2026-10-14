@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { clientRuleWarningsForPage } from '@/lib/stylistPinterestOutfits';
 import { supabaseAdmin } from '@/lib/supabase';
 import { canAccessBlueprintReport, isAdminCookieAuthenticated } from '@/lib/stylistWorkspaceAuth';
 import { revalidateStylistBlueprintCache } from '@/lib/stylistBlueprintCache';
@@ -141,6 +142,7 @@ export async function POST(
     return NextResponse.json({
       success: true,
       page: editedPage,
+      warnings: clientRuleWarningsForPage(resolvedSubmission, nextReportData, editedPage),
       report: freshReport,
       imageUrls: imageResult?.imageUrls,
       imageUrl: imageResult?.imageUrl,

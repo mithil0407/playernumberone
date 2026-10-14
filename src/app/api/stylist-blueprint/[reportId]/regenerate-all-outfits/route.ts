@@ -23,6 +23,8 @@ import {
   isStylistOutfitScienceHarnessEnabled,
 } from '@/lib/stylistOutfitScience';
 import { resolveConsultationIntakePhotos } from '@/lib/stylistConsultationWorkspace';
+import { generatePinterestVerbatimApplication, isPinterestVerbatimEngineEnabled } from '@/lib/stylistPinterestOutfits';
+import { callStylistOutfitJSON } from '@/lib/stylistBlueprintGenerator';
 
 export const maxDuration = 300;
 
@@ -111,10 +113,14 @@ export async function POST(
     let nextReportData: StylistBlueprintReportData | null = null;
     let lastValidationError: unknown = null;
     for (let attempt = 0; attempt < 2; attempt++) {
-      const scienceEnabled = isScienceBlueprintReport(reportData) || isStylistOutfitScienceHarnessEnabled();
-      const scienceResult = scienceEnabled
-        ? await generateStylistOutfitScienceApplication(resolvedSubmission, reportData)
-        : null;
+      // New sets come from real Pinterest looks; a science report keeps its engine.
+      const verbatimEnabled = !isScienceBlueprintReport(reportData) && isPinterestVerbatimEngineEnabled();
+      const scienceEnabled = !verbatimEnabled && (isScienceBlueprintReport(reportData) || isStylistOutfitScienceHarnessEnabled());
+      const scienceResult = verbatimEnabled
+        ? await generatePinterestVerbatimApplication(resolvedSubmission, { ...reportData, outfit_engine: undefined }, callStylistOutfitJSON)
+        : scienceEnabled
+          ? await generateStylistOutfitScienceApplication(resolvedSubmission, reportData)
+          : null;
       const replacementPages = scienceResult?.pages ?? await generateStylistBlueprintReplacementOutfits(
         resolvedSubmission,
         reportData,

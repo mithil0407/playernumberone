@@ -145,11 +145,11 @@ export async function POST(
       library_anchor_id: candidate?.library_ref?.id ?? null,
       verdict: qaVerdict,
       reason: reason || scienceQaSummary(qaVerdict),
-      technique_ids: candidate?.techniques.map(item => item.id) ?? [],
+      technique_ids: candidate?.techniques.map((item: { id: string }) => item.id) ?? [],
       created_at: existingFeedback?.created_at ?? now,
       updated_at: now,
     };
-    const existing = reportData.outfit_engine?.qa_feedback ?? [];
+    const existing: OutfitScienceQaFeedback[] = reportData.outfit_engine?.qa_feedback ?? [];
     const nextFeedback = [
       ...existing.filter(item => item.page_number !== pageNumber),
       feedback,

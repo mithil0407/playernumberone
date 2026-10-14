@@ -1571,16 +1571,19 @@ export async function generateStylistOutfitScienceApplication(
   };
 }
 
-export function isScienceBlueprintReport(reportData?: Pick<StylistBlueprintReportData, 'outfit_engine'> | null) {
+export function isScienceBlueprintReport<T extends Pick<StylistBlueprintReportData, 'outfit_engine'>>(
+  reportData?: T | null,
+): reportData is T & { outfit_engine: OutfitScienceEngineMetadata } {
   return reportData?.outfit_engine?.version === STYLIST_OUTFIT_SCIENCE_VERSION;
 }
 
 export function scienceCandidateForPage(reportData: StylistBlueprintReportData, pageNumber: number) {
   const outfitStart = getStylistBlueprintOutfitStartPage(reportData);
   const index = pageNumber - outfitStart;
-  const candidateId = reportData.outfit_engine?.selected_candidate_ids[index];
+  if (!isScienceBlueprintReport(reportData)) return null;
+  const candidateId = reportData.outfit_engine.selected_candidate_ids[index];
   if (!candidateId) return null;
-  return reportData.outfit_engine?.scored_candidates.find(candidate => candidate.id === candidateId) ?? null;
+  return reportData.outfit_engine.scored_candidates.find(candidate => candidate.id === candidateId) ?? null;
 }
 
 export function scienceQaSummary(verdict: OutfitScienceQaVerdict) {

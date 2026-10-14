@@ -55,7 +55,9 @@ function text(value: unknown) {
 function list(value: unknown) {
   if (Array.isArray(value)) return value.map(text).filter(Boolean);
   const one = text(value);
-  return one ? one.split(/,|;|\n/).map(item => item.trim()).filter(Boolean) : [];
+  // Commas inside brackets belong to one answer: "Earthy colours (Navy blue,
+  // rust, terracotta)" is one preference, not three fragments.
+  return one ? one.split(/[,;\n](?![^()]*\))/).map(item => item.trim()).filter(Boolean) : [];
 }
 
 function compact<T extends JsonRecord>(value: T): T {
@@ -156,16 +158,17 @@ export function consultationSourceToIntake(source: ConsultationSourceBundle) {
     focus_areas: Array.from(new Set([...concerns, ...goals])).filter(Boolean),
     coverage_requirements: compact({
       boundaries: list(data.boundaries),
-      fit_restrictions: list(data.fitRestrictions),
-      fabric_restrictions: list(data.fabricRestrictions),
+      fit_restrictions: [...list(data.fitRestrictions), ...list(data.fitRestrictionsOther)],
+      fabric_restrictions: [...list(data.fabricRestrictions), ...list(data.fabricsAvoided).filter(item => !/^none\.?$/i.test(item))],
       cultural_restrictions: list(data.culturalRestrictions),
       modesty_preference: text(data.modestyPreference),
       modesty_reason: text(data.modestyReason),
     }),
     lifestyle_context: compact({
       occupation: text(data.occupation),
-      occasions: list(data.occasions),
-      upcoming_events: list(data.upcomingEvents),
+      occasions: Array.from(new Set([...list(data.occasions), ...list(data.occasionsNeedHelp)])),
+      upcoming_events: list(data.upcomingEvents).length ? list(data.upcomingEvents) : list(data.upcomingEvent),
+      winterwear: text(data.winterwearNeed),
       consultation_reason: text(data.consultationReason),
       desired_feelings: list(data.desiredFeelings),
       life_changes: list(data.lifeChanges),
@@ -174,6 +177,8 @@ export function consultationSourceToIntake(source: ConsultationSourceBundle) {
     }),
     piece_preferences: compact({
       loved: list(data.itemsLoved),
+      go_to_outfits: list(data.goToOutfits),
+      fabrics_preferred: list(data.fabricsPreferred).filter(item => !/^no preference\.?$/i.test(item)),
       avoided: list(data.itemsHated),
       least_favourites: list(data.wardrobeLeastFavorites),
       footwear: list(data.footwear),

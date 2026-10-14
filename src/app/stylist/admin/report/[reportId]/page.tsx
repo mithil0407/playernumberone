@@ -1263,6 +1263,7 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
       const statusRes = await fetch(`/api/stylist-blueprint/status/${reportId}`, { cache: 'no-store' });
       if (statusRes.ok) setImageCounts((await statusRes.json()).imageCounts ?? null);
       setOutfitInstruction('');
+      if (Array.isArray(data.warnings) && data.warnings.length) setError(`Edit saved. Check it against her brief: ${data.warnings.join('; ')}.`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Outfit edit failed');
       await load(true);
@@ -2158,6 +2159,7 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
                   const data = await response.json();
                   if (!response.ok) throw new Error(data.error || 'Could not read that outfit');
                   handlePageChange(data.page);
+                  if (Array.isArray(data.warnings) && data.warnings.length) setError(`Check this outfit against her brief: ${data.warnings.join('; ')}.`);
                   return typeof data.prompt === 'string' ? data.prompt : null;
                 }}
                 getAlternatives={activeRevisedOutfit ? undefined : async () => {

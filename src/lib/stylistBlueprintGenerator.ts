@@ -85,6 +85,12 @@ import {
   outfitProseBlocks,
   type OutfitScienceEngineMetadata,
 } from './stylistOutfitScience.ts';
+import {
+  generatePinterestVerbatimApplication,
+  isPinterestVerbatimEngineEnabled,
+  isPinterestVerbatimReport,
+  type PinterestOutfitEngineMetadata,
+} from './stylistPinterestOutfits.ts';
 
 export {
   STYLIST_BLUEPRINT_36_PAGE_COUNT,
@@ -522,7 +528,7 @@ export interface StylistBlueprintReportData {
   analysis: StylistBlueprintAnalysis;
   classification: StylistBlueprintClassification;
   pages: BlueprintPage[];
-  outfit_engine?: OutfitScienceEngineMetadata;
+  outfit_engine?: OutfitScienceEngineMetadata | PinterestOutfitEngineMetadata;
   studio?: StylistReportStudioMetadata;
   /**
    * Looks a stylist wrote after delivery, in answer to a client revision. Kept
@@ -1196,6 +1202,11 @@ async function callGeminiJSON(prompt: string, imageUrls: string[] = []): Promise
  * slower spinner. The 30-second deadline and single retry are the same
  * bargain: for someone watching, a bad minute should fail fast.
  */
+/** The JSON call the Pinterest outfit engine uses to pick and describe looks. */
+export function callStylistOutfitJSON(prompt: string, imageUrls: string[] = []): Promise<unknown> {
+  return callGeminiJSON(prompt, imageUrls);
+}
+
 async function callGeminiJSONFast(prompt: string): Promise<unknown> {
   return withRetry(async () => {
     const response = await ai.models.generateContent({
@@ -3116,7 +3127,8 @@ function stripHarnessMarkdown(value: string) {
 }
 
 function isNoneHarnessValue(value: string) {
-  return /^(none|n\/a|not needed|not required|skip|no)$/i.test(stripHarnessMarkdown(value));
+  // "None." and "None (the top is the layer)" are still empty slots.
+  return /^(none|n\/a|not needed|not required|skip|no)\b[.\s]*(?:\(.*\))?\.?$/i.test(stripHarnessMarkdown(value).trim());
 }
 
 function parseHarnessSection(block: string, key: keyof Omit<ParsedHarnessOutfit, 'outfitNumber' | 'context'>) {
@@ -3170,7 +3182,7 @@ function fillHarnessNarrativeFallbacks(parsed: ParsedHarnessOutfit) {
 }
 
 const NO_LAYER_HARNESS_VALUE = 'None';
-const ARM_COVERAGE_CUT_RE = /\b(sleeve|sleeved|elbow[-\s]?length|bracelet[-\s]?length|three[-\s]?quarter|3\/4|long[-\s]?sleeve|short[-\s]?sleeve|cap[-\s]?sleeve|covered shoulder|shoulder coverage|kimono sleeve|dolman sleeve|batwing sleeve)\b/i;
+const ARM_COVERAGE_CUT_RE = /\b(sleeves?|sleeved|elbow[-\s]?length|bracelet[-\s]?length|three[-\s]?quarter|3\/4|long[-\s]?sleeve|short[-\s]?sleeve|cap[-\s]?sleeve|covered shoulder|shoulder coverage|kimono sleeve|dolman sleeve|batwing sleeve)\b/i;
 const ARM_EXPOSURE_RE = /\b(sleeveless|strapless|spaghetti\s+strap|thin\s+strap|cami|camisole|tank)\b/i;
 
 function sleeveCoveragePhraseForPlan(plan: PlannedOutfit) {
@@ -6220,7 +6232,7 @@ export async function generateStylistBlueprintPages(
   reportData: StylistBlueprintReportData,
   act: 'opening' | 'diagnosis' | 'prescription' | 'application' | 'closing',
   requestedPages?: number[],
-): Promise<BlueprintPage[] | { pages: BlueprintPage[]; outfit_engine: OutfitScienceEngineMetadata }> {
+): Promise<BlueprintPage[] | { pages: BlueprintPage[]; outfit_engine: OutfitScienceEngineMetadata | PinterestOutfitEngineMetadata }> {
   const libraryContext = await loadOutfitLibraryContext();
   const culturalMode = getStylistOutfitCulturalMode(submission);
   const pageCount = getStylistBlueprintPageCount(reportData);
@@ -6233,7 +6245,15 @@ export async function generateStylistBlueprintPages(
   const outfitsPerCapsule = outfitCount / 4;
   const outfitDiversityPlan = buildOutfitDiversityPlan(reportData, libraryContext, culturalMode, submission);
   if (act === 'application') {
-    if (isStylistOutfitScienceHarnessEnabled() || isScienceBlueprintReport(reportData)) {
+    // A report keeps the engine it was made with; new reports get real
+    // Pinterest looks worn as styled unless a deploy opts out.
+    if (isScienceBlueprintReport(reportData)) {
+      return generateStylistOutfitScienceApplication(submission, reportData, libraryContext.outfits);
+    }
+    if (isPinterestVerbatimReport(reportData) || isPinterestVerbatimEngineEnabled()) {
+      return generatePinterestVerbatimApplication(submission, reportData, callStylistOutfitJSON);
+    }
+    if (isStylistOutfitScienceHarnessEnabled()) {
       return generateStylistOutfitScienceApplication(submission, reportData, libraryContext.outfits);
     }
     if (isLatestStylistBlueprintVersion(reportData)) {
@@ -6750,7 +6770,10 @@ ${buildStylistBlueprintIntakeDigest(submission)}`;
 
   nextData = {
     ...nextData,
-    pages: reportData.pages.map(page => normaliseGeneratedPage(page, nextData)),
+    // A new palette must not rewrite finished outfits. Normalising an outfit
+    // page re-derived its swatches and appended texture and pattern text to
+    // every piece, including looks a stylist had already written.
+    pages: reportData.pages.map(page => (page.page_type === 'outfit' || page.page_type === 'transformation') ? page : normaliseGeneratedPage(page, nextData)),
   };
 
   return nextData;
