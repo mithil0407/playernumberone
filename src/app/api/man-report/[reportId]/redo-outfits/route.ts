@@ -118,6 +118,18 @@ export async function POST(
   const previousOverrides = reportData.outfit_library?.selectionProfile?.overrides ?? {};
   const excluded = [...new Set([...(previousOverrides.excluded ?? []), ...downvotedLooks])];
 
+  // v5: replace only the 👎 outfits, with the head stylist choosing around the kept ones.
+  if (mode === 'downvoted' && getManOutfitLibraryVersion(classification) === MAN_OUTFIT_LIBRARY_PORTFOLIO_VERSION) {
+    if (!downvoted.length) return NextResponse.json({ error: 'No outfits are marked 👎 yet.' }, { status: 400 });
+    try {
+      const { replaceManReportOutfits } = await import('@/lib/manReportOutfitReplace');
+      return NextResponse.json(await replaceManReportOutfits(reportId, { replace: downvoted }));
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      return NextResponse.json({ error: `Outfit regeneration failed: ${message}` }, { status: 500 });
+    }
+  }
+
   let pinned: Record<string, number> = {};
   if (mode === 'downvoted') {
     if (!usesManColourLock(reportData.outfit_library?.version)) {

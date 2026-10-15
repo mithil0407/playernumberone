@@ -13,6 +13,7 @@ import 'server-only';
 import { GoogleGenAI } from '@google/genai';
 import { manGenerateText } from './manAi';
 import {
+  getManOutfitLibrary,
   getManPortfolioCandidates,
   getManReportClimateProfile,
   manPortfolioLeadCap,
@@ -67,11 +68,22 @@ function looksToRelease(issues: ManPortfolioVarietyIssue[]): Set<number> {
 export async function runManHeadStylist(
   classification: ClassificationResult,
   now = new Date(),
-  options: { excluded?: number[] } = {},
+  options: {
+    excluded?: number[];
+    /** Outfit number → look already approved; only the other slots are chosen, and nothing moves. */
+    fixed?: Record<string, number>;
+  } = {},
 ): Promise<{ overrides: ManOutfitSelectionOverrides; dropped: string[]; issues: string[]; released: number[]; prompt: string; raw: string }> {
   const { slots, candidates } = getManPortfolioCandidates(classification, undefined, now, undefined, options.excluded);
+  const library = getManOutfitLibrary();
   const entries = new Map<number, ManOutfitLibraryEntry>();
   for (const list of candidates.values()) for (const { entry } of list) entries.set(entry.id, entry);
+  const fixed = new Map<number, ManOutfitLibraryEntry>();
+  for (const [slot, id] of Object.entries(options.fixed ?? {})) {
+    const entry = library.find(item => item.id === id);
+    if (entry) { fixed.set(Number(slot), entry); entries.set(entry.id, entry); }
+  }
+  const fixedChoices: ManHeadStylistChoice[] = [...fixed].map(([slot, entry]) => ({ slot, id: entry.id, why: '' }));
   const maxPerLeadFamily = manPortfolioLeadCap(slots.length);
   const prompt = buildManHeadStylistPrompt({
     classification,
@@ -79,12 +91,15 @@ export async function runManHeadStylist(
     candidates,
     climateLabel: getManReportClimateProfile(classification, now).label,
     maxPerLeadFamily,
+    fixed,
   });
 
   const attempt = (raw: string) => {
-    const parsed = parseManHeadStylistChoices(raw, slots, candidates, maxPerLeadFamily);
-    const choices = orderManPortfolioChoices(parsed.choices, slots, entries);
-    const issues = choices.length === slots.length ? findManPortfolioVarietyIssues(manPortfolioLooks(choices, slots, entries)) : [];
+    const parsed = parseManHeadStylistChoices(raw, slots, candidates, maxPerLeadFamily, fixed);
+    // Kept looks hold their slots (their text and pictures are already approved), so only a fresh portfolio is reordered.
+    const choices = fixed.size ? parsed.choices : orderManPortfolioChoices(parsed.choices, slots, entries);
+    const whole = [...fixedChoices, ...choices];
+    const issues = whole.length === slots.length ? findManPortfolioVarietyIssues(manPortfolioLooks(whole, slots, entries)) : [];
     return { choices, dropped: parsed.dropped, issues };
   };
 
@@ -102,12 +117,12 @@ export async function runManHeadStylist(
     }
   }
 
-  const released = looksToRelease(result.issues);
+  const released = new Set([...looksToRelease(result.issues)].filter(slot => !fixed.has(slot)));
   const kept: ManHeadStylistChoice[] = result.choices.filter(choice => !released.has(choice.slot));
   return {
     overrides: {
       ...(options.excluded?.length ? { excluded: options.excluded } : {}),
-      pinned: Object.fromEntries(kept.map(choice => [String(choice.slot), choice.id])),
+      pinned: Object.fromEntries([...fixedChoices, ...kept].map(choice => [String(choice.slot), choice.id])),
       roles: Object.fromEntries(kept.flatMap(choice => choice.role ? [[String(choice.slot), choice.role]] : [])),
       stylistNotes: Object.fromEntries(kept.filter(choice => choice.why).map(choice => [String(choice.slot), choice.why])),
     },

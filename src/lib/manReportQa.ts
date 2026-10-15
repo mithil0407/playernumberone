@@ -719,6 +719,8 @@ export function findManPortfolioVarietyIssues(looks: ManPortfolioLook[]): ManPor
       if (tees.length > 3) issues.push({ code: 'relaxed_plain_tee_cap', message: `Relaxed has ${tees.length} plain tee-led looks; at most 3.`, outfits: tees, limit: 3 });
     }
   }
+  const whiteSneakers = outfits.filter(outfit => /\bwhite\b[^,;|]*sneakers?/i.test(outfit.fields.footwear)).map(outfit => outfit.number);
+  if (whiteSneakers.length > 3) issues.push({ code: 'white_sneakers_cap', message: `${whiteSneakers.length} looks wear white sneakers; at most 3.`, outfits: whiteSneakers, limit: 3 });
   // The colour a look leads with near his face (the layer, else the top); shoes and a tee under a jacket don't count.
   const leadCap = Math.max(3, Math.ceil(outfits.length / 5));
   const dominant = group(outfits, outfit => getManOutfitPrimaryColourFamily(hasNoLayer(outfit) ? outfit.fields.top : outfit.fields.layer)?.replace(/^patterned-/, '') ?? null);

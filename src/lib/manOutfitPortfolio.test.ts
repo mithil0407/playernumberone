@@ -3,7 +3,10 @@ import assert from 'node:assert/strict';
 import { getManColourInfo, isManColourAvoided, readManClientColouring, scoreManColourSuitability, findManColourMentions } from './manOutfitColour';
 import { buildManRecommendationProfile, computeManContextSplit } from './manRecommendationProfile';
 import {
+  cleanManAccessories,
   getManOutfitLibrary,
+  isManVagueLook,
+  manFootwearClash,
   getManOutfitLibraryVersion,
   getManOutfitPrimaryColourFamily,
   getManPortfolioCandidates,
@@ -202,4 +205,19 @@ test('reordering an occasion separates neighbouring colours and keeps each look 
     assert.equal(choice.role, original.role);
   }
   void candidates;
+});
+
+test('shoes, vague looks and props: sneakers stay with denim, photo captions never reach the shortlist, totes and caps are opt-in', () => {
+  assert.ok(manFootwearClash({ context: 'Smart Casual', bottom: 'Mid-grey high-rise single-pleat tailored trousers', footwear: 'White leather low-top sneakers' }));
+  assert.ok(manFootwearClash({ context: 'Evening Wear', bottom: 'Black jeans', footwear: 'White sneakers' }));
+  assert.ok(!manFootwearClash({ context: 'Relaxed Casual', bottom: 'Blue straight-leg jeans', footwear: 'White leather low-top sneakers' }));
+  assert.ok(isManVagueLook({ top: 'Dark shirt', layer: 'Grey-and-black plaid overshirt, worn open', bottom: 'Loose dark trousers' }));
+  assert.ok(isManVagueLook({ top: 'Light blue shirt', layer: 'Blue checked blazer', bottom: 'Blue trousers, partly visible' }));
+  assert.ok(!isManVagueLook({ top: 'Navy button-front shirt', layer: 'No layer', bottom: 'Grey tailored trousers' }));
+  assert.equal(cleanManAccessories('Dark brown leather belt; tan and black structured tote; sunglasses', v5.recommendation_profile), 'Dark brown leather belt, sunglasses');
+  assert.equal(cleanManAccessories('Silver watch and navy cotton cap', { ...v5.recommendation_profile!, try_pieces: ['caps'] }), 'Silver watch, navy cotton cap');
+  const { candidates } = getManPortfolioCandidates(v5, undefined, now);
+  for (const [, list] of candidates) for (const { entry } of list) {
+    assert.ok(!isManVagueLook(entry) && !manFootwearClash(entry), `#${entry.id} should not be shortlisted`);
+  }
 });

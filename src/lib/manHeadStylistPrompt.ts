@@ -20,6 +20,7 @@ import {
 } from './manOutfitLibrary';
 import { MAN_TASTE_LOOKS, describeManRecommendationProfile } from './manRecommendationProfile';
 import { manPortfolioLookShape, type ManPortfolioLook } from './manReportQa';
+import { findManColourMentions } from './manOutfitColour';
 
 const ROLE_BRIEF = {
   anchor: 'SAFE CLASSIC: a look he could wear tomorrow, but it must still be good: clean, well-proportioned, never filler',
@@ -46,13 +47,22 @@ export function buildManHeadStylistPrompt(input: {
   candidates: Map<ManOutfitLibraryContext, ManPortfolioCandidate[]>;
   climateLabel: string;
   maxPerLeadFamily: number;
+  /** Slots already decided (outfit number → look); the stylist fills only the rest. */
+  fixed?: Map<number, ManOutfitLibraryEntry>;
 }) {
   const { classification, slots, candidates } = input;
+  const fixed = input.fixed ?? new Map<number, ManOutfitLibraryEntry>();
   const { colour, body, style_brief: style, client } = classification;
   const profile = classification.recommendation_profile;
   const roleCounts = (['anchor', 'signature', 'stretch'] as const)
     .map(role => `${slots.filter(slot => slot.role === role).length} ${role}`).join(', ');
-  const slotLines = slots.map((slot, index) => `Slot ${index + 1} — ${slot.context} — ${ROLE_BRIEF[slot.role]}`).join('\n');
+  const slotLines = slots.map((slot, index) => {
+    const kept = fixed.get(index + 1);
+    return kept
+      ? `Slot ${index + 1} — ${slot.context} — ALREADY CHOSEN, KEEP: ${lookLine(kept)}`
+      : `Slot ${index + 1} — ${slot.context} — ${ROLE_BRIEF[slot.role]}`;
+  }).join('\n');
+  const open = slots.map((_, index) => index + 1).filter(number => !fixed.has(number));
   const candidateBlocks = [...candidates.entries()].map(([context, list]) => `### ${context.toUpperCase()} (choose only from these for ${context} slots)
 ${list.map(({ entry }) => lookLine(entry)).join('\n')}`).join('\n\n');
 
@@ -81,7 +91,9 @@ ${tasteLines(classification) || '- He did not take the taste test.'}
    - no two looks next to each other (in slot order) with the same [top] colour, or the same layer colour;
    - no colour group (blues, browns, greys, whites, greens, reds…) leading near his face in more than a fifth of the looks;
    - evening needs at least one statement jacket (leather, suede, bomber) and at most three looks with no layer;
-   - relaxed has at most three plain-tee looks.
+   - relaxed has at most three plain-tee looks;
+   - at most three looks with white sneakers, and never under tailored or pleated trousers or on a night out.
+8. Shoes finish the look: loafers, Derbies, Chelsea or chukka boots with tailoring; sneakers with denim and chinos. Pass over any look whose shoes fight the outfit.
 
 ## THE SLOTS
 ${slotLines}
@@ -90,7 +102,10 @@ ${slotLines}
 ${candidateBlocks}
 
 ## ANSWER
-Return ONLY JSON, no markdown: {"outfits":[{"slot":1,"id":215,"why":"one plain sentence on why this is right for him"}, …]} with exactly one entry per slot, every id from that slot's occasion list, and no id used twice.`;
+${fixed.size
+    ? `The client has already approved the slots marked ALREADY CHOSEN; they stay exactly as they are. Choose looks ONLY for slots ${open.join(', ')}, and make them work alongside the kept ones (the variety limits count the whole Blueprint).
+Return ONLY JSON, no markdown: {"outfits":[{"slot":${open[0] ?? 1},"id":215,"why":"one plain sentence on why this is right for him"}, …]} with one entry per open slot, every id from that slot's occasion list, and no id used anywhere else in the Blueprint.`
+    : `Return ONLY JSON, no markdown: {"outfits":[{"slot":1,"id":215,"why":"one plain sentence on why this is right for him"}, …]} with exactly one entry per slot, every id from that slot's occasion list, and no id used twice.`}`;
 }
 
 function lookLine(entry: ManOutfitLibraryEntry) {
@@ -189,6 +204,7 @@ export function parseManHeadStylistChoices(
   slots: ManPortfolioSlot[],
   candidates: Map<ManOutfitLibraryContext, ManPortfolioCandidate[]>,
   maxPerLeadFamily: number,
+  fixed: Map<number, ManOutfitLibraryEntry> = new Map(),
 ): { choices: ManHeadStylistChoice[]; dropped: string[] } {
   const cleaned = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/, '').trim();
   const start = cleaned.indexOf('{');
@@ -197,9 +213,15 @@ export function parseManHeadStylistChoices(
   const outfits = Array.isArray(parsed.outfits) ? parsed.outfits : [];
   const choices: ManHeadStylistChoice[] = [];
   const dropped: string[] = [];
-  const used = new Set<number>();
+  const used = new Set<number>([...fixed.values()].map(entry => entry.id));
   const leads = new Map<string, number>();
   let blackLed = 0;
+  for (const entry of fixed.values()) {
+    const layer = /^(none|no layer)\b/i.test(entry.layer.trim()) ? '' : entry.layer;
+    const family = findManColourMentions(layer || entry.top)[0]?.info.family;
+    if (family) leads.set(family, (leads.get(family) ?? 0) + 1);
+    if (isManBlackLed(entry)) blackLed += 1;
+  }
   for (const item of outfits) {
     const record = item && typeof item === 'object' ? item as Record<string, unknown> : {};
     const slot = Number(record.slot);
@@ -207,6 +229,7 @@ export function parseManHeadStylistChoices(
     const why = typeof record.why === 'string' ? record.why.trim().slice(0, 240) : '';
     const target = slots[slot - 1];
     if (!target) { dropped.push(`slot ${record.slot}: no such slot`); continue; }
+    if (fixed.has(slot)) continue;
     if (choices.some(choice => choice.slot === slot)) { dropped.push(`slot ${slot}: chosen twice`); continue; }
     const candidate = candidates.get(target.context)?.find(option => option.entry.id === id);
     if (!candidate) { dropped.push(`slot ${slot}: #${record.id} is not on the ${target.context} shortlist`); continue; }

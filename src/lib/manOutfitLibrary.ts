@@ -150,6 +150,8 @@ export interface ManOutfitSelectionOverrides {
   stylistNotes?: Record<string, string>;
   /** v5: the role each pinned look was chosen for, when the head stylist reordered an occasion. */
   roles?: Record<string, ManOutfitRole>;
+  /** Outfit number → a fix the admin asked for when rewriting that outfit (e.g. its shoes). */
+  fixNotes?: Record<string, string>;
 }
 
 const HEADER_CONTEXTS: Record<string, ManOutfitLibraryContext> = {
@@ -1343,7 +1345,63 @@ function portfolioHardEligible(entry: ManOutfitLibraryEntry, context: ManOutfitL
 function portfolioPreferred(entry: ManOutfitLibraryEntry, setup: PortfolioSetup): boolean {
   return !neverPieceConflict(entry, setup.profile)
     && !(setup.bottomHeavy && /\bshorts\b/i.test(entry.bottom))
-    && !/flip-flops?/i.test(entry.footwear);
+    && !/flip-flops?/i.test(entry.footwear)
+    && !isManVagueLook(entry)
+    && !manFootwearClash(entry);
+}
+
+const PHOTO_CAPTION = /partly visible|just visible|partly cropped|shown in|collage|flat lay|beside the model|carried (?:in|over)/i;
+
+/**
+ * A board look written from a photo caption ("Dark shirt", "Loose dark
+ * trousers", "Blue trousers, partly visible"): too vague for the writer to turn
+ * into a stylist's outfit, so it never reaches the shortlist.
+ */
+export function isManVagueLook(entry: Pick<ManOutfitLibraryEntry, 'top' | 'layer' | 'bottom'>): boolean {
+  const layer = /^(none|no layer)\b/i.test(entry.layer.trim()) ? '' : entry.layer;
+  return [entry.top, layer, entry.bottom].filter(Boolean)
+    .some(line => !findManColourMentions(line).length || PHOTO_CAPTION.test(line) || /^\s*(dark|light)\s/i.test(line) && !findManColourMentions(line.replace(/^\s*(dark|light)\s/i, '')).length);
+}
+
+/**
+ * Shoes that fight the outfit: white or low-top sneakers under tailored, pleated
+ * or dress trousers, or on a night out. They belong with jeans, chinos and
+ * relaxed trousers.
+ */
+export function manFootwearClash(entry: Pick<ManOutfitLibraryEntry, 'bottom' | 'footwear' | 'context'>): boolean {
+  if (!/sneaker|trainer/i.test(entry.footwear)) return false;
+  if (entry.context === 'Evening Wear' || entry.context === 'Office / Formal') return true;
+  return /tailored|pleat|dress trousers|wool trousers|suit/i.test(entry.bottom) && !/jeans|denim|chino|drawstring|cargo|relaxed/i.test(entry.bottom);
+}
+
+const BAG_OR_CAP = /\b(tote|bag|duffel|duffle|backpack|briefcase|pouch|cap|hat)\b/i;
+
+/**
+ * The accessory line as the writer should see it: no photo-caption words, and no
+ * bags or caps unless he asked for them (a tote in an outfit photo reads as a prop).
+ */
+export function cleanManAccessories(accessories: string, profile?: ManRecommendationProfile | null): string {
+  const allowBags = profile?.try_pieces.includes('bags');
+  const allowCaps = profile?.try_pieces.includes('caps');
+  // "Belt and watch" is two items; "tan and black tote" is one, so a colour-only piece joins the next.
+  const isColourOnly = (text: string) => !text.replace(new RegExp(findManColourMentions(text).map(m => m.name).join('|') || '$^', 'gi'), '').replace(/[\s-]+/g, '');
+  const parts = accessories
+    .replace(/\s*(?:shown|visible|carried)\s+(?:in|beside|alongside|in hand)[^,;]*/gi, '')
+    .split(/\s*[,;]\s*/)
+    .flatMap(part => part.split(/\s+and\s+/i).reduce<string[]>((items, piece) => {
+      const last = items.at(-1);
+      if (last !== undefined && isColourOnly(last)) items[items.length - 1] = `${last} and ${piece}`;
+      else items.push(piece);
+      return items;
+    }, []))
+    .map(part => part.trim())
+    .filter(Boolean)
+    .filter(part => {
+      if (!BAG_OR_CAP.test(part)) return true;
+      if (/\b(cap|hat)\b/i.test(part)) return Boolean(allowCaps);
+      return Boolean(allowBags);
+    });
+  return parts.length ? parts.join(', ') : 'None';
 }
 
 /** How right a look is for him before the portfolio is considered: style, colour, body and taste. */
@@ -1718,10 +1776,12 @@ function formatTasteLedLibraryPrompt(
   picks: ManOutfitLibraryPick[],
   climate: ManReportClimateProfile,
   stylistNotes: Record<string, string> = {},
+  fixNotes: Record<string, string> = {},
 ): string {
   const references = picks.map((pick, index) => {
     const entry = pick.entry;
     const note = stylistNotes[String(index + 1)];
+    const fix = fixNotes[String(index + 1)];
     return `### MANDATORY SOURCE FOR FINAL OUTFIT ${index + 1}: LIBRARY LOOK ${entry.id} — ${entry.context.toUpperCase()}
 ${pick.role ? `ROLE: ${ROLE_GUIDANCE[pick.role]}` : `LADDER: ${pick.ladder ? LADDER_GUIDANCE[pick.ladder] : 'comfort zone'}`}
 SILHOUETTE FAMILY: ${entry.silhouetteFamily}
@@ -1730,9 +1790,10 @@ TOP: ${entry.top}
 LAYER: ${entry.layer}
 BOTTOM: ${entry.bottom}
 FOOTWEAR: ${entry.footwear}
-ACCESSORY: ${entry.accessories}${entry.styling ? `
+ACCESSORY: ${pick.role ? cleanManAccessories(entry.accessories, classification.recommendation_profile) : entry.accessories}${entry.styling ? `
 STYLING: ${entry.styling}` : ''}${note ? `
-WHY THE HEAD STYLIST CHOSE IT: ${note}` : ''}`;
+WHY THE HEAD STYLIST CHOSE IT: ${note}` : ''}${fix ? `
+FIX REQUIRED BY THE STYLIST (outranks the source where they disagree): ${fix}` : ''}`;
   }).join('\n\n');
   const split = describeManContextSplit(classification, '–').join('; ');
   const waivers = getManOutfitSelectionWaivers(classification);
@@ -1748,7 +1809,9 @@ SOURCE LOCK — non-negotiable, and it outranks every older rule about colour:
 - Keep the source's STYLING line (tucked, sleeves rolled, worn open, draped) and its accessories. If the source accessory is "None", add one that suits his face shape.
 - Your job is execution: give every garment a real fabric, a fit for his body and one precise styling instruction, so each line reads as a buyable product. That is where the elevation comes from — fabric, texture, proportion and styling — not from new colours.
 - Respect the ${picks.some(pick => pick.role) ? 'ROLE' : 'LADDER'} line: comfort looks stay wearable, stretch looks stay bold. Do not tone a stretch look down.${picks.some(pick => pick.role) ? `
-- Write every outfit fresh: no fit or styling phrase (for example "worn open below the belly" or "room through the waist") may appear in more than two outfits. Say how a look flatters his body only where it matters, in different words each time.` : ''}
+- Write every outfit fresh: no fit or styling phrase (for example "worn open below the belly" or "room through the waist") may appear in more than two outfits. Say how a look flatters his body only where it matters, in different words each time.
+- Shoes finish the outfit: office and evening trousers are full length with a slight break and worn with socks (no bare ankles, no cropped hems); sockless loafers and cropped hems belong only to relaxed looks. White sneakers go only with jeans, chinos or relaxed trousers, never under tailored or pleated trousers.
+- No bags, totes or caps unless the source keeps one in its ACCESSORY line.` : ''}
 - Never introduce satin or any shiny fabric; silk only as matte raw silk or cotton-silk in wedding-function looks. ${waivers.includes('ties') ? 'No ties for this client.' : 'Add a tie only where the source has one.'} ${waivers.includes('suits') ? 'No suits for this client.' : ''}
 
 Occasion split for this client: ${split}.${classification.recommendation_profile?.occasion_mode === 'groom'
@@ -1771,7 +1834,7 @@ export function formatManOutfitLibraryForPrompt(
 ): string {
   const climate = getManReportClimateProfile(classification, now);
   if (classification.recommendation_profile) {
-    return formatTasteLedLibraryPrompt(classification, selectManOutfitLibraryPicks(classification, library, now, selectionSalt, overrides), climate, overrides.stylistNotes);
+    return formatTasteLedLibraryPrompt(classification, selectManOutfitLibraryPicks(classification, library, now, selectionSalt, overrides), climate, overrides.stylistNotes, overrides.fixNotes);
   }
   const selected = selectManOutfitLibraryReferences(classification, library, now, selectionSalt);
   const references = selected.map((entry, index) => `### MANDATORY SOURCE FOR FINAL OUTFIT ${index + 1}: LIBRARY LOOK ${entry.id} — ${entry.context.toUpperCase()}
