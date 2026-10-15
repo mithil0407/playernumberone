@@ -964,6 +964,45 @@ function tryPieceBonus(entry: ManOutfitLibraryEntry, profile: ManRecommendationP
   }, 0);
 }
 
+/** v5: does one garment of the look carry this piece? ("Green kurta | Cream trousers" is not coloured trousers.) */
+export function manLookHasPiece(entry: ManOutfitLibraryEntry, pieceId: string): boolean {
+  if (pieceId === 'all_black') return manPieceMatches(pieceId, manLookPieceText(entry));
+  const layer = /^(none|no layer)\b/i.test(entry.layer.trim()) ? '' : entry.layer;
+  return [entry.top, layer, entry.bottom, entry.footwear, entry.accessories].some(text => text && manPieceMatches(pieceId, text));
+}
+
+/**
+ * Pieces a stylist swaps instead of dropping the look: a man who never wears
+ * loafers still gets a good outfit, in Derbies. The writer is told the swap.
+ */
+const MAN_SWAPPABLE_PIECES: Record<string, string> = {
+  loafers: 'he never wears loafers: use the same colour in leather Derby shoes with tailoring, or clean leather sneakers with denim and chinos',
+  boots: 'he never wears boots: use the same colour in leather Derby shoes with tailoring, or clean leather sneakers with denim',
+  sneakers: 'he never wears sneakers: use leather Derby shoes or loafers in a colour that suits the look',
+  pleated: 'he never wears pleated trousers: make them flat-front in the same colour and cut',
+  jewellery: 'he never wears chains, pendants or bracelets: leave them out (a watch is fine)',
+  bags: 'no bag or tote',
+  caps: 'no cap or hat',
+};
+
+/** v5: never-pieces that rule a look out (the swappable ones are fixed in the writing instead). */
+function v5NeverConflict(entry: ManOutfitLibraryEntry, profile: ManRecommendationProfile): boolean {
+  return profile.never_pieces.some(piece => !['suit', 'tie', 'patterns'].includes(piece) && !MAN_SWAPPABLE_PIECES[piece] && manLookHasPiece(entry, piece));
+}
+
+/** v5: the swaps the writer must make in this look for his never-pieces. */
+export function manLookSwaps(entry: ManOutfitLibraryEntry, profile: ManRecommendationProfile | null | undefined): string[] {
+  return (profile?.never_pieces ?? []).filter(piece => MAN_SWAPPABLE_PIECES[piece] && manLookHasPiece(entry, piece)).map(piece => MAN_SWAPPABLE_PIECES[piece]);
+}
+
+function v5TryPieceBonus(entry: ManOutfitLibraryEntry, profile: ManRecommendationProfile, selected: ManOutfitLibraryEntry[]): number {
+  return profile.try_pieces.reduce((bonus, piece) => {
+    if (!manLookHasPiece(entry, piece) || manLookSwaps(entry, profile).length && profile.never_pieces.includes(piece)) return bonus;
+    const covered = selected.some(chosen => manLookHasPiece(chosen, piece));
+    return bonus + (covered ? 0.06 : 0.2);
+  }, 0);
+}
+
 function lightVarietyBonus(entry: ManOutfitLibraryEntry, selected: ManOutfitLibraryEntry[]): number {
   let bonus = 0;
   if (!selected.some(chosen => footwearType(chosen) === footwearType(entry))) bonus += 0.06;
@@ -1343,7 +1382,7 @@ function portfolioHardEligible(entry: ManOutfitLibraryEntry, context: ManOutfitL
 
 /** Soft rules: dropped only when an occasion has nothing else left. */
 function portfolioPreferred(entry: ManOutfitLibraryEntry, setup: PortfolioSetup): boolean {
-  return !neverPieceConflict(entry, setup.profile)
+  return !v5NeverConflict(entry, setup.profile)
     && !(setup.bottomHeavy && /\bshorts\b/i.test(entry.bottom))
     && !/flip-flops?/i.test(entry.footwear)
     && !isManVagueLook(entry)
@@ -1450,7 +1489,9 @@ export function getManPortfolioCandidates(
     const eligible = portfolioContextPool(library, context, setup)
       .filter(entry => portfolioHardEligible(entry, context, setup, false) || (indian && portfolioHardEligible(entry, context, setup, true)));
     const preferred = eligible.filter(entry => portfolioPreferred(entry, setup));
-    const pool = (preferred.length >= count ? preferred : eligible)
+    // Too few looks after the soft rules: relax those, but never his hard "never" pieces.
+    const allowed = eligible.filter(entry => !v5NeverConflict(entry, setup.profile));
+    const pool = (preferred.length >= count ? preferred : allowed.length >= count ? allowed : eligible)
       .map(entry => ({ entry, score: portfolioLookScore(entry, setup), leadFamily: leadNearFace(entry)?.family ?? null }))
       .sort((a, b) => b.score - a.score || a.entry.id - b.entry.id);
     const limit = Math.max(perContext, count * 3);
@@ -1535,7 +1576,7 @@ function selectPortfolioPicks(
         const officeTone = context === 'Office / Formal' && profile.dress_code === 'smart_no_tie' ? (hasTie(entry) ? -0.2 : 0) - (isSuit(entry) ? 0.1 : 0) : 0;
         return portfolioLookScore(entry, setup)
           + 0.3 * roleFit(entry, role, comfort, colouring, current)
-          + tryPieceBonus(entry, profile, current)
+          + v5TryPieceBonus(entry, profile, current)
           + lightVarietyBonus(entry, current)
           + newColour
           + officeTone
@@ -1782,6 +1823,7 @@ function formatTasteLedLibraryPrompt(
     const entry = pick.entry;
     const note = stylistNotes[String(index + 1)];
     const fix = fixNotes[String(index + 1)];
+    const swaps = pick.role ? manLookSwaps(entry, classification.recommendation_profile) : [];
     return `### MANDATORY SOURCE FOR FINAL OUTFIT ${index + 1}: LIBRARY LOOK ${entry.id} — ${entry.context.toUpperCase()}
 ${pick.role ? `ROLE: ${ROLE_GUIDANCE[pick.role]}` : `LADDER: ${pick.ladder ? LADDER_GUIDANCE[pick.ladder] : 'comfort zone'}`}
 SILHOUETTE FAMILY: ${entry.silhouetteFamily}
@@ -1793,7 +1835,8 @@ FOOTWEAR: ${entry.footwear}
 ACCESSORY: ${pick.role ? cleanManAccessories(entry.accessories, classification.recommendation_profile) : entry.accessories}${entry.styling ? `
 STYLING: ${entry.styling}` : ''}${note ? `
 WHY THE HEAD STYLIST CHOSE IT: ${note}` : ''}${fix ? `
-FIX REQUIRED BY THE STYLIST (outranks the source where they disagree): ${fix}` : ''}`;
+FIX REQUIRED BY THE STYLIST (outranks the source where they disagree): ${fix}` : ''}${swaps.length ? `
+SWAP REQUIRED (outranks the source and the footwear lock): ${swaps.join('; ')}.` : ''}`;
   }).join('\n\n');
   const split = describeManContextSplit(classification, '–').join('; ');
   const waivers = getManOutfitSelectionWaivers(classification);
@@ -1811,7 +1854,8 @@ SOURCE LOCK — non-negotiable, and it outranks every older rule about colour:
 - Respect the ${picks.some(pick => pick.role) ? 'ROLE' : 'LADDER'} line: comfort looks stay wearable, stretch looks stay bold. Do not tone a stretch look down.${picks.some(pick => pick.role) ? `
 - Write every outfit fresh: no fit or styling phrase (for example "worn open below the belly" or "room through the waist") may appear in more than two outfits. Say how a look flatters his body only where it matters, in different words each time.
 - Shoes finish the outfit: office and evening trousers are full length with a slight break and worn with socks (no bare ankles, no cropped hems); sockless loafers and cropped hems belong only to relaxed looks. White sneakers go only with jeans, chinos or relaxed trousers, never under tailored or pleated trousers.
-- No bags, totes or caps unless the source keeps one in its ACCESSORY line.` : ''}
+- No bags, totes or caps unless the source keeps one in its ACCESSORY line.
+- Name sneakers as real, recognisable pairs so the photograph looks real: grey sneakers are always grey Nike Air Force 1 lows; white leather sneakers are plain white leather low-tops like Common Projects Achilles; never an unbranded grey or coloured sneaker.` : ''}
 - Never introduce satin or any shiny fabric; silk only as matte raw silk or cotton-silk in wedding-function looks. ${waivers.includes('ties') ? 'No ties for this client.' : 'Add a tie only where the source has one.'} ${waivers.includes('suits') ? 'No suits for this client.' : ''}
 
 Occasion split for this client: ${split}.${classification.recommendation_profile?.occasion_mode === 'groom'

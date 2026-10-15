@@ -59,7 +59,7 @@ async function ask(prompt: string) {
 function looksToRelease(issues: ManPortfolioVarietyIssue[]): Set<number> {
   const release = new Set<number>();
   for (const issue of issues) {
-    if (!['silhouette_context_cap', 'silhouette_global_cap'].includes(issue.code) || issue.limit === undefined) continue;
+    if (!['silhouette_context_cap', 'silhouette_global_cap', 'formula_context_cap'].includes(issue.code) || issue.limit === undefined) continue;
     issue.outfits.slice(issue.limit).forEach(number => release.add(number));
   }
   return release;
@@ -99,7 +99,8 @@ export async function runManHeadStylist(
     // Kept looks hold their slots (their text and pictures are already approved), so only a fresh portfolio is reordered.
     const choices = fixed.size ? parsed.choices : orderManPortfolioChoices(parsed.choices, slots, entries);
     const whole = [...fixedChoices, ...choices];
-    const issues = whole.length === slots.length ? findManPortfolioVarietyIssues(manPortfolioLooks(whole, slots, entries)) : [];
+    // Checked on whatever was chosen, so a partial answer still gets its repeats sent back.
+    const issues = findManPortfolioVarietyIssues(manPortfolioLooks(whole, slots, entries));
     return { choices, dropped: parsed.dropped, issues };
   };
 

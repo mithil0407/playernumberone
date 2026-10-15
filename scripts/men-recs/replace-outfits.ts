@@ -4,7 +4,7 @@ import { replaceManReportOutfits } from '@/lib/manReportOutfitReplace';
 
 const [reportId, ...args] = process.argv.slice(2);
 const list = (flag: string) => (args[args.indexOf(flag) + 1] ?? '').split(',').map(Number).filter(Boolean);
-const fixNotes = Object.fromEntries(args.flatMap((arg, index) => args[index - 1] === '--fix' ? [arg.split(/=(.*)/s).slice(0, 2)] : []));
+const fixNotes = Object.fromEntries(args.flatMap((arg, index) => args[index - 1] === '--fix' ? [arg.split(/=([\s\S]*)/).slice(0, 2)] : []));
 const started = Date.now();
 const result = await replaceManReportOutfits(reportId, {
   replace: args.includes('--replace') ? list('--replace') : [],

@@ -92,8 +92,10 @@ ${tasteLines(classification) || '- He did not take the taste test.'}
    - no colour group (blues, browns, greys, whites, greens, reds…) leading near his face in more than a fifth of the looks;
    - evening needs at least one statement jacket (leather, suede, bomber) and at most three looks with no layer;
    - relaxed has at most three plain-tee looks;
-   - at most three looks with white sneakers, and never under tailored or pleated trousers or on a night out.
-8. Shoes finish the look: loafers, Derbies, Chelsea or chukka boots with tailoring; sneakers with denim and chinos. Pass over any look whose shoes fight the outfit.
+   - at most three looks with white sneakers, and never under tailored or pleated trousers or on a night out;
+   - the same formula (e.g. a tee under a jacket, a shirt under a blazer) at most three times across the Blueprint and twice per occasion, and no layer type (bomber, blazer, leather jacket) more than twice per occasion;
+   - at most five looks with light bottoms (white, cream, ivory, beige, khaki, stone).
+8. Some looks show shoes or details he never wears (loafers, boots, pleats): the writer swaps those in the same colour (Derbies for loafers or boots, flat-front for pleated), so judge the look with the swap made. Shoes finish the look: loafers, Derbies, Chelsea or chukka boots with tailoring; sneakers with denim and chinos. Pass over any look whose shoes fight the outfit.
 
 ## THE SLOTS
 ${slotLines}

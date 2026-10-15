@@ -719,6 +719,30 @@ export function findManPortfolioVarietyIssues(looks: ManPortfolioLook[]): ManPor
       if (tees.length > 3) issues.push({ code: 'relaxed_plain_tee_cap', message: `Relaxed has ${tees.length} plain tee-led looks; at most 3.`, outfits: tees, limit: 3 });
     }
   }
+  // Visual formulas: what the eye reads first, top under layer. Two tee-and-jacket looks read as variety; four read as a uniform.
+  const topKind = (top: string) => /\b(tee|t-shirt)\b/i.test(top) ? 'tee' : /\bpolo\b/i.test(top) ? 'polo'
+    : /sweater|knit|pullover|turtleneck|high-neck|henley|sweatshirt/i.test(top) ? 'knit' : /kurta|bandhgala|sherwani|achkan/i.test(top) ? 'indian' : 'shirt';
+  const layerKind = (layer: string) => !layer || /^\s*(none|no layer|n\/a)\s*$/i.test(layer) ? 'no layer'
+    : /blazer|suit jacket/i.test(layer) ? 'blazer' : /bomber/i.test(layer) ? 'bomber' : /vest|gilet/i.test(layer) ? 'vest'
+    : /sweater|cardigan|knit|zip/i.test(layer) ? 'knit layer' : /overshirt|shirt/i.test(layer) ? 'overshirt' : 'jacket';
+  const formula = (outfit: ParsedQaOutfit) => {
+    const layer = layerKind(outfit.fields.layer);
+    return `${topKind(outfit.fields.top)} ${layer === 'no layer' ? 'on its own' : `under a ${layer === 'bomber' ? 'jacket' : layer}`}`;
+  };
+  for (const [name, numbers] of group(outfits, formula)) {
+    if (numbers.length > 3 && !/on its own/.test(name)) issues.push({ code: 'formula_global_cap', message: `${numbers.length} looks are a ${name}; at most 3 read as variety.`, outfits: numbers, limit: 3 });
+  }
+  for (const context of new Set(outfits.map(outfit => outfit.context))) {
+    const local = outfits.filter(outfit => outfit.context === context);
+    for (const [name, numbers] of group(local, formula)) {
+      if (numbers.length > 2) issues.push({ code: 'formula_context_cap', message: `${context} has ${numbers.length} looks that are a ${name}; at most 2.`, outfits: numbers, limit: 2 });
+    }
+    for (const [kind, numbers] of group(local, outfit => { const kind = layerKind(outfit.fields.layer); return kind === 'no layer' ? null : kind; })) {
+      if (numbers.length > 2) issues.push({ code: 'layer_context_cap', message: `${context} has ${numbers.length} looks with a ${kind}; at most 2.`, outfits: numbers, limit: 2 });
+    }
+  }
+  const lightBottoms = outfits.filter(outfit => /\b(white|cream|ivory|ecru|off-white|beige|khaki|stone|sand|oatmeal)\b/i.test(outfit.fields.bottom.split(/[—-]/)[0])).map(outfit => outfit.number);
+  if (lightBottoms.length > 5) issues.push({ code: 'light_bottom_cap', message: `${lightBottoms.length} looks have light trousers or jeans; at most 5.`, outfits: lightBottoms, limit: 5 });
   const whiteSneakers = outfits.filter(outfit => /\bwhite\b[^,;|]*sneakers?/i.test(outfit.fields.footwear)).map(outfit => outfit.number);
   if (whiteSneakers.length > 3) issues.push({ code: 'white_sneakers_cap', message: `${whiteSneakers.length} looks wear white sneakers; at most 3.`, outfits: whiteSneakers, limit: 3 });
   // The colour a look leads with near his face (the layer, else the top); shoes and a tee under a jacket don't count.
