@@ -1176,7 +1176,19 @@ const STYLIST_BLUEPRINT_THINKING_LEVEL: ThinkingLevel = ({
   high: ThinkingLevel.HIGH,
 } as const)[(process.env.GEMINI_STYLIST_THINKING_LEVEL || '').trim().toLowerCase()] ?? ThinkingLevel.LOW;
 
+type StylistJsonCaller = (prompt: string, imageUrls: string[]) => Promise<unknown>;
+let jsonCallerOverride: StylistJsonCaller | null = null;
+
+/**
+ * Sends the report's JSON calls to another model, e.g. a local run through the
+ * operator's signed-in ChatGPT. Null restores Gemini. Never set on Vercel.
+ */
+export function setStylistBlueprintJsonCaller(caller: StylistJsonCaller | null) {
+  jsonCallerOverride = caller;
+}
+
 async function callGeminiJSON(prompt: string, imageUrls: string[] = []): Promise<unknown> {
+  if (jsonCallerOverride) return jsonCallerOverride(prompt, imageUrls);
   return withRetry(async () => {
     const imageParts = await Promise.all(imageUrls.slice(0, 4).map(fetchImagePart).filter(Boolean));
     const parts = [{ text: prompt }, ...imageParts.filter((part): part is { inlineData: { mimeType: string; data: string } } => Boolean(part))];

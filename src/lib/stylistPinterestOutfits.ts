@@ -213,8 +213,12 @@ export interface VerbatimClientRules {
   legs: boolean;
   sheer: boolean;
   loose: boolean;
+  /** She wants shape: nothing oversized, baggy or boxy. */
+  wantsDefinition: boolean;
   flatsOnly: boolean;
   heelPreferred: boolean;
+  /** Her own words, e.g. "1.2-2 inch heel". */
+  statedHeel: string;
   noWorkSkirtOrDress: boolean;
   bannedTerms: string[];
   antiCodePatterns: Array<{ label: string; re: RegExp }>;
@@ -262,6 +266,8 @@ const ANTI_CODE_PATTERNS: Array<{ match: RegExp; label: string; re: RegExp }> = 
   { match: /sequin|glitter|shimmer/i, label: 'sequins', re: /sequin|glitter|lam[eé]\b/i },
   { match: /satin|shiny|shine/i, label: 'shine', re: /\bsatin\b|metallic|lam[eé]\b/i },
   { match: /\bshorts?\b/i, label: 'shorts', re: /\bshorts\b|bermuda/i },
+  { match: /dupatta/i, label: 'dupattas', re: /dupatta/i },
+  { match: /baggy|overly loose|oversized/i, label: 'baggy fits', re: /oversized|baggy|slouch|boxy/i },
 ];
 
 const SHADE_WORDS = '(?:optic|stark|bright|crisp|neon|icy|hot|electric|pastel|baby|lemon|pure|cool|fluorescent)';
@@ -339,9 +345,12 @@ export function buildVerbatimClientRules(
     back: /backless|open back|back/.test(coverageText),
     legs: /\bleg|knee|mini|short skirt|thigh/.test(coverageText),
     sheer: /sheer|opaque|opacity|transparent|see.?through/.test(coverageText) || /flims|sheer/.test(antiText),
-    loose: /tight|cling|bodycon|loose|comfort/.test(coverageText) || /tight/.test(antiText),
+    // "Nothing too loose (wants definition)" is the opposite of "nothing tight".
+    loose: /tight|cling|bodycon/.test(coverageText) || /\btight/.test(antiText),
+    wantsDefinition: /too loose|not loose|overly loose|definition|baggy|shapeless/.test(`${coverageText} ${antiText}`),
     flatsOnly: /flats? only|only flats|no heels?|flat shoes only|without heels?/.test(footwearText) || /flats only|no heels/.test(notes),
     heelPreferred: footwear.heelPreferred,
+    statedHeel: footwear.statedHeel,
     noWorkSkirtOrDress: /no (?:dress(?:es)?|skirts?)(?: (?:and|or|&) (?:dress(?:es)?|skirts?))? (?:at|for|to) work|no (?:dress(?:es)?|skirts?) (?:in|at) (?:the )?(?:office|hospital|clinic)/.test(notes),
     bannedTerms: bannedPieceTerms(prefs),
     antiCodePatterns,
@@ -367,7 +376,13 @@ export function buildVerbatimClientRules(
       : /cool|summer|winter|pink|blue/i.test(`${classification.colour.undertone_direction} ${classification.colour.palette_name}`) ? 'cool' : 'neutral',
     depth: /deep|dark/i.test(classification.colour.depth ?? '') ? 'deep' : /light|pale|fair/i.test(classification.colour.depth ?? '') ? 'light' : 'medium',
     muted: /muted|soft|dusty|autumn|summer/i.test(`${classification.colour.palette_name} ${classification.colour.contrast}`),
-    tasteTerms: tasteTermsFrom([...(classification.taste.signature_codes ?? []), ...(classification.taste.shopping_filters ?? [])]),
+    tasteTerms: tasteTermsFrom([
+      ...(classification.taste.signature_codes ?? []),
+      ...(classification.taste.shopping_filters ?? []),
+      // What she told us she loves and actually wears outranks our labels.
+      flatText((prefs as Record<string, unknown>).loved),
+      flatText((prefs as Record<string, unknown>).go_to_outfits),
+    ]),
     minimalist: /minimal/i.test(`${classification.taste.style_archetype} ${classification.taste.moodboard} ${flatText(submission.secondary_moodboard_elements)} ${submission.selected_moodboard_label ?? ''}`),
     summary: [],
   };
@@ -378,6 +393,7 @@ export function buildVerbatimClientRules(
     rules.legs ? 'Hems at or below the knee' : '',
     rules.sheer ? 'Nothing sheer' : '',
     rules.loose ? 'Nothing tight or clingy' : '',
+    rules.wantsDefinition ? 'Nothing oversized, baggy or boxy' : '',
     rules.flatsOnly ? 'Flats only: heels are swapped for a flat in the same colour' : '',
     rules.noWorkSkirtOrDress ? 'No dresses or skirts in work outfits' : '',
     ...rules.antiCodePatterns.map(item => `No ${item.label}`),
@@ -406,7 +422,7 @@ function spreadAcross(target: number, perCapsule: number, order: VerbatimCapsule
   return counts;
 }
 
-const TASTE_NOUNS = /blazer|trouser|tunic|loafer|pointed|flat|gold|tonal|monochrom|matching|set|co-ord|shirt|knit|linen|leather|tote|straight[- ]leg|wide[- ]leg|structured|crisp|denim|kurta|waistcoat|vest|cardigan|trench|coat|silk|cotton/gi;
+const TASTE_NOUNS = /\bdress|co-?ord|bootcut|boot cut|chanderi|kota|stole|jeans|\bsuit|kurt[ai]|blazer|trouser|tunic|loafer|pointed|flat|gold|tonal|monochrom|matching|set|co-ord|shirt|knit|linen|leather|tote|straight[- ]leg|wide[- ]leg|structured|crisp|denim|kurta|waistcoat|vest|cardigan|trench|coat|silk|cotton/gi;
 
 function tasteTermsFrom(values: string[]) {
   const terms = new Set<string>();
@@ -424,7 +440,8 @@ const SHORT_HEM_RE = /\bmini\b|shorts|bermuda|thigh[- ](?:high )?slit|high slit|
 const SHEER_RE = /sheer|mesh|see[- ]through|transparent|organza|tulle|lace (?:top|blouse|dress)/i;
 const TIGHT_RE = /bodycon|body[- ]con|second[- ]skin|skin[- ]tight|body[- ]skimming|figure[- ]hugging|\bskinny\b|leggings|pencil|\btight\b|ribbed knit (?:midi )?(?:tank )?dress|bandage/i;
 const CROPPED_RE = /\bcrop(?:ped)? (?:top|tee|blouse|knit|cami|tank|sweater|cardigan)|crop top|midriff|sliver of (?:waist|skin)|bare midriff|knotted at the (?:front |waist|hem)|tie-front (?:cropped )?(?:top|blouse|shirt)/i;
-const NOT_AN_OUTFIT_RE = /menswear|product shot|reference chart|footwear only|shirtless|nothing under(?:neath)?|worn as the top|bra top/i;
+const NOT_AN_OUTFIT_RE = /mannequin|menswear|product shot|reference chart|footwear only|shirtless|nothing under(?:neath)?|worn as the top|bra top/i;
+const SHAPELESS_RE = /oversized|baggy|slouch|boxy|loose[- ]fit|relaxed[- ]fit|tent|swing (?:top|dress)|kaftan|poncho|smock/i;
 const HIP_CLING_RE = /skinny|\bslim\b|cigarette|pencil|legging|jogger|tapered|capri|bodycon|jeggings|\bbias\b|slip skirt|slip dress/i;
 const HIP_VOLUME_RE = /tiered|balloon|harem|bubble|cargo|paper-?bag|peg[- ]leg|full circle|puffball|dhoti/i;
 const SKIRT_DRESS_RE = /\bskirt\b|\bdress\b|\bgown\b|saree|\bsari\b|lehenga/i;
@@ -435,7 +452,24 @@ function isHeeledShoe(shoe: string) {
   return HEEL_RE.test(shoe) && !/\bflats?\b|flat (?:sandals?|mules?|boots?)/i.test(shoe);
 }
 
+const SHOE_WORD_RE = /shoe|sandal|heel|flat|sneaker|trainer|loafer|pump|mule|boot|jutti|kolhapuri|wedge|espadrille|slide|brogue|slingback|stiletto|oxford|moccasin|ballet|derby|clog/i;
 const MISSING_RE = /^(?:not visible|barefoot|none|n\/a|unknown|hidden|cropped out)/i;
+
+/** The low heel she asked for, in the same colour and shape. */
+export function heeledVersionOfShoe(shoe: string, statedHeel: string): string {
+  const height = statedHeel.replace(/\s*heels?\s*$/i, '').trim() || 'low';
+  const next = shoe
+    .replace(/\bballet flats?\b/gi, 'block-heel pumps')
+    .replace(/\bpointed flats?\b/gi, 'pointed block-heel pumps')
+    .replace(/\bflat sandals?\b/gi, 'block-heel sandals')
+    .replace(/\bflat mules?\b/gi, 'block-heel mules')
+    .replace(/\bslingback flats?\b/gi, 'block-heel slingbacks')
+    .replace(/\bflats\b/gi, 'block-heel pumps')
+    .replace(/\b(sandals|mules|slides|loafers|juttis?|kolhapuris?)\b/i, match => `block-heel ${match.replace(/slides/i, 'sandals')}`)
+    .replace(/block-heel block-heel/gi, 'block-heel')
+    .replace(/\bflat\s+block-heel/gi, 'block-heel');
+  return /heel|pump/i.test(next) ? `${next.replace(/\s*\.\s*$/, '')}, ${height} heel` : `${next}, ${height} block heel`;
+}
 
 /** A flat in the same colour, so the look keeps its colour story. */
 export function flatVersionOfShoe(shoe: string): string {
@@ -465,6 +499,7 @@ function neutralShoe(capsule: VerbatimCapsule, rules: VerbatimClientRules) {
   const warm = rules.palette.some(entry => /camel|tan|cognac|brown|terracotta|rust/i.test(entry.name));
   const metal = rules.metal ?? 'gold';
   if (capsule === 'Occasion' || capsule === 'Social') return rules.flatsOnly ? `Soft ${metal} metallic pointed flats` : `Soft ${metal} metallic block-heel sandals`;
+  if (rules.heelPreferred) return `${warm ? 'Tan' : 'Black'} leather pointed block-heel pumps, ${rules.statedHeel.replace(/\s*heels?\s*$/i, '') || 'low'} heel`;
   return warm ? 'Tan leather pointed flats' : 'Black leather pointed flats';
 }
 
@@ -603,6 +638,8 @@ export function evaluateVerbatimLook(look: VerbatimLook, rules: VerbatimClientRu
 
   if (NOT_AN_OUTFIT_RE.test(all)) rejects.push('not a complete outfit');
   if (!base || (!pieces.dress && !pieces.bottom)) rejects.push('incomplete look');
+  // A pin whose slots shifted puts a skirt in the shoe slot; it cannot be shown as written.
+  if (pieces.shoes && !MISSING_RE.test(pieces.shoes) && !SHOE_WORD_RE.test(pieces.shoes)) rejects.push('garbled pin');
   if (!rules.ethnicAllowed && look.ethnic) rejects.push('ethnic look for a Western-only client');
 
   const bareBase = BARE_ARM_RE.test(base);
@@ -614,6 +651,7 @@ export function evaluateVerbatimLook(look: VerbatimLook, rules: VerbatimClientRu
   if (rules.legs && SHORT_HEM_RE.test(garments)) rejects.push('short hem');
   if (rules.sheer && SHEER_RE.test(garments)) rejects.push('sheer');
   if (rules.loose && TIGHT_RE.test(garments)) rejects.push('tight fit');
+  if (rules.wantsDefinition && SHAPELESS_RE.test(garments)) rejects.push('oversized or shapeless');
   if ((rules.loose || rules.neckline || rules.arms) && CROPPED_RE.test(`${garments} ${pieces.styling}`)) rejects.push('cropped or midriff');
   for (const code of rules.antiCodePatterns) if (code.re.test(all)) rejects.push(code.label);
   const banned = violatesBannedPieces(garments, rules.bannedTerms);
@@ -651,6 +689,10 @@ export function evaluateVerbatimLook(look: VerbatimLook, rules: VerbatimClientRu
   if (!pieces.shoes || MISSING_RE.test(pieces.shoes)) {
     pieces.shoes = neutralShoe(capsule, rules);
     swaps.push(`shoes not shown → ${pieces.shoes.toLowerCase()}`);
+  } else if (rules.heelPreferred && !isHeeledShoe(pieces.shoes) && !/sneaker|trainer|boot/i.test(pieces.shoes)) {
+    const heeled = heeledVersionOfShoe(pieces.shoes, rules.statedHeel);
+    swaps.push(`${pieces.shoes.toLowerCase()} → ${heeled.toLowerCase()}`);
+    pieces.shoes = heeled;
   } else if (rules.flatsOnly && isHeeledShoe(pieces.shoes)) {
     const flat = flatVersionOfShoe(pieces.shoes);
     swaps.push(`${pieces.shoes.toLowerCase()} → ${flat.toLowerCase()}`);
@@ -673,6 +715,8 @@ export function evaluateVerbatimLook(look: VerbatimLook, rules: VerbatimClientRu
     swaps.push(`bag not shown → ${pieces.accessories.toLowerCase()}`);
   }
 
+  // The report shows at least four pieces per outfit; a sparser pin cannot fill the page.
+  if (verbatimFormulaItems({ pieces, swaps }).length < 4) rejects.push('too few pieces');
   const tuck = classifyTuck({ ...look, top: pieces.top, dress: pieces.dress });
   const { score, notes } = scoreLook(look, pieces, tuck, rules, capsule);
   return { look, pieces, rejects, swaps, tuck, score: score - swaps.length * 0.25, scoreNotes: notes };
@@ -779,6 +823,10 @@ function diversityPenalty(candidate: EvaluatedLook, chosen: EvaluatedLook[], cap
   penalty += capsuleChosen.filter(item => bottomFamily(item.pieces) === bottom).length * 1.2;
   penalty += chosen.filter(item => bottomFamily(item.pieces) === bottom).length * 0.25;
   if (layer !== 'none') penalty += capsuleChosen.filter(item => layerFamily(item.pieces) === layer).length * 1;
+  // A jacket on every look reads as one formula: past two layered looks a capsule pays for more.
+  if (layer !== 'none') penalty += Math.max(0, capsuleChosen.filter(item => layerFamily(item.pieces) !== 'none').length - 1) * 1;
+  // Colour is the point: past two neutral-led looks, the next neutral lead costs.
+  if (lead === 'neutral') penalty += Math.max(0, capsuleChosen.filter(item => leadFamily(item.pieces) === 'neutral').length - 1) * 1;
   penalty += capsuleChosen.filter(item => leadFamily(item.pieces) === lead).length * 1.2;
   penalty += chosen.filter(item => leadFamily(item.pieces) === lead).length * 0.3;
   if (chosen.some(item => shapeKey(item.pieces) === shapeKey(candidate.pieces) && leadFamily(item.pieces) === lead)) penalty += 2;
@@ -1033,7 +1081,9 @@ Choose by how good each outfit will actually LOOK ON HER, as a stylist would jud
 - colours that flatter her skin, hair and eyes and sit well together, never a forced combination;
 - proportions that suit her body without making a show of hiding it;
 - outfits that look like something a stylish woman really wears for that part of her life, not a costume;
-- a set that is varied: some tucked, some untucked or worn long, different bottoms and colours, never five versions of one formula.
+- a set that is varied: some tucked, some untucked or worn long, different bottoms and colours, never five versions of one formula;
+- not a jacket or blazer on every look: most outfits should stand on their own, with a layer only where it makes the look;
+- colour she will enjoy wearing: lead with her richer palette colours, not a run of beiges, greys and blacks, and never the same lead colour twice in a capsule.
 Technical correctness is the floor, not the goal. If two are equally correct, pick the one that looks better on her.
 ${Object.entries(rules.ethnicByCapsule).filter(([, count]) => count > 0).map(([capsule, count]) => `Include exactly ${count} ethnic look(s) in ${capsule}.`).join(' ')}
 
