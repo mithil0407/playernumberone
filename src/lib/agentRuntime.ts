@@ -82,6 +82,8 @@ import {
   type MemoryNode,
 } from '@/lib/agentMemoryTree';
 import { buildAgentInstructions } from '@/lib/agentPrompt';
+import { claimMembershipForAgent, parseMemberCode } from '@/lib/styleMembershipAgent';
+import { isActiveMember } from '@/lib/styleMembershipAgentProfile';
 import { forwardableOccasionInvite, lookResponseFromText, occasionCampaign, parseLookButtonPayload } from '@/lib/agentOccasionLooks';
 import { findOccasionOutfit, loadOccasionLibrary, occasionOutfitText, shortlistOccasionOutfits } from '@/lib/agentOccasionLibrary';
 import { activeOccasionLookFor, noteOccasionLookResponse, revealOccasionLook } from '@/lib/agentOccasionLookStore';
@@ -276,6 +278,11 @@ async function storeInboundImage(clientId: string, mediaId: string) {
   return uploadAgentMedia(clientId, downloaded.bytes, downloaded.mimeType, extension);
 }
 
+function logMembershipError(error: unknown) {
+  console.warn('[agent] style membership link failed:', error instanceof Error ? error.message : error);
+  return null;
+}
+
 /**
  * Entry point from the WhatsApp webhook. Existing clients and Blueprint
  * customers are served; with the free tier on, people without a Blueprint join
@@ -285,9 +292,16 @@ async function storeInboundImage(clientId: string, mediaId: string) {
 export async function handleAgentInbound(message: WhatsappInboundMessage) {
   const access = agentAccessFor(message.from);
   const free = freeTierEnabled();
-  if (!access && !free) return 'not_served' as const;
+  // Style Membership: the welcome page's button types her ICM- code, which links
+  // the membership (quiz, plan, 90-day schedule) before anything else.
+  const memberClient = parseMemberCode(message.text)
+    ? await claimMembershipForAgent(message.text, message.from, { byPhone: false }).catch(logMembershipError)
+    : null;
+  if (!access && !free && !memberClient) return 'not_served' as const;
 
-  let client = await resolveAgentClientByPhone(message.from, { allowPreviewReports: access?.previewReports ?? false });
+  let client = memberClient ?? await resolveAgentClientByPhone(message.from, { allowPreviewReports: access?.previewReports ?? false });
+  // A new chat from the number she paid with links her membership without the code.
+  if (!client) client = await claimMembershipForAgent(message.text, message.from, { byPhone: true }).catch(logMembershipError);
   if (!client && free) {
     let code = parseInviteCode(message.text);
     if (!code && colourAnalysisOpen() && (asksForColourAnalysis(message.text) || asksForBodyShapeAnalysis(message.text))) code = await ensureDirectCampaignCode();
@@ -373,7 +387,7 @@ export async function handleAgentInbound(message: WhatsappInboundMessage) {
     return 'own_invite' as const;
   }
 
-  if (client.tier === 'free') {
+  if (client.tier === 'free' && !isActiveMember(client.lite_profile)) {
     const today = await inboundMessagesToday(client.id);
     if (isOverDailyMessageCap(today)) {
       // Say it once, on the first message over the cap; stay quiet after that.
@@ -1548,7 +1562,8 @@ async function runAgentTurnInner(client: AgentClient, options: TurnOptions) {
     state.nodes = nodes;
     state.occasion = occasionCampaign(occasionLook?.campaign)?.occasion ?? null;
 
-    const freeTier = client.tier === 'free';
+    // Members pay, so free-tier limits (runs, pictures a day) don't apply to them.
+    const freeTier = client.tier === 'free' && !isActiveMember(client.lite_profile);
     if (freeTier) await ensureMonthlyGrant(client);
     const [runsLeft, invite, imagesToday, imagesTodayEveryone] = await Promise.all([
       freeTier ? creditBalance(client.id) : Promise.resolve(null),

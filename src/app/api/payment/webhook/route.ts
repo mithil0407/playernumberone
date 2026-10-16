@@ -29,6 +29,7 @@ import {
 } from '@/lib/manEdit';
 import { createEditIssueDraft, runEditIssuePipeline } from '@/lib/manEditIssues';
 import { markCheckoutRecoveryConverted, markCheckoutRecoveryPaymentFailed } from '@/lib/checkoutRecovery';
+import { handleStyleMembershipWebhook } from '@/lib/styleMembershipWebhook';
 
 // Room for a monthly charge to write that month's Edit draft after the 200.
 export const maxDuration = 300;
@@ -231,6 +232,12 @@ export async function POST(request: NextRequest) {
     const { event, payload } = webhookData;
 
     console.log(`Processing webhook event: ${event}`);
+
+    // Style Membership orders, subscriptions and payment links are marked in
+    // their notes and handled on their own; nothing below sees them.
+    if (await handleStyleMembershipWebhook(event, payload)) {
+      return NextResponse.json({ status: 'success' }, { status: 200 });
+    }
 
     switch (event) {
       case 'payment.captured':

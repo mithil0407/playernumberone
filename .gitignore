@@ -53,3 +53,4 @@ next-env.d.ts
 /.next-seo-cache/
 /reports/seo-*/
 /scripts/__pycache__/
+.style-membership-dev/
