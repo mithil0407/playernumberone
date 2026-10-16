@@ -17,6 +17,7 @@ import {
 } from './manOutfitLibrary';
 import { buildManHeadStylistPrompt, orderManPortfolioChoices, parseManHeadStylistChoices } from './manHeadStylistPrompt';
 import { findManPortfolioVarietyIssues } from './manReportQa';
+import { finaliseManSection4 } from './manOutfitSection';
 import type { ClassificationResult } from './manReportGenerator';
 
 const now = new Date('2026-10-10T12:00:00Z');
@@ -220,4 +221,14 @@ test('shoes, vague looks and props: sneakers stay with denim, photo captions nev
   for (const [, list] of candidates) for (const { entry } of list) {
     assert.ok(!isManVagueLook(entry) && !manFootwearClash(entry), `#${entry.id} should not be shortlisted`);
   }
+});
+
+test('final pass: no pleats for a man who never wears them, Air Force 1s for grey sneakers, sunglasses on at most three looks', () => {
+  const block = (n: number, bottom: string, footwear: string, accessory: string) => `OUTFIT ${n} — RELAXED CASUAL\nTOP: Tee\nBOTTOM: ${bottom}\nFOOTWEAR: ${footwear}\nACCESSORY: ${accessory}`;
+  const text = [1, 2, 3, 4, 5].map(n => block(n, n === 1 ? 'Espresso cotton single-pleat trousers — relaxed' : 'Black jeans', n === 2 ? 'Grey leather low-top sneakers' : 'Brown Derby shoes', `Silver watch; brown sunglasses ${n}`)).join('\n\n');
+  const out = finaliseManSection4(text, { never_pieces: ['pleated'] });
+  assert.match(out, /BOTTOM: Espresso cotton flat-front trousers/);
+  assert.match(out, /FOOTWEAR: Grey Nike Air Force 1/);
+  assert.equal((out.match(/sunglasses/g) ?? []).length, 3);
+  assert.match(finaliseManSection4(text, { never_pieces: [] }), /single-pleat/, 'pleats stay for a man who wears them');
 });
