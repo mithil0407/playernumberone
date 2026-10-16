@@ -347,6 +347,9 @@ export function readManAvoidRule(name: string): ManAvoidRule | null {
   if (LOUD_WORDS.test(name)) return { family, loud: true };
   // Light blues are their own family: "icy blue" means pale and light blues, not navy or cobalt.
   if (LIGHT_WORDS.test(name)) return family === 'blue' ? { family: 'light-blue' } : { family, depth: 'light' };
+  // A named shade rules out shades like it, not its whole family: "cobalt" is the loud blues, not navy or slate.
+  if (mention.info.loudness === 2) return { family, loud: true };
+  if (mention.info.depth === 'light' && !['white', 'cream', 'beige', 'light-blue', 'sage', 'pink'].includes(family)) return { family, depth: 'light' };
   return { family };
 }
 

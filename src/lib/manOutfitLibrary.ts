@@ -1386,7 +1386,14 @@ function portfolioPreferred(entry: ManOutfitLibraryEntry, setup: PortfolioSetup)
     && !(setup.bottomHeavy && /\bshorts\b/i.test(entry.bottom))
     && !/flip-flops?/i.test(entry.footwear)
     && !isManVagueLook(entry)
-    && !manFootwearClash(entry);
+    && !manFootwearClash(entry)
+    && !avoidedNearFace(entry, setup.colouring);
+}
+
+/** A colour his analysis says to avoid, at his face (the top or the layer over it). */
+function avoidedNearFace(entry: ManOutfitLibraryEntry, colouring: ManClientColouring): boolean {
+  const { top, layer } = nearFaceColours(entry);
+  return [...top.slice(0, 1), ...layer.slice(0, 1)].some(info => isManColourAvoided(info, colouring));
 }
 
 const PHOTO_CAPTION = /partly visible|just visible|partly cropped|shown in|collage|flat lay|beside the model|carried (?:in|over)/i;
@@ -1854,7 +1861,7 @@ SOURCE LOCK — non-negotiable, and it outranks every older rule about colour:
 - Respect the ${picks.some(pick => pick.role) ? 'ROLE' : 'LADDER'} line: comfort looks stay wearable, stretch looks stay bold. Do not tone a stretch look down.${picks.some(pick => pick.role) ? `
 - Write every outfit fresh: no fit or styling phrase (for example "worn open below the belly" or "room through the waist") may appear in more than two outfits. Say how a look flatters his body only where it matters, in different words each time.
 - Shoes finish the outfit: office and evening trousers are full length with a slight break and worn with socks (no bare ankles, no cropped hems); sockless loafers and cropped hems belong only to relaxed looks. White sneakers go only with jeans, chinos or relaxed trousers, never under tailored or pleated trousers.
-- No bags, totes or caps unless the source keeps one in its ACCESSORY line.
+- No bags, totes or caps unless the source keeps one in its ACCESSORY line. Sunglasses in at most three outfits across the whole section (a face hidden behind them in every photo makes the looks blur together); otherwise a watch, a belt or optical frames.
 - Name sneakers as real, recognisable pairs so the photograph looks real: grey sneakers are always grey Nike Air Force 1 lows; white leather sneakers are plain white leather low-tops like Common Projects Achilles; never an unbranded grey or coloured sneaker.` : ''}
 - Never introduce satin or any shiny fabric; silk only as matte raw silk or cotton-silk in wedding-function looks. ${waivers.includes('ties') ? 'No ties for this client.' : 'Add a tie only where the source has one.'} ${waivers.includes('suits') ? 'No suits for this client.' : ''}
 
