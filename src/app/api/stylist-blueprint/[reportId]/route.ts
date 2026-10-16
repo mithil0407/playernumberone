@@ -1,3 +1,5 @@
+import { clientRuleWarningsForPage } from '@/lib/stylistPinterestOutfits';
+import { withCurrentConsultationAnswers } from '@/lib/stylistConsultationWorkspace';
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { canAccessBlueprintReport } from '@/lib/stylistWorkspaceAuth';
@@ -68,6 +70,7 @@ export async function PATCH(
   const allowedStatuses = new Set(['pending', 'generating', 'draft_ready', 'in_review', 'approved', 'sent', 'delivered', 'error']);
   const patch: Record<string, unknown> = { updated_at: new Date().toISOString() };
   let invalidatedOutfitImages: number[] = [];
+  let outfitWarnings: Array<{ outfit: number; warnings: string[] }> = [];
   let invalidatedHairImage = false;
   const expectedRevision = body.expectedRevision;
   if (expectedRevision !== undefined && (!Number.isInteger(expectedRevision) || expectedRevision < 0)) {
@@ -75,7 +78,7 @@ export async function PATCH(
   }
   const { data: currentRevisionRow, error: revisionError } = await supabaseAdmin
     .from('stylist_blueprint_reports')
-    .select('revision, updated_at, status, progress_stage, report_data, section_approvals, image_urls')
+    .select('revision, updated_at, status, progress_stage, report_data, section_approvals, image_urls, submission_id')
     .eq('id', reportId)
     .single();
   if (revisionError || !currentRevisionRow) {
@@ -188,6 +191,19 @@ export async function PATCH(
         return !previous || JSON.stringify(outfitPieces(previous)) !== JSON.stringify(outfitPieces(page));
       }).map(page => page.page_number - start));
     invalidatedOutfitImages = [...changed];
+    // Hand edits are held to her brief like pasted ones, as a warning: an
+    // autosave mid-sentence must never be blocked.
+    if (changed.size && currentRevisionRow.submission_id) {
+      const { data: intake } = await supabaseAdmin.from('stylist_intake_responses').select('*').eq('id', currentRevisionRow.submission_id).maybeSingle();
+      if (intake) {
+        const submission = await withCurrentConsultationAnswers(intake as StylistIntakeSubmission & { consultation_id?: string | null });
+        outfitWarnings = [...changed].flatMap(index => {
+          const page = after.pages.find(item => item.page_number === start + index);
+          const warnings = page ? clientRuleWarningsForPage(submission, after, page) : [];
+          return warnings.length ? [{ outfit: index + 1, warnings }] : [];
+        });
+      }
+    }
     if (changed.size) {
       const paths = currentRevisionRow.image_urls as StylistBlueprintImagePaths | null;
       patch.image_urls = { ...paths, application: { ...paths?.application,
@@ -228,7 +244,7 @@ export async function PATCH(
   }
 
   await revalidateStylistBlueprintCache(reportId, data.share_token);
-  return NextResponse.json({ report: data, invalidatedOutfitImages, invalidatedHairImage });
+  return NextResponse.json({ report: data, invalidatedOutfitImages, invalidatedHairImage, outfitWarnings });
 }
 
 export async function POST(

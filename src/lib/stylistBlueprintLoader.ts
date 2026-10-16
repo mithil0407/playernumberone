@@ -86,7 +86,8 @@ async function publicReport(row: RawStylistBlueprintReport, view: ReportView = '
     const { outfit_engine: _internalEngine, ...clientData } = data;
     void _internalEngine;
     const hidden = new Set(data.studio?.hidden_page_numbers ?? []);
-    data = { ...clientData, pages: data.pages.filter(page => !hidden.has(page.page_number)) };
+    // Library provenance and swap notes are for stylists, not the client's page source.
+    data = { ...clientData, pages: data.pages.filter(page => !hidden.has(page.page_number)).map(page => ({ ...page, library_refs: undefined })) };
   }
   return {
     id: row.id, status: row.status, report_data: data,

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { clientRuleWarningsForPage } from '@/lib/stylistPinterestOutfits';
 import { supabaseAdmin } from '@/lib/supabase';
 import { canAccessBlueprintReport, isAdminCookieAuthenticated } from '@/lib/stylistWorkspaceAuth';
 import { revalidateStylistBlueprintCache } from '@/lib/stylistBlueprintCache';
@@ -15,7 +16,7 @@ import {
   regenerateStylistBlueprintImageSlot,
   type StylistBlueprintImageSlotKey,
 } from '@/lib/stylistBlueprintImageGenerator';
-import { resolveConsultationIntakePhotos } from '@/lib/stylistConsultationWorkspace';
+import { resolveConsultationIntakePhotos, withCurrentConsultationAnswers } from '@/lib/stylistConsultationWorkspace';
 
 export const maxDuration = 300;
 
@@ -75,7 +76,7 @@ export async function POST(
     if (submissionError || !submission) {
       return NextResponse.json({ error: 'Submission not found' }, { status: 404 });
     }
-    const resolvedSubmission = await resolveConsultationIntakePhotos(submission as StylistIntakeSubmission & { source_photo_paths?: Record<string, string> | null });
+    const resolvedSubmission = await resolveConsultationIntakePhotos(await withCurrentConsultationAnswers(submission as StylistIntakeSubmission & { source_photo_paths?: Record<string, string> | null; consultation_id?: string | null }));
 
     await supabaseAdmin
       .from('stylist_blueprint_reports')
@@ -141,6 +142,7 @@ export async function POST(
     return NextResponse.json({
       success: true,
       page: editedPage,
+      warnings: clientRuleWarningsForPage(resolvedSubmission, nextReportData, editedPage),
       report: freshReport,
       imageUrls: imageResult?.imageUrls,
       imageUrl: imageResult?.imageUrl,
