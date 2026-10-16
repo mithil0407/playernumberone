@@ -56,11 +56,14 @@ async function ask(prompt: string) {
  * replaces, so a colour one over its cap or two similar neighbours stay as
  * chosen (QA still notes them for the admin).
  */
-function looksToRelease(issues: ManPortfolioVarietyIssue[]): Set<number> {
+function looksToRelease(issues: ManPortfolioVarietyIssue[], fixed: Map<number, unknown>): Set<number> {
   const release = new Set<number>();
   for (const issue of issues) {
-    if (!['silhouette_context_cap', 'silhouette_global_cap', 'formula_context_cap'].includes(issue.code) || issue.limit === undefined) continue;
-    issue.outfits.slice(issue.limit).forEach(number => release.add(number));
+    if (!['silhouette_context_cap', 'silhouette_global_cap', 'formula_context_cap', 'formula_global_cap'].includes(issue.code) || issue.limit === undefined) continue;
+    // Kept looks can't move, so the excess comes out of the newly chosen ones first.
+    const open = issue.outfits.filter(number => !fixed.has(number));
+    const excess = issue.outfits.length - issue.limit;
+    open.slice(Math.max(0, open.length - excess)).forEach(number => release.add(number));
   }
   return release;
 }
@@ -118,7 +121,7 @@ export async function runManHeadStylist(
     }
   }
 
-  const released = new Set([...looksToRelease(result.issues)].filter(slot => !fixed.has(slot)));
+  const released = looksToRelease(result.issues, fixed);
   const kept: ManHeadStylistChoice[] = result.choices.filter(choice => !released.has(choice.slot));
   return {
     overrides: {

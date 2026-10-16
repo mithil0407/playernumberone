@@ -1390,6 +1390,16 @@ function portfolioPreferred(entry: ManOutfitLibraryEntry, setup: PortfolioSetup)
     && !avoidedNearFace(entry, setup.colouring);
 }
 
+/** What the eye reads first: the top, and what's over it (matches the Section 4 variety check). */
+export function manLookFormula(entry: Pick<ManOutfitLibraryEntry, 'top' | 'layer'>): string {
+  const top = /\b(tee|t-shirt)\b/i.test(entry.top) ? 'tee' : /\bpolo\b/i.test(entry.top) ? 'polo'
+    : /sweater|knit|pullover|turtleneck|high-neck|henley|sweatshirt/i.test(entry.top) ? 'knit' : /kurta|bandhgala|sherwani|achkan/i.test(entry.top) ? 'indian' : 'shirt';
+  const layer = /^(none|no layer)\b/i.test(entry.layer.trim()) ? 'none'
+    : /blazer|suit jacket/i.test(entry.layer) ? 'blazer' : /vest|gilet/i.test(entry.layer) ? 'vest'
+    : /sweater|cardigan|knit|zip/i.test(entry.layer) ? 'knit' : /overshirt|shirt/i.test(entry.layer) ? 'overshirt' : 'jacket';
+  return `${top}/${layer}`;
+}
+
 /** A colour his analysis says to avoid, at his face (the top or the layer over it). */
 function avoidedNearFace(entry: ManOutfitLibraryEntry, colouring: ManClientColouring): boolean {
   const { top, layer } = nearFaceColours(entry);
@@ -1577,11 +1587,15 @@ function selectPortfolioPicks(
       const pool = preferred.length ? preferred : base;
       const tier = pool.some(entry => entry.tier === 'board') ? pool.filter(entry => entry.tier === 'board') : pool;
       const current = selected();
+      const formulaCount = (entry: ManOutfitLibraryEntry, scope: ManOutfitLibraryEntry[]) => scope.filter(other => manLookFormula(other) === manLookFormula(entry)).length;
       const score = (entry: ManOutfitLibraryEntry) => {
         const lead = leadNearFace(entry);
         const newColour = lead && !isManNeutralColour(lead) && leadCount(lead.family) === 0 ? 0.06 : 0;
+        // The same formula (a tee under a jacket…) twice in an occasion is enough.
+        const repeatFormula = formulaCount(entry, inContext) >= 2 || formulaCount(entry, selected()) >= 3 ? -0.4 : 0;
         const officeTone = context === 'Office / Formal' && profile.dress_code === 'smart_no_tie' ? (hasTie(entry) ? -0.2 : 0) - (isSuit(entry) ? 0.1 : 0) : 0;
         return portfolioLookScore(entry, setup)
+          + repeatFormula
           + 0.3 * roleFit(entry, role, comfort, colouring, current)
           + v5TryPieceBonus(entry, profile, current)
           + lightVarietyBonus(entry, current)
