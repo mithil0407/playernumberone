@@ -83,6 +83,13 @@ export interface VerbatimLook {
 
 export type TuckState = 'tucked' | 'half-tucked' | 'untucked' | 'peplum' | 'one-piece' | 'unstated';
 
+/**
+ * How colour sits in a look. Stylists build on neutrals and let one palette
+ * colour lead or accent: a rust shirt over denim, a navy column with a teal coat.
+ * Head-to-toe colour, every garment from the palette, is what Samiya flagged.
+ */
+export type ColourBalance = 'balanced' | 'neutral-with-accent' | 'all-neutral' | 'all-colour';
+
 /** A look checked against one client: what it would be, and why. */
 export interface EvaluatedLook {
   look: VerbatimLook;
@@ -91,6 +98,7 @@ export interface EvaluatedLook {
   rejects: string[];
   swaps: string[];
   tuck: TuckState;
+  colourBalance: ColourBalance;
   score: number;
   scoreNotes: string[];
 }
@@ -718,8 +726,39 @@ export function evaluateVerbatimLook(look: VerbatimLook, rules: VerbatimClientRu
   // The report shows at least four pieces per outfit; a sparser pin cannot fill the page.
   if (verbatimFormulaItems({ pieces, swaps }).length < 4) rejects.push('too few pieces');
   const tuck = classifyTuck({ ...look, top: pieces.top, dress: pieces.dress });
-  const { score, notes } = scoreLook(look, pieces, tuck, rules, capsule);
-  return { look, pieces, rejects, swaps, tuck, score: score - swaps.length * 0.25, scoreNotes: notes };
+  const colourBalance = colourBalanceOf(pieces);
+  const { score, notes } = scoreLook(look, pieces, tuck, rules, capsule, colourBalance);
+  return { look, pieces, rejects, swaps, tuck, colourBalance, score: score - swaps.length * 0.25, scoreNotes: notes };
+}
+
+const WARDROBE_NEUTRALS = new Set([
+  'black', 'ink', 'jet', 'charcoal', 'graphite', 'grey', 'gray', 'slate', 'white', 'off-white', 'ivory', 'cream', 'ecru', 'chalk', 'bone',
+  'oatmeal', 'oat', 'beige', 'sand', 'stone', 'taupe', 'mushroom', 'biscuit', 'nude', 'camel', 'tan', 'caramel', 'toffee', 'cognac',
+  'brown', 'chocolate', 'cocoa', 'mocha', 'coffee', 'espresso', 'chestnut', 'khaki', 'navy', 'denim', 'indigo', 'chambray',
+]);
+const DENIM_RE = /\b(?:denim|jeans|chambray)\b/i;
+
+/** True for a wardrobe neutral (black, ivory, camel, navy, denim...), false for a colour, null when the piece names none. */
+export function garmentReadsNeutral(piece: string): boolean | null {
+  if (!piece) return null;
+  const colour = colourFromPieceText(piece);
+  if (!colour) return DENIM_RE.test(piece) ? true : null;
+  const base = colour.name.toLowerCase().split(/\s+/).at(-1) ?? '';
+  if (WARDROBE_NEUTRALS.has(base)) return true;
+  // "Light-wash jeans" and "mid-blue denim" read as denim, not as blue.
+  if (DENIM_RE.test(piece) && /blue|wash/i.test(piece)) return true;
+  return colourFamilyOfHex(colour.hex) === 'neutral';
+}
+
+export function colourBalanceOf(pieces: Pick<EvaluatedLook['pieces'], 'top' | 'dress' | 'layer' | 'bottom' | 'shoes' | 'accessories'>): ColourBalance {
+  const garments = pieces.dress ? [pieces.dress, pieces.layer] : [pieces.top, pieces.layer, pieces.bottom];
+  const reads = garments.filter(Boolean).map(garmentReadsNeutral).filter((value): value is boolean => value !== null);
+  const neutral = reads.filter(Boolean).length;
+  const colour = reads.length - neutral;
+  if (colour && neutral) return 'balanced';
+  if (colour) return 'all-colour';
+  const accents = `${pieces.shoes}, ${pieces.accessories}`.split(/,\s*/).filter(part => garmentReadsNeutral(part) === false && !/\bgold|silver|metallic|bronze|pearl\b/i.test(part));
+  return accents.length ? 'neutral-with-accent' : 'all-neutral';
 }
 
 function scoreLook(
@@ -728,6 +767,7 @@ function scoreLook(
   tuck: TuckState,
   rules: VerbatimClientRules,
   capsule: VerbatimCapsule,
+  colourBalance: ColourBalance,
 ) {
   const notes: string[] = [];
   let score = 0;
@@ -769,6 +809,11 @@ function scoreLook(
   const colour = pieceColourScore(nearFace, rules, 2) + pieceColourScore(pieces.layer, rules, 1.5)
     + pieceColourScore(pieces.bottom, rules, 1);
   add(Math.round(colour * 10) / 10, 'palette fit');
+  // Palette colours lead or accent; neutrals carry the rest of the outfit.
+  if (colourBalance === 'balanced') add(2.5, 'palette colour on a neutral base');
+  if (colourBalance === 'neutral-with-accent') add(1, 'neutral base with a colour accent');
+  if (colourBalance === 'all-neutral') add(-1, 'no colour at all');
+  if (colourBalance === 'all-colour') add(-3, 'head-to-toe colour');
 
   const tasteHits = rules.tasteTerms.filter(term => new RegExp(term, 'i').test(all)).length;
   add(Math.min(2, tasteHits * 0.5), 'matches her taste');
@@ -825,8 +870,11 @@ function diversityPenalty(candidate: EvaluatedLook, chosen: EvaluatedLook[], cap
   if (layer !== 'none') penalty += capsuleChosen.filter(item => layerFamily(item.pieces) === layer).length * 1;
   // A jacket on every look reads as one formula: past two layered looks a capsule pays for more.
   if (layer !== 'none') penalty += Math.max(0, capsuleChosen.filter(item => layerFamily(item.pieces) !== 'none').length - 1) * 1;
-  // Colour is the point: past two neutral-led looks, the next neutral lead costs.
-  if (lead === 'neutral') penalty += Math.max(0, capsuleChosen.filter(item => leadFamily(item.pieces) === 'neutral').length - 1) * 1;
+  // Neutral base, colour on top: head-to-toe colour is rare across the set, and
+  // all-neutral looks cannot pile up in a capsule and turn it beige.
+  if (candidate.colourBalance === 'all-colour') penalty += chosen.filter(item => item.colourBalance === 'all-colour').length * 2.5;
+  if (candidate.colourBalance === 'all-neutral') penalty += capsuleChosen.filter(item => item.colourBalance === 'all-neutral').length * 2;
+  if (candidate.colourBalance === 'neutral-with-accent') penalty += Math.max(0, capsuleChosen.filter(item => item.colourBalance !== 'balanced' && item.colourBalance !== 'all-colour').length - 1) * 1;
   penalty += capsuleChosen.filter(item => leadFamily(item.pieces) === lead).length * 1.2;
   penalty += chosen.filter(item => leadFamily(item.pieces) === lead).length * 0.3;
   if (chosen.some(item => shapeKey(item.pieces) === shapeKey(candidate.pieces) && leadFamily(item.pieces) === lead)) penalty += 2;
@@ -1045,6 +1093,7 @@ function lookLine(evaluated: EvaluatedLook) {
     `shoes: ${p.shoes}`,
     p.accessories ? `accessories: ${p.accessories}` : '',
     p.styling ? `worn: ${p.styling}` : '',
+    `colour: ${evaluated.colourBalance.replace(/-/g, ' ')}`,
   ].filter(Boolean).join(' | ');
 }
 
@@ -1083,14 +1132,15 @@ Choose by how good each outfit will actually LOOK ON HER, as a stylist would jud
 - outfits that look like something a stylish woman really wears for that part of her life, not a costume;
 - a set that is varied: some tucked, some untucked or worn long, different bottoms and colours, never five versions of one formula;
 - not a jacket or blazer on every look: most outfits should stand on their own, with a layer only where it makes the look;
-- colour she will enjoy wearing: lead with her richer palette colours, not a run of beiges, greys and blacks, and never the same lead colour twice in a capsule.
+- colour the way a stylist uses it: build each outfit on neutrals (black, ivory, navy, denim, camel, brown, beige, grey) and let her palette colour be the hero piece or the accent, a coloured top, layer, bag or shoe. Not head-to-toe colour, not a run of all-beige looks, and never the same hero colour twice in a capsule.
 Technical correctness is the floor, not the goal. If two are equally correct, pick the one that looks better on her.
 ${Object.entries(rules.ethnicByCapsule).filter(([, count]) => count > 0).map(([capsule, count]) => `Include exactly ${count} ethnic look(s) in ${capsule}.`).join(' ')}
 
 ${CAPSULES.map(capsule => `${capsule}:\n${shortlist[capsule].map(item => `- ${item.look.id}${item.look.ethnic ? ' (ethnic)' : ''}: ${lookLine(item)}`).join('\n')}`).join('\n\n')}
 
 Return only JSON: {"Professional":["id",...],"Social":[...],"Everyday":[...],"Occasion":[...]}`;
-  const fallback = Object.fromEntries(CAPSULES.map(capsule => [capsule, shortlist[capsule].slice(0, perCapsule)])) as Record<VerbatimCapsule, EvaluatedLook[]>;
+  const fallback = Object.fromEntries(CAPSULES.map(capsule => [capsule,
+    withExactEthnicCount(shortlist[capsule].slice(0, perCapsule), shortlist[capsule], rules.ethnicByCapsule[capsule] ?? 0)])) as Record<VerbatimCapsule, EvaluatedLook[]>;
   let raw: unknown;
   try {
     raw = await callJson(prompt, photoUrls);
@@ -1111,17 +1161,34 @@ Return only JSON: {"Professional":["id",...],"Social":[...],"Everyday":[...],"Oc
       if (unique.length >= perCapsule) break;
       if (!unique.includes(item) && !used.has(item.look.id)) unique.push(item);
     }
-    const ethnicWanted = rules.ethnicByCapsule[capsule] ?? 0;
-    if (unique.filter(item => item.look.ethnic).length < ethnicWanted) {
-      const missing = shortlist[capsule].filter(item => item.look.ethnic && !unique.includes(item));
-      while (unique.filter(item => item.look.ethnic).length < ethnicWanted && missing.length) {
-        const western = [...unique].reverse().find(item => !item.look.ethnic);
-        if (!western) break;
-        unique[unique.indexOf(western)] = missing.shift()!;
-      }
-    }
-    unique.forEach(item => used.add(item.look.id));
-    result[capsule] = unique;
+    const exact = withExactEthnicCount(unique, shortlist[capsule].filter(item => !used.has(item.look.id)), rules.ethnicByCapsule[capsule] ?? 0);
+    exact.forEach(item => used.add(item.look.id));
+    result[capsule] = exact;
+  }
+  return result;
+}
+
+/**
+ * Exactly the ethnic share she asked for in this capsule. The Western/Indian
+ * mix is her stated preference, so extra kurtas and saris are swapped out for
+ * the best Western looks as firmly as missing ones are swapped in. A client
+ * who said "More Western" was given ten ethnic looks of twenty before this.
+ */
+export function withExactEthnicCount(chosen: EvaluatedLook[], pool: EvaluatedLook[], wanted: number): EvaluatedLook[] {
+  const result = [...chosen];
+  const spare = (ethnic: boolean) => pool.filter(item => item.look.ethnic === ethnic && !result.includes(item));
+  const ethnicCount = () => result.filter(item => item.look.ethnic).length;
+  while (ethnicCount() > wanted) {
+    const replacement = spare(false)[0];
+    const extra = [...result].reverse().find(item => item.look.ethnic);
+    if (!replacement || !extra) break;
+    result[result.indexOf(extra)] = replacement;
+  }
+  while (ethnicCount() < wanted) {
+    const replacement = spare(true)[0];
+    const western = [...result].reverse().find(item => !item.look.ethnic);
+    if (!replacement || !western) break;
+    result[result.indexOf(western)] = replacement;
   }
   return result;
 }

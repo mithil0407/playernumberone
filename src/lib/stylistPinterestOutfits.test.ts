@@ -126,3 +126,34 @@ test('a full set is twenty real looks with a mix of tucked and untucked', async 
   assert.equal(tucks.length, 20);
   for (const page of outfits) assert.deepEqual(clientRuleWarningsForPage(submission, reportData, page), [], `${page.title} breaks a rule`);
 });
+
+test('colour sits on a neutral base, not head to toe', async () => {
+  const { colourBalanceOf, garmentReadsNeutral } = await import('./stylistPinterestOutfits.ts');
+  assert.equal(garmentReadsNeutral('mid-blue wide-leg jeans'), true);
+  assert.equal(garmentReadsNeutral('Camel double-breasted blazer'), true);
+  assert.equal(garmentReadsNeutral('Rust linen shirt'), false);
+  const base = { layer: '', shoes: 'tan flats', accessories: 'tan tote', dress: '' };
+  assert.equal(colourBalanceOf({ ...base, top: 'Rust linen shirt', bottom: 'dark indigo jeans' }), 'balanced');
+  assert.equal(colourBalanceOf({ ...base, top: 'Emerald kurta', bottom: 'matching emerald palazzo' }), 'all-colour');
+  assert.equal(colourBalanceOf({ ...base, top: 'Black tee', bottom: 'beige trousers' }), 'all-neutral');
+  assert.equal(colourBalanceOf({ ...base, top: 'Black tee', bottom: 'beige trousers', accessories: 'burgundy tote' }), 'neutral-with-accent');
+});
+
+test('a full set mostly puts palette colour on a neutral base', async () => {
+  const noModel = async () => { throw new Error('offline'); };
+  const result = await generatePinterestVerbatimApplication(submission, { ...reportData, version: 'women_blueprint_41_v1', pages: [] } as StylistBlueprintReportData, noModel);
+  const pools = rankVerbatimLooks(submission, reportData);
+  const all = Object.values(pools.byCapsule).flat();
+  const balances = result.outfit_engine.selected.map(item => all.find(look => look.look.id === item.look_id)!.colourBalance);
+  assert.ok(balances.filter(item => item === 'balanced').length >= 12, `only ${balances.filter(item => item === 'balanced').length} balanced looks`);
+  assert.ok(balances.filter(item => item === 'all-colour').length <= 2);
+});
+
+test('the Western/Indian mix is exact, never over the stated share', async () => {
+  const { withExactEthnicCount } = await import('./stylistPinterestOutfits.ts');
+  const look = (id: string, ethnic: boolean) => ({ look: { id, ethnic } }) as unknown as Parameters<typeof withExactEthnicCount>[0][number];
+  const chosen = [look('k1', true), look('k2', true), look('k3', true), look('w1', false), look('w2', false)];
+  const pool = [...chosen, look('w3', false), look('w4', false)];
+  assert.equal(withExactEthnicCount(chosen, pool, 1).filter(item => item.look.ethnic).length, 1);
+  assert.equal(withExactEthnicCount(chosen.slice(3), [...pool], 2).filter(item => item.look.ethnic).length, 2);
+});

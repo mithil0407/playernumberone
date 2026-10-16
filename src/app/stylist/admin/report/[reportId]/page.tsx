@@ -1,5 +1,6 @@
 'use client';
 
+import { StylistClientBrief } from '@/components/StylistClientBrief';
 import { use, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
 import Link from 'next/link';
@@ -2142,6 +2143,7 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
               </>
             )}
 
+            {studioPanel === 'outfit' && activePage && versioned && <StylistClientBrief reportId={reportId} />}
             {studioPanel === 'outfit' && activePage && versioned && (
               <StylistOutfitEditor key={activePageNumber} page={activePage} onChange={handlePageChange}
                 saveError={error} onSave={() => saveChangedPagesRef.current()} busy={Boolean(currentBusyReason) && !saving} saving={saving} hasUnsavedEdits={hasUnsavedEdits}

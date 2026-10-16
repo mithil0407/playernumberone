@@ -254,13 +254,13 @@ export default function ConsultationWorkspacePage({ params, adminMode = false }:
           </Section>
           <Section title="Body, coverage & boundaries">
             <div className="grid gap-x-8 md:grid-cols-2">
-              <div><Field label="Body shape" value={clientData.bodyShape} /><Field label="Body concerns" value={[clientData.bodyConcerns, clientData.bodyConcernsOther].filter(Boolean)} /><Field label="Fit restrictions" value={clientData.fitRestrictions} /><Field label="Modesty" value={[clientData.modestyPreference, clientData.modestyReason].filter(Boolean)} /></div>
-              <div><Field label="Boundaries" value={clientData.boundaries} /><Field label="Fabric restrictions" value={clientData.fabricRestrictions} /><Field label="Cultural restrictions" value={clientData.culturalRestrictions} /><Field label="Height / weight" value={[clientData.height, clientData.weight].filter(Boolean)} /></div>
+              <div><Field label="Body shape" value={clientData.bodyShape} /><Field label="Body concerns" value={[clientData.bodyConcerns, clientData.bodyConcernsOther].filter(Boolean)} /><Field label="Fit restrictions" value={[clientData.fitRestrictions, clientData.fitRestrictionsOther].filter(Boolean)} /><Field label="Modesty" value={[clientData.modestyPreference, clientData.modestyReason].filter(Boolean)} /></div>
+              <div><Field label="Boundaries" value={clientData.boundaries} /><Field label="Fabric restrictions" value={[clientData.fabricRestrictions, clientData.fabricsAvoided].filter(Boolean)} /><Field label="Cultural restrictions" value={clientData.culturalRestrictions} /><Field label="Height / weight" value={[clientData.height, clientData.weight].filter(Boolean)} /></div>
             </div>
           </Section>
           <Section title="Style preferences">
             <div className="grid gap-x-8 md:grid-cols-2">
-              <div><Field label="Items loved" value={clientData.itemsLoved} /><Field label="Items avoided" value={[clientData.itemsHated, clientData.wardrobeLeastFavorites].filter(Boolean)} /><Field label="Footwear" value={clientData.footwear} /><Field label="Experimentation" value={clientData.styleExperimentation} /></div>
+              <div><Field label="Western / Indian" value={clientData.outfitRatioPreference || clientData.outfitRatio} /><Field label="Go-to outfits" value={clientData.goToOutfits} /><Field label="Items loved" value={clientData.itemsLoved} /><Field label="Items avoided" value={[clientData.itemsHated, clientData.wardrobeLeastFavorites].filter(Boolean)} /><Field label="Footwear" value={clientData.footwear} /><Field label="Experimentation" value={clientData.styleExperimentation} /></div>
               <div><Field label="Skin context" value={[clientData.skinTone, clientData.skinType, clientData.skinTint, clientData.sunReaction].filter(Boolean)} /><Field label="Colour preference" value={clientData.colorFamilyPreference} /><Field label="Metal preference" value={clientData.metalPreference} /><Field label="Hair" value={[clientData.hairType, clientData.hairChangeOpenness].filter(Boolean)} /></div>
             </div>
           </Section>
