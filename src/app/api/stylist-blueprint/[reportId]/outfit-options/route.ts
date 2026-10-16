@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { canAccessBlueprintReport } from '@/lib/stylistWorkspaceAuth';
+import { withCurrentConsultationAnswers } from '@/lib/stylistConsultationWorkspace';
+
+// Choosing a look writes fresh copy with Gemini.
+export const maxDuration = 60;
 import { supabaseAdmin } from '@/lib/supabase';
 import { revalidateStylistBlueprintCache } from '@/lib/stylistBlueprintCache';
 import { callStylistOutfitJSON, getStylistBlueprintOutfitStartPage, isVersionedStylistBlueprintReportData, validateStylistBlueprintReport, type StylistBlueprintReportData, type StylistIntakeSubmission } from '@/lib/stylistBlueprintGenerator';
@@ -14,7 +18,7 @@ async function load(reportId: string) {
 }
 async function loadSubmission(submissionId: string) {
   const { data } = await supabaseAdmin.from('stylist_intake_responses').select('*').eq('id', submissionId).maybeSingle();
-  return (data ?? null) as StylistIntakeSubmission | null;
+  return data ? withCurrentConsultationAnswers(data as StylistIntakeSubmission & { consultation_id?: string | null }) : null;
 }
 function scienceAlternatives(report: StylistBlueprintReportData & { outfit_engine: OutfitScienceEngineMetadata }, pageNumber: number) {
   const index = pageNumber - getStylistBlueprintOutfitStartPage(report);

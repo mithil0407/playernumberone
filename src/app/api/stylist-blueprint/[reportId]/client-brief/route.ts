@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { canAccessBlueprintReport } from '@/lib/stylistWorkspaceAuth';
+import { withCurrentConsultationAnswers } from '@/lib/stylistConsultationWorkspace';
+import type { StylistIntakeSubmission } from '@/lib/stylistBlueprintGenerator';
 
 function record(value: unknown): Record<string, unknown> {
   return value && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : {};
@@ -16,11 +18,13 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
   if (!(await canAccessBlueprintReport(reportId))) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const { data: report } = await supabaseAdmin.from('stylist_blueprint_reports').select('submission_id').eq('id', reportId).maybeSingle();
   if (!report) return NextResponse.json({ error: 'Report not found' }, { status: 404 });
-  const { data: intake } = await supabaseAdmin
+  const { data: stored } = await supabaseAdmin
     .from('stylist_intake_responses')
-    .select('piece_preferences, coverage_requirements, lifestyle_context, raw_consultation_notes')
+    .select('id, consultation_id, workspace_overrides, piece_preferences, coverage_requirements, lifestyle_context, raw_consultation_notes')
     .eq('id', report.submission_id)
     .maybeSingle();
+  // The consultation as it reads now, so the brief matches what the outfits use.
+  const intake = stored ? await withCurrentConsultationAnswers(stored as unknown as StylistIntakeSubmission & { consultation_id?: string | null }) : null;
   const prefs = record(intake?.piece_preferences);
   const coverage = record(intake?.coverage_requirements);
   const lifestyle = record(intake?.lifestyle_context);

@@ -157,3 +157,85 @@ test('the Western/Indian mix is exact, never over the stated share', async () =>
   assert.equal(withExactEthnicCount(chosen, pool, 1).filter(item => item.look.ethnic).length, 1);
   assert.equal(withExactEthnicCount(chosen.slice(3), [...pool], 2).filter(item => item.look.ethnic).length, 2);
 });
+
+// --- Pre-deploy audit cases, from real intake wording -----------------------
+
+const withPrefs = (overrides: Record<string, unknown>) => ({ ...submission, ...overrides }) as unknown as StylistIntakeSubmission;
+const ethnicTotal = (rules: ReturnType<typeof buildVerbatimClientRules>) => Object.values(rules.ethnicByCapsule).reduce((a, b) => a + b, 0);
+
+test('a stated Western/Indian mix is honoured, plurals included', () => {
+  const aziza = buildVerbatimClientRules(withPrefs({ raw_consultation_notes: '', piece_preferences: { outfit_ratio: 'Equal', loved: ['ethnics kurtas for work'] } }), reportData);
+  assert.equal(ethnicTotal(aziza), 10);
+  const ranjani = buildVerbatimClientRules(withPrefs({ raw_consultation_notes: '', piece_preferences: { outfit_ratio: 'More Western', loved: ['kurtis'] } }), reportData);
+  assert.equal(ethnicTotal(ranjani), 5);
+  const khushi = buildVerbatimClientRules(withPrefs({ raw_consultation_notes: 'A few options of ethnic for work.', piece_preferences: { outfit_ratio: 'More Ethnic', loved: ['Dupatta dresses', 'sarees'] } }), reportData);
+  assert.equal(ethnicTotal(khushi), 12, 'a "few for work" note does not override More Ethnic');
+  assert.equal(khushi.antiCodePatterns.some(code => code.label === 'dupattas'), false, 'loving dupatta dresses never bans dupattas');
+  const western = buildVerbatimClientRules(withPrefs({ raw_consultation_notes: '', piece_preferences: { outfit_ratio: 'Western only' } }), reportData);
+  assert.equal(ethnicTotal(western), 0);
+  const festive = buildVerbatimClientRules(withPrefs({ raw_consultation_notes: 'ethnic for festive only, 2-3 looks', piece_preferences: { outfit_ratio: 'More Western' } }), reportData);
+  assert.equal(festive.ethnicByCapsule.Professional, 0);
+  assert.ok(ethnicTotal(festive) <= 3);
+});
+
+test('negated avoid terms, strappy pieces and full modesty are hard rules', () => {
+  const jyotsna = buildVerbatimClientRules(withPrefs({ piece_preferences: { avoided: ['no skirts', 'no sarees'], footwear: ['Flats only'] } }), reportData);
+  assert.ok(evaluateVerbatimLook(look({ bottom: 'navy pleated midi skirt' }), jyotsna, 'Everyday').rejects.some(item => /avoids/.test(item)));
+  const sabiha = buildVerbatimClientRules(withPrefs({ coverage_requirements: { modesty_preference: 'Wears hijab, fully covered' }, piece_preferences: {} }), reportData);
+  assert.ok(sabiha.arms && sabiha.armsStrict && sabiha.legs && sabiha.neckline);
+  const slip = look({ top: undefined, bottom: undefined, dress: 'Red-and-white polka-dot strappy bias midi dress, slip-style cut' });
+  assert.ok(evaluateVerbatimLook(slip, sabiha, 'Social').rejects.includes('bare arms or shoulders'));
+  const noTuck = buildVerbatimClientRules(withPrefs({ piece_preferences: { avoided: ['no tucked in'] } }), reportData);
+  assert.ok(evaluateVerbatimLook(look({ styling: 'shirt tucked in fully' }), noTuck, 'Professional').rejects.includes('tucked in'));
+  const daily = buildVerbatimClientRules(withPrefs({ raw_consultation_notes: 'no dresses and skirts for daily wear' }), reportData);
+  assert.deepEqual([...daily.noSkirtCapsules].sort(), ['Everyday', 'Professional']);
+});
+
+test('heel swaps stay sensible and respect her height', async () => {
+  const { heeledVersionOfShoe, statedHeelHeight } = await import('./stylistPinterestOutfits.ts');
+  assert.equal(statedHeelHeight('comfortable heels').phrase, 'low');
+  assert.equal(statedHeelHeight('1.2-2 inch heel').maxInches, 2);
+  assert.doesNotMatch(heeledVersionOfShoe('tan flat slide sandals', '1.2-2 inch heel'), /flat/i);
+  const teju = buildVerbatimClientRules(withPrefs({ piece_preferences: { footwear: ['1.2-2 inch heel'] } }), reportData);
+  const juttis = evaluateVerbatimLook(look({ shoes: 'gold flat juttis' }), teju, 'Social');
+  assert.equal(juttis.pieces.shoes, 'gold flat juttis');
+  const stiletto = evaluateVerbatimLook(look({ shoes: 'black 4-inch stilettos' }), teju, 'Social');
+  assert.match(stiletto.pieces.shoes, /1\.2-2 inch heel/);
+});
+
+test('no shine means no metallic shoe is added', () => {
+  const shabana = buildVerbatimClientRules({ ...withPrefs({ piece_preferences: {} }) }, { classification: { ...classification, taste: { ...classification.taste, anti_codes: ['No shine or satin'] } } } as StylistBlueprintReportData);
+  const evaluated = evaluateVerbatimLook(look({ shoes: 'not visible' }), shabana, 'Occasion');
+  assert.doesNotMatch(evaluated.pieces.shoes, /metallic|gold|silver/i);
+});
+
+test('tonal colour sets are head-to-toe colour even under a neutral vest', async () => {
+  const { colourBalanceOf } = await import('./stylistPinterestOutfits.ts');
+  assert.equal(colourBalanceOf({ top: 'Rust linen top', layer: 'cream knit waistcoat', bottom: 'matching rust wide-leg trousers', dress: '', shoes: 'tan flats', accessories: 'tan tote' }), 'all-colour');
+  assert.equal(colourBalanceOf({ top: 'Sage green shirt', layer: '', bottom: 'black trousers', dress: '', shoes: 'tan flats', accessories: 'tan tote' }), 'balanced');
+});
+
+test('board commentary and swapped colours never reach her styling note', async () => {
+  const { stylingAfterSwaps } = await import('./stylistPinterestOutfits.ts');
+  const text = stylingAfterSwaps('top tucked in, everything else white — the strongest colour-matching in the set', ['white → stone (closest shade in her palette)'], { metal: 'gold' });
+  assert.equal(text, 'top tucked in, everything else stone');
+});
+
+test('fallback copy speaks to her and never cuts a word', async () => {
+  const { fallbackVerbatimCopy } = await import('./stylistPinterestOutfits.ts');
+  const rules = buildVerbatimClientRules(submission, reportData);
+  const evaluated = evaluateVerbatimLook(look({ bottom: 'matching rust wide-leg trousers with a pressed crease' }), rules, 'Professional');
+  const copy = fallbackVerbatimCopy(evaluated, 'Professional');
+  assert.doesNotMatch(copy.why, /\bher\b/);
+  assert.match(copy.why, /^This outfit /);
+  assert.ok(copy.title.split(/\s+/).every(word => /^[A-Za-z,-]+$/.test(word)));
+});
+
+test('a very strict client still gets twenty looks instead of a failed report', async () => {
+  const strict = withPrefs({
+    coverage_requirements: { boundaries: ['Deep Neck', 'Backless', 'Sleeveless', 'Short Skirt'], fit_restrictions: ['Nothing tight', 'No dresses and skirts at work.'] },
+    piece_preferences: { avoided: ['palazzo', 'jeans', 'dresses'], footwear: ['Flats only'] },
+  });
+  const result = await generatePinterestVerbatimApplication(strict, { ...reportData, pages: [] } as StylistBlueprintReportData, async () => { throw new Error('offline'); });
+  assert.equal(result.pages.filter(page => page.page_type === 'outfit').length, 20);
+});

@@ -331,4 +331,32 @@ export async function resolveConsultationIntakePhotos<T extends StylistIntakeSub
   };
 }
 
+/**
+ * The client's answers as the current mapping reads them. An intake is
+ * snapshotted when a report is first created, so one made before a mapping fix
+ * still lacks answers such as "No dresses and skirts at work" or her go-to
+ * outfits. Outfit routes re-read the consultation so a regenerate sees what
+ * she actually said; the stylist's own overrides still win. Falls back to the
+ * stored intake if the consultation cannot be read.
+ */
+export async function withCurrentConsultationAnswers<T extends StylistIntakeSubmission & { consultation_id?: string | null; workspace_overrides?: unknown }>(submission: T): Promise<T> {
+  if (!submission.consultation_id) return submission;
+  try {
+    const source = await loadConsultationSource(submission.consultation_id);
+    if (!source) return submission;
+    const mapped = consultationSourceToIntake(source);
+    const overrides = record(submission.workspace_overrides);
+    const pick = (key: 'coverage_requirements' | 'piece_preferences' | 'lifestyle_context') =>
+      (overrides[key] as Record<string, unknown> | undefined) ?? mapped[key] ?? submission[key];
+    return {
+      ...submission,
+      coverage_requirements: pick('coverage_requirements'),
+      piece_preferences: pick('piece_preferences'),
+      lifestyle_context: pick('lifestyle_context'),
+    };
+  } catch {
+    return submission;
+  }
+}
+
 export { workspaceBucket } from './stylistWorkspaceQueueModel';

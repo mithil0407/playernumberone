@@ -11,6 +11,7 @@ import {
   type StylistIntakeSubmission,
 } from '@/lib/stylistBlueprintGenerator';
 import { clientRuleWarningsForPage, isHardClientRuleWarning } from '@/lib/stylistPinterestOutfits';
+import { withCurrentConsultationAnswers } from '@/lib/stylistConsultationWorkspace';
 import {
   buildStylistBlueprintManualImagePrompt,
   type StylistBlueprintImageSlotKey,
@@ -96,7 +97,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     // sleeveless shell for a client who ruled sleeveless out.
     const { data: submission } = await supabaseAdmin
       .from('stylist_intake_responses').select('*').eq('id', report.submission_id).maybeSingle();
-    const warnings = submission ? clientRuleWarningsForPage(submission as StylistIntakeSubmission, nextData, parsed) : [];
+    const warnings = submission ? clientRuleWarningsForPage(await withCurrentConsultationAnswers(submission as StylistIntakeSubmission & { consultation_id?: string | null }), nextData, parsed) : [];
     const hard = warnings.filter(isHardClientRuleWarning);
     if (hard.length) {
       return NextResponse.json({ error: `This outfit breaks her brief: ${hard.join('; ')}. Change it and paste again.`, warnings }, { status: 422 });

@@ -8,6 +8,7 @@ import {
   getStylistBlueprintOutfitEndPage,
   getStylistBlueprintOutfitStartPage,
   getStylistBlueprintOutfitSystemPage,
+  getStylistBlueprintTransformationPage,
   getStylistOutfitCulturalMode,
   isVersionedStylistBlueprintReportData,
   validateStylistBlueprintReport,
@@ -22,7 +23,7 @@ import {
   isScienceBlueprintReport,
   isStylistOutfitScienceHarnessEnabled,
 } from '@/lib/stylistOutfitScience';
-import { resolveConsultationIntakePhotos } from '@/lib/stylistConsultationWorkspace';
+import { resolveConsultationIntakePhotos, withCurrentConsultationAnswers } from '@/lib/stylistConsultationWorkspace';
 import { generatePinterestVerbatimApplication, isPinterestVerbatimEngineEnabled } from '@/lib/stylistPinterestOutfits';
 import { callStylistOutfitJSON } from '@/lib/stylistBlueprintGenerator';
 
@@ -33,6 +34,12 @@ export const maxDuration = 300;
 // (e.g. a serverless timeout, which skips the catch block and leaves progress_stage
 // stuck). In that case we let a new request recover instead of returning 409 forever.
 const STALE_PROGRESS_MS = 6 * 60 * 1000;
+
+function scienceResultReplaced(next: StylistBlueprintReportData, previous: StylistBlueprintReportData, pageNumber: number) {
+  const before = previous.pages.find(page => page.page_number === pageNumber);
+  const after = next.pages.find(page => page.page_number === pageNumber);
+  return JSON.stringify(before?.blocks ?? null) !== JSON.stringify(after?.blocks ?? null);
+}
 
 function clearOutfitImageSlots(paths: StylistBlueprintImagePaths | null | undefined, outfitCount: number): StylistBlueprintImagePaths {
   return {
@@ -93,7 +100,7 @@ export async function POST(
     if (submissionError || !submission) {
       return NextResponse.json({ error: 'Submission not found' }, { status: 404 });
     }
-    const resolvedSubmission = await resolveConsultationIntakePhotos(submission as StylistIntakeSubmission & { source_photo_paths?: Record<string, string> | null });
+    const resolvedSubmission = await resolveConsultationIntakePhotos(await withCurrentConsultationAnswers(submission as StylistIntakeSubmission & { source_photo_paths?: Record<string, string> | null; consultation_id?: string | null }));
 
     await supabaseAdmin
       .from('stylist_blueprint_reports')
@@ -117,7 +124,11 @@ export async function POST(
       const verbatimEnabled = !isScienceBlueprintReport(reportData) && isPinterestVerbatimEngineEnabled();
       const scienceEnabled = !verbatimEnabled && (isScienceBlueprintReport(reportData) || isStylistOutfitScienceHarnessEnabled());
       const scienceResult = verbatimEnabled
-        ? await generatePinterestVerbatimApplication(resolvedSubmission, { ...reportData, outfit_engine: undefined }, callStylistOutfitJSON)
+        ? await generatePinterestVerbatimApplication(resolvedSubmission, { ...reportData, outfit_engine: undefined }, callStylistOutfitJSON, {
+          // New looks, not the same twenty again, and the stylist's reason guides the pick.
+          excludeLookIds: reportData.pages.flatMap(page => (page.page_type === 'outfit' || page.page_type === 'transformation') ? page.library_refs?.map(ref => ref.id) ?? [] : []),
+          stylistNote: reason,
+        })
         : scienceEnabled
           ? await generateStylistOutfitScienceApplication(resolvedSubmission, reportData)
           : null;
@@ -153,6 +164,14 @@ export async function POST(
       ),
     };
     const clearedImagePaths = clearOutfitImageSlots(report.image_urls as StylistBlueprintImagePaths | null, outfitCount);
+    // The Pinterest engine also writes new preview looks on the transformation
+    // page; their old images and approval must not sit under the new looks.
+    const transformationPage = getStylistBlueprintTransformationPage(reportData);
+    const previewReplaced = Boolean(transformationPage && scienceResultReplaced(nextReportData, reportData, transformationPage));
+    if (previewReplaced) {
+      clearedImagePaths.application = { ...(clearedImagePaths.application ?? {}), transformationLooks: [null, null, null] };
+      nextApprovals[`p${transformationPage}`] = false;
+    }
 
     await supabaseAdmin
       .from('stylist_blueprint_reports')

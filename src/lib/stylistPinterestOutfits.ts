@@ -43,8 +43,10 @@ import {
 import {
   bannedPieceTerms,
   dullsInWhite,
-  ethnicCountsByCapsule,
+  ETHNIC_CAPSULE_CAPS,
+  ETHNIC_CAPSULE_PRIORITY,
   ethnicOutfitTarget,
+  parseEthnicShare,
   intakeSignalsEthnicPreference,
   parseFootwearPreference,
   violatesBannedPieces,
@@ -228,6 +230,18 @@ export interface VerbatimClientRules {
   /** Her own words, e.g. "1.2-2 inch heel". */
   statedHeel: string;
   noWorkSkirtOrDress: boolean;
+  /** Capsules where she said no skirts or dresses ("at work", "for daily wear"). */
+  noSkirtCapsules: VerbatimCapsule[];
+  /** She said "no tucked in": every tucked look is out. */
+  noTuck: boolean;
+  /** Bare arms are fine under a sleeved layer ("no sleeveless unless layered"). */
+  layeredBaseAllowed: boolean;
+  /** A warm country and no winter wardrobe asked for: no wool coats or roll-necks. */
+  warmClimate: boolean;
+  /** Deterministic per-client seed so two clients do not get the same twenty. */
+  seed: string;
+  /** Her ethnic share when she stated one, else null. */
+  ethnicShare: number | null;
   bannedTerms: string[];
   antiCodePatterns: Array<{ label: string; re: RegExp }>;
   avoidColours: Array<{ label: string; re: RegExp; nearFaceOnly: boolean }>;
@@ -276,6 +290,7 @@ const ANTI_CODE_PATTERNS: Array<{ match: RegExp; label: string; re: RegExp }> = 
   { match: /\bshorts?\b/i, label: 'shorts', re: /\bshorts\b|bermuda/i },
   { match: /dupatta/i, label: 'dupattas', re: /dupatta/i },
   { match: /baggy|overly loose|oversized/i, label: 'baggy fits', re: /oversized|baggy|slouch|boxy/i },
+  { match: /loud|flashy|bling|showy|over the top/i, label: 'loud pieces', re: /louis vuitton|\blv\b|monogram|logo|birkin|sequin|embellish|glitter|\bstatement\b|neon/i },
 ];
 
 const SHADE_WORDS = '(?:optic|stark|bright|crisp|neon|icy|hot|electric|pastel|baby|lemon|pure|cool|fluorescent)';
@@ -285,12 +300,15 @@ function avoidColourPatterns(avoid: string[]): VerbatimClientRules['avoidColours
   for (const entry of avoid) {
     const lower = entry.toLowerCase();
     const nearFaceOnly = /face|near|against/.test(lower);
-    const colour = lower.match(/\b(white|ivory|pink|yellow|lavender|lilac|silver|grey|gray|orange|green|blue|purple|red|black|beige|mint|peach|coral|gold|brown|navy|fuchsia|magenta|turquoise|aqua)\b/);
-    if (!colour) continue;
+    const found = lower.match(/\b(white|ivory|pink|yellow|lavender|lilac|mauve|silver|grey|gray|orange|green|blue|purple|red|black|beige|mint|peach|coral|gold|brown|navy|fuchsia|magenta|turquoise|aqua)\b/);
+    if (!found) continue;
+    // A client who avoids lavender avoids lilac too; grey is spelt both ways.
+    const SYNONYMS: Record<string, string> = { lavender: '(?:lavender|lilac)', lilac: '(?:lilac|lavender)', mauve: '(?:mauve|lilac)', grey: '(?:grey|gray)', gray: '(?:grey|gray)' };
+    const colour = [found[0], SYNONYMS[found[1]] ?? found[1]] as const;
     const shade = lower.match(new RegExp(`\\b${SHADE_WORDS}\\b`));
     // An optic or stark white is the white a plain "white tee" is, so plain
     // white counts. A neon pink is not a dusty pink, so the shade word must match.
-    if (shade && !(colour[1] === 'white' && /optic|stark|bright|pure|crisp/.test(shade[0]))) {
+    if (shade && !(found[1] === 'white' && /optic|stark|bright|pure|crisp/.test(shade[0]))) {
       const word = shade[0] === 'lemon' ? 'lemon' : `${shade[0]}[- ]?${colour[1]}`;
       patterns.push({ label: entry, re: new RegExp(`\\b${word}\\b`, 'i'), nearFaceOnly });
     } else {
@@ -323,44 +341,94 @@ export function buildVerbatimClientRules(
   const heightCm = Number(measurements.height_cm ?? 0);
   const metalText = `${flatText((prefs as Record<string, unknown>).metal_preference)} ${(classification.taste.signature_codes ?? []).join(' ')} ${(classification.taste.shopping_filters ?? []).join(' ')}`.toLowerCase();
 
-  // Consultation notes are typed live, so "ethnuc workwear" has to count too.
-  const ethnicAllowed = intakeSignalsEthnicPreference(submission) || /\bethn[a-z]*\b/.test(notes);
-  // "A few smart ethnic workwear options" is a handful, not the half-and-half
-  // her "Equal" ratio would otherwise give.
-  const fewEthnic = /\b(few|couple|some|one or two|1-2|2-3)\b[^.]{0,40}\bethn/.test(notes) || /\bethn[^.]{0,40}\b(few|couple|one or two)\b/.test(notes);
-  const ethnicWork = /ethn\w*\s+(work|office)|(work|office)\w*\s+ethn/.test(notes);
+  // Where a stylist writes the mix in words: her notes, the reason for the
+  // consultation, and the free text of what she loves and wears.
+  const rawNotes = [
+    submission.raw_consultation_notes ?? '',
+    flatText((submission.lifestyle_context as Record<string, unknown> | null)?.consultation_reason),
+    flatText((prefs as Record<string, unknown>).loved),
+    flatText((prefs as Record<string, unknown>).go_to_outfits),
+  ].join(' . ').toLowerCase();
+  const ETHNIC_WORD = '(?:ethn\\w*|indian\\w*|inidan|traditional)';
+  // Her stated mix is consent in itself: "More Western" still means some
+  // Indianwear, "Equal" means half. Only a client who states nothing falls
+  // back to reading her answers for ethnic words.
+  const ethnicShare = parseEthnicShare((prefs as Record<string, unknown>).outfit_ratio);
+  const ethnicAllowed = ethnicShare !== null
+    ? ethnicShare > 0 || /\bethn[a-z]*\b/.test(rawNotes)
+    : intakeSignalsEthnicPreference(submission) || /\bethn[a-z]*\b/.test(notes);
+  // A stylist who writes "a few ethnic options" means a handful. It narrows an
+  // even or unstated mix; it never overrides "More Ethnic".
+  const fewMatch = rawNotes.match(new RegExp(`\\b(few|couple|some|one or two|\\d\\s*(?:or|-|to)\\s*\\d|two or three|\\d)\\b[^.]{0,40}\\b${ETHNIC_WORD}`))
+    ?? rawNotes.match(new RegExp(`\\b${ETHNIC_WORD}[^.]{0,40}\\b(few|couple|one or two|\\d\\s*(?:or|-|to)\\s*\\d|two or three)\\b`));
+  const fewEthnic = Boolean(fewMatch) && (ethnicShare === null || ethnicShare <= 0.5);
+  const festiveOnly = new RegExp(`${ETHNIC_WORD}[^.]{0,30}\\b(?:only\\s+)?for\\s+(?:festive|festivals?|weddings?|functions?|occasions?)|${ETHNIC_WORD}[^.]{0,20}(?:festive|festival|wedding|occasion)s?\\s+only|(?:festive|occasion)s?\\s+only[^.]{0,20}${ETHNIC_WORD}|only\\s+[^.]{0,20}${ETHNIC_WORD}\\s+(?:festive|festival|wedding|occasion)`).test(rawNotes);
+  const ethnicWork = new RegExp(`${ETHNIC_WORD}\\s+(?:work|office)|(?:work|office)\\w*\\s+${ETHNIC_WORD}|${ETHNIC_WORD}[^.]{0,20}\\bfor\\s+(?:work|office)`).test(rawNotes);
   const perCapsule = outfitCount / CAPSULES.length;
-  const target = !ethnicAllowed ? 0 : fewEthnic ? Math.min(3, Math.round(outfitCount * 0.15)) : ethnicOutfitTarget({
-    outfitCount,
-    culturalMode: 'ethnic_allowed',
-    piecePreferences: prefs,
-  });
-  const ethnicCapsuleOrder: VerbatimCapsule[] = ethnicWork
-    ? ['Professional', 'Everyday', 'Social', 'Occasion']
-    : ['Occasion', 'Social', 'Everyday', 'Professional'];
-  const ethnicByCapsule = ethnicWork
-    ? spreadAcross(target, perCapsule, ethnicCapsuleOrder)
-    : ethnicCountsByCapsule(target, perCapsule);
+  const range = fewMatch?.[0].match(/(\d)\s*(?:or|-|to)\s*(\d)/);
+  const statedCount = !fewMatch ? 0
+    : range ? Number(range[2])
+      : /two or three/.test(fewMatch[0]) ? 3 : /one or two|couple/.test(fewMatch[0]) ? 2 : Number(fewMatch[0].match(/\d/)?.[0]) || 3;
+  const target = !ethnicAllowed ? 0
+    : fewEthnic ? Math.min(statedCount || 3, Math.round(outfitCount * 0.2))
+      : ethnicOutfitTarget({ outfitCount, culturalMode: 'ethnic_allowed', piecePreferences: prefs });
+  const ethnicCapsuleOrder: VerbatimCapsule[] = festiveOnly
+    ? ['Occasion', 'Social']
+    : ethnicWork ? ['Professional', 'Everyday', 'Social', 'Occasion'] : [...ETHNIC_CAPSULE_PRIORITY] as VerbatimCapsule[];
+  const ethnicByCapsule = spreadAcross(target, perCapsule, ethnicCapsuleOrder);
 
+  // Anti-codes come from what she avoids, never from what she loves: loving
+  // "dupatta dresses" must not ban every dupatta.
+  const avoidedText = flatText([
+    (prefs as Record<string, unknown>).avoided,
+    (prefs as Record<string, unknown>).least_favourites,
+    (prefs as Record<string, unknown>).disliked,
+  ]).toLowerCase();
   const antiCodePatterns = ANTI_CODE_PATTERNS
-    .filter(entry => entry.match.test(antiText) || entry.match.test(flatText(prefs).toLowerCase().replace(/\bliked?\b.*$/, '')))
+    .filter(entry => entry.match.test(antiText) || entry.match.test(avoidedText))
     .map(({ label, re }) => ({ label, re }));
+  const bannedTerms = bannedPieceTerms(prefs);
+
+  // Hijab or full modesty is every coverage rule at once.
+  const fullModesty = /hijab|abaya|burqa|full(?:y)?\s+(?:modest|cover)|fully covered|conservative|modest dressing/.test(`${coverageText} ${notes}`);
+  const noSkirtCapsules = new Set<VerbatimCapsule>();
+  const skirtText = `${notes} ${avoidedText}`;
+  const SKIRT_WORDS = '(?:skirts?|dress(?:es)?)';
+  const contexts = [
+    ...skirtText.matchAll(new RegExp(`\\bno\\s+${SKIRT_WORDS}(?:\\s*(?:and|or|&|/|,)\\s*${SKIRT_WORDS})?\\s*(?:at|for|to|in|during|as)?\\s*(?:the\\s+)?(work|office|hospital|clinic|daily wear|daily|everyday|day to day)`, 'g')),
+    ...skirtText.matchAll(new RegExp(`(work|office|daily)\\s*wear\\s*\\(?\\s*no\\s+${SKIRT_WORDS}`, 'g')),
+    ...skirtText.matchAll(new RegExp(`${SKIRT_WORDS}\\s+(?:are\\s+)?not\\s+(?:for|at|in)\\s+(?:the\\s+)?(work|office|daily)`, 'g')),
+  ].map(match => match[1]);
+  for (const context of contexts) {
+    noSkirtCapsules.add('Professional');
+    if (/daily|everyday|day to day/.test(context)) noSkirtCapsules.add('Everyday');
+  }
+  const country = `${classification.client.country ?? ''} ${submission.country ?? ''}`.toLowerCase();
+  const winterwear = flatText((submission.lifestyle_context as Record<string, unknown> | null)?.winterwear).toLowerCase();
+  const warmCountry = /india|singapore|malaysia|dubai|uae|emirates|qatar|oman|bahrain|sri lanka|indonesia|thailand|philippines|kenya|nigeria|bangladesh/.test(country) || !country.trim();
 
   const rules: VerbatimClientRules = {
-    arms: /sleeveless|arm|sleeve|shoulder/.test(coverageText),
-    armsStrict: /cover (?:my |the )?(?:upper )?arms|upper arms|elbow/.test(coverageText),
-    neckline: /deep neck|cleavage|low neck|neckline|plung/.test(coverageText),
-    back: /backless|open back|back/.test(coverageText),
-    legs: /\bleg|knee|mini|short skirt|thigh/.test(coverageText),
-    sheer: /sheer|opaque|opacity|transparent|see.?through/.test(coverageText) || /flims|sheer/.test(antiText),
+    arms: fullModesty || /sleeveless|arm|sleeve|shoulder/.test(coverageText),
+    armsStrict: fullModesty || /cover (?:my |the )?(?:upper )?arms|upper arms|elbow/.test(coverageText),
+    neckline: fullModesty || /deep neck|cleavage|low neck|neckline|plung/.test(coverageText),
+    back: fullModesty || /backless|open back|back/.test(coverageText),
+    legs: fullModesty || /\bleg|knee|mini|short skirt|thigh/.test(coverageText),
+    sheer: fullModesty || /sheer|opaque|opacity|transparent|see.?through/.test(coverageText) || /flims|sheer/.test(antiText),
     // "Nothing too loose (wants definition)" is the opposite of "nothing tight".
-    loose: /tight|cling|bodycon/.test(coverageText) || /\btight/.test(antiText),
+    loose: fullModesty || /tight|cling|bodycon/.test(coverageText) || /\btight/.test(antiText),
     wantsDefinition: /too loose|not loose|overly loose|definition|baggy|shapeless/.test(`${coverageText} ${antiText}`),
     flatsOnly: /flats? only|only flats|no heels?|flat shoes only|without heels?/.test(footwearText) || /flats only|no heels/.test(notes),
-    heelPreferred: footwear.heelPreferred,
+    // "Flats only" wins over a loved "flat heels" or "comfortable heels".
+    heelPreferred: footwear.heelPreferred && !(/flats? only|only flats|no heels?|flat shoes only|without heels?/.test(footwearText) || /flats only|no heels/.test(notes)) && !/flat heels?/.test(footwearText + ' ' + flatText((prefs as Record<string, unknown>).loved).toLowerCase()),
     statedHeel: footwear.statedHeel,
-    noWorkSkirtOrDress: /no (?:dress(?:es)?|skirts?)(?: (?:and|or|&) (?:dress(?:es)?|skirts?))? (?:at|for|to) work|no (?:dress(?:es)?|skirts?) (?:in|at) (?:the )?(?:office|hospital|clinic)/.test(notes),
-    bannedTerms: bannedPieceTerms(prefs),
+    noWorkSkirtOrDress: noSkirtCapsules.has('Professional'),
+    noSkirtCapsules: [...noSkirtCapsules],
+    noTuck: bannedTerms.some(term => /tuck/.test(term)),
+    layeredBaseAllowed: /unless layered|if layered|with a layer|layering (?:is )?(?:ok|fine)|can (?:be )?layer/.test(coverageText),
+    warmClimate: warmCountry && !/yes|cold|winter/.test(winterwear),
+    seed: String(submission.id ?? classification.client.name ?? ''),
+    ethnicShare,
+    bannedTerms,
     antiCodePatterns,
     avoidColours: avoidColourPatterns(classification.colour.avoid_colours ?? []),
     avoidLightNearFace: /(white|ivory).{0,40}(face)|(face).{0,40}(white|ivory)/.test(antiText)
@@ -403,7 +471,9 @@ export function buildVerbatimClientRules(
     rules.loose ? 'Nothing tight or clingy' : '',
     rules.wantsDefinition ? 'Nothing oversized, baggy or boxy' : '',
     rules.flatsOnly ? 'Flats only: heels are swapped for a flat in the same colour' : '',
-    rules.noWorkSkirtOrDress ? 'No dresses or skirts in work outfits' : '',
+    rules.noSkirtCapsules.length ? `No dresses or skirts in ${rules.noSkirtCapsules.map(item => item === 'Professional' ? 'work' : 'everyday').join(' or ')} outfits` : '',
+    rules.noTuck ? 'Nothing tucked in' : '',
+    rules.warmClimate ? 'Warm climate: no wool coats or roll-necks' : '',
     ...rules.antiCodePatterns.map(item => `No ${item.label}`),
     rules.bannedTerms.length ? `Pieces she avoids: ${rules.bannedTerms.slice(0, 6).join(', ')}` : '',
     rules.avoidLightNearFace ? 'No stark white or bright ivory against the face' : '',
@@ -414,13 +484,13 @@ export function buildVerbatimClientRules(
 }
 
 function spreadAcross(target: number, perCapsule: number, order: VerbatimCapsule[]) {
-  const counts: Record<string, number> = Object.fromEntries(order.map(capsule => [capsule, 0]));
+  const counts: Record<string, number> = Object.fromEntries(CAPSULES.map(capsule => [capsule, 0]));
   let remaining = target;
   while (remaining > 0) {
     let placed = false;
     for (const capsule of order) {
       if (remaining <= 0) break;
-      if (counts[capsule] >= Math.min(2, perCapsule)) continue;
+      if (counts[capsule] >= Math.min(ETHNIC_CAPSULE_CAPS[capsule] ?? perCapsule, perCapsule)) continue;
       counts[capsule] += 1;
       remaining -= 1;
       placed = true;
@@ -440,12 +510,22 @@ function tasteTermsFrom(values: string[]) {
 
 // --- Checking one look ---------------------------------------------------------
 
-const BARE_ARM_RE = /sleeveless|strapless|off[- ]the[- ]shoulder|off[- ]shoulder|one[- ]shoulder|halter|bandeau|tube top|spaghetti|\bcami(?:sole)?\b|\btank\b|racerback|cold[- ]shoulder|cut-?out shoulder|bustier|corset|bralette|vest top|muscle tee/i;
+/** "Slim but not tight" and "nothing oversized" describe the opposite of the word. */
+function withoutNegations(text: string) {
+  return text.replace(/\b(?:not|never|no|without|nothing|isn'?t)\s+(?:too\s+|very\s+|overly\s+)?(?:tight|clingy|bodycon|skinny|fitted|oversized|baggy|boxy|loose|sheer)\b/gi, '');
+}
+
+const BARE_ARM_RE = /strappy|\bstraps\b|thin[- ]straps?|slip[- ](?:dress|top)|(?:waistcoat|vest)(?: top| worn as)|sleeveless|strapless|off[- ]the[- ]shoulder|off[- ]shoulder|one[- ]shoulder|halter|bandeau|tube top|spaghetti|\bcami(?:sole)?\b|\btank\b|racerback|cold[- ]shoulder|cut-?out shoulder|bustier|corset|bralette|vest top|muscle tee/i;
 const SHORT_SLEEVE_RE = /short[- ]sleeve|cap[- ]sleeve|short puff|puff[- ]sleeve(?!.*(long|three-quarter|elbow))|flutter[- ]sleeve|\btee\b(?!.*(long[- ]sleeve|three-quarter))|t-shirt(?!.*long)|polo/i;
 const LOW_NECK_RE = /plung|deep[- ]v|low[- ]cut|sweetheart|keyhole|surplice|unbuttoned to|open to the (?:chest|sternum)|deep scoop|deep neck|wrap[- ]front mini/i;
 const BACKLESS_RE = /backless|open[- ]back|low back|cut-?out back|bare back/i;
 const SHORT_HEM_RE = /\bmini\b|shorts|bermuda|thigh[- ](?:high )?slit|high slit|slit to the thigh|above[- ]the[- ]knee|above[- ]knee|just above the knee|skort|\bmicro[- ]?(?:mini|skirt|shorts|dress)\b|hot pants/i;
-const SHEER_RE = /sheer|mesh|see[- ]through|transparent|organza|tulle|lace (?:top|blouse|dress)/i;
+const SHEER_RE = /sheer|mesh|see[- ]through|transparent|organza|tulle|lace (?:top|blouse|dress|sleeves)|slip (?:underneath|showing)|unbuttoned from the waist/i;
+/** A shell is sleeveless unless the piece says otherwise. */
+const SHELL_RE = /\bshell\b/i;
+const SLEEVED_LAYER_RE = /blazer|jacket|cardigan|shrug|kimono|coat|overshirt|shirt|duster|bolero|kurta/i;
+/** Wool coats, roll-necks and heavy knits, wrong for a warm climate. */
+const WINTER_RE = /\bwool|overcoat|\bcoat\b|roll[- ]?neck|turtle[- ]?neck|polo[- ]neck|cable[- ]knit|chunky knit|\bfur\b|shearling|puffer|knee[- ]high boots|thermal|cashmere|\bjumper\b|\bsweater\b/i;
 const TIGHT_RE = /bodycon|body[- ]con|second[- ]skin|skin[- ]tight|body[- ]skimming|figure[- ]hugging|\bskinny\b|leggings|pencil|\btight\b|ribbed knit (?:midi )?(?:tank )?dress|bandage/i;
 const CROPPED_RE = /\bcrop(?:ped)? (?:top|tee|blouse|knit|cami|tank|sweater|cardigan)|crop top|midriff|sliver of (?:waist|skin)|bare midriff|knotted at the (?:front |waist|hem)|tie-front (?:cropped )?(?:top|blouse|shirt)/i;
 const NOT_AN_OUTFIT_RE = /mannequin|menswear|product shot|reference chart|footwear only|shirtless|nothing under(?:neath)?|worn as the top|bra top/i;
@@ -457,7 +537,20 @@ const SKIRT_DRESS_RE = /\bskirt\b|\bdress\b|\bgown\b|saree|\bsari\b|lehenga/i;
 const HEEL_RE = /\bheels?\b|heeled|\bpumps?\b|stiletto|wedges?\b|platforms?\b|block[- ]heel|kitten[- ]heel|court shoes?|slingbacks?\b|\bmules?\b(?=.*heel)|heeled boots?/i;
 /** A heel, unless the piece already says it is a flat ("slingback flats"). */
 function isHeeledShoe(shoe: string) {
-  return HEEL_RE.test(shoe) && !/\bflats?\b|flat (?:sandals?|mules?|boots?)/i.test(shoe);
+  // Platform sneakers are still sneakers.
+  return HEEL_RE.test(shoe) && !/\bflats?\b|flat (?:sandals?|mules?|boots?)|sneaker|trainer/i.test(shoe);
+}
+
+/** Shoes that are flat by nature: no one wants "block-heel juttis". */
+const HEEL_SWAP_SKIP_RE = /jutti|kolhapuri|mojari|loafer|espadrille|sneaker|trainer|slide|moccasin|brogue|oxford|gladiator|boot|clog|derby/i;
+
+/** "1.2-2 inch heel" -> "1.2-2 inch"; anything without a number is just "low". */
+export function statedHeelHeight(statedHeel: string): { phrase: string; maxInches: number | null } {
+  const match = statedHeel.match(/(\d+(?:\.\d+)?)(?:\s*[-–to]+\s*(\d+(?:\.\d+)?))?\s*(inch(?:es)?|in\b|"|cm)/i);
+  if (!match) return { phrase: 'low', maxInches: null };
+  const unit = /cm/i.test(match[3]) ? 'cm' : 'inch';
+  const max = Number(match[2] ?? match[1]);
+  return { phrase: `${match[1]}${match[2] ? `-${match[2]}` : ''} ${unit}`, maxInches: unit === 'cm' ? max / 2.54 : max };
 }
 
 const SHOE_WORD_RE = /shoe|sandal|heel|flat|sneaker|trainer|loafer|pump|mule|boot|jutti|kolhapuri|wedge|espadrille|slide|brogue|slingback|stiletto|oxford|moccasin|ballet|derby|clog/i;
@@ -465,15 +558,17 @@ const MISSING_RE = /^(?:not visible|barefoot|none|n\/a|unknown|hidden|cropped ou
 
 /** The low heel she asked for, in the same colour and shape. */
 export function heeledVersionOfShoe(shoe: string, statedHeel: string): string {
-  const height = statedHeel.replace(/\s*heels?\s*$/i, '').trim() || 'low';
+  const height = statedHeelHeight(statedHeel).phrase;
   const next = shoe
+    // "flat" as an adjective goes; the shoe it describes stays.
+    .replace(/\bflat\s+(?=[a-z])/gi, '')
     .replace(/\bballet flats?\b/gi, 'block-heel pumps')
     .replace(/\bpointed flats?\b/gi, 'pointed block-heel pumps')
     .replace(/\bflat sandals?\b/gi, 'block-heel sandals')
     .replace(/\bflat mules?\b/gi, 'block-heel mules')
     .replace(/\bslingback flats?\b/gi, 'block-heel slingbacks')
     .replace(/\bflats\b/gi, 'block-heel pumps')
-    .replace(/\b(sandals|mules|slides|loafers|juttis?|kolhapuris?)\b/i, match => `block-heel ${match.replace(/slides/i, 'sandals')}`)
+    .replace(/\b(sandals|mules)\b/i, match => (/block-heel/i.test(match) ? match : `block-heel ${match}`))
     .replace(/block-heel block-heel/gi, 'block-heel')
     .replace(/\bflat\s+block-heel/gi, 'block-heel');
   return /heel|pump/i.test(next) ? `${next.replace(/\s*\.\s*$/, '')}, ${height} heel` : `${next}, ${height} block heel`;
@@ -506,8 +601,14 @@ export function flatVersionOfShoe(shoe: string): string {
 function neutralShoe(capsule: VerbatimCapsule, rules: VerbatimClientRules) {
   const warm = rules.palette.some(entry => /camel|tan|cognac|brown|terracotta|rust/i.test(entry.name));
   const metal = rules.metal ?? 'gold';
-  if (capsule === 'Occasion' || capsule === 'Social') return rules.flatsOnly ? `Soft ${metal} metallic pointed flats` : `Soft ${metal} metallic block-heel sandals`;
-  if (rules.heelPreferred) return `${warm ? 'Tan' : 'Black'} leather pointed block-heel pumps, ${rules.statedHeel.replace(/\s*heels?\s*$/i, '') || 'low'} heel`;
+  const height = statedHeelHeight(rules.statedHeel).phrase;
+  // A client who ruled out shine gets leather, not a metallic.
+  const noShine = rules.antiCodePatterns.some(code => /shine|sequin|loud/.test(code.label));
+  if (capsule === 'Occasion' || capsule === 'Social') {
+    if (noShine) return rules.flatsOnly ? 'Nude leather pointed flats' : rules.heelPreferred ? `Nude leather block-heel sandals, ${height} heel` : 'Nude leather pointed flats';
+    return rules.flatsOnly ? `Soft ${metal} metallic pointed flats` : rules.heelPreferred ? `Soft ${metal} metallic block-heel sandals, ${height} heel` : `Soft ${metal} metallic block-heel sandals`;
+  }
+  if (rules.heelPreferred) return `${warm ? 'Tan' : 'Black'} leather pointed block-heel pumps, ${height} heel`;
   return warm ? 'Tan leather pointed flats' : 'Black leather pointed flats';
 }
 
@@ -642,7 +743,7 @@ export function evaluateVerbatimLook(look: VerbatimLook, rules: VerbatimClientRu
   };
   const base = pieces.dress || pieces.top;
   const all = Object.values(pieces).join(' / ');
-  const garments = [pieces.top, pieces.dress, pieces.layer, pieces.bottom].join(' / ');
+  const garments = withoutNegations([pieces.top, pieces.dress, pieces.layer, pieces.bottom].join(' / '));
 
   if (NOT_AN_OUTFIT_RE.test(all)) rejects.push('not a complete outfit');
   if (!base || (!pieces.dress && !pieces.bottom)) rejects.push('incomplete look');
@@ -650,8 +751,10 @@ export function evaluateVerbatimLook(look: VerbatimLook, rules: VerbatimClientRu
   if (pieces.shoes && !MISSING_RE.test(pieces.shoes) && !SHOE_WORD_RE.test(pieces.shoes)) rejects.push('garbled pin');
   if (!rules.ethnicAllowed && look.ethnic) rejects.push('ethnic look for a Western-only client');
 
-  const bareBase = BARE_ARM_RE.test(base);
-  if (rules.arms && bareBase) rejects.push('bare arms or shoulders');
+  const bareBase = BARE_ARM_RE.test(base) || (SHELL_RE.test(base) && !/sleeve/i.test(base));
+  // "No sleeveless unless layered" accepts a sleeveless base under a sleeved layer.
+  const coveredByLayer = rules.layeredBaseAllowed && SLEEVED_LAYER_RE.test(pieces.layer) && !BARE_ARM_RE.test(pieces.layer);
+  if (rules.arms && bareBase && !coveredByLayer) rejects.push('bare arms or shoulders');
   if (rules.arms && BARE_ARM_RE.test(pieces.layer) && !pieces.top) rejects.push('bare arms or shoulders');
   if (rules.armsStrict && !pieces.layer && SHORT_SLEEVE_RE.test(base)) rejects.push('short sleeves for an upper-arm client');
   if (rules.neckline && LOW_NECK_RE.test(`${base} ${pieces.styling}`)) rejects.push('low neckline');
@@ -664,7 +767,7 @@ export function evaluateVerbatimLook(look: VerbatimLook, rules: VerbatimClientRu
   for (const code of rules.antiCodePatterns) if (code.re.test(all)) rejects.push(code.label);
   const banned = violatesBannedPieces(garments, rules.bannedTerms);
   if (banned.length) rejects.push(`avoids ${banned[0]}`);
-  if (capsule === 'Professional' && rules.noWorkSkirtOrDress && SKIRT_DRESS_RE.test(`${pieces.dress} ${pieces.bottom}`)) rejects.push('skirt or dress at work');
+  if (rules.noSkirtCapsules.includes(capsule) && SKIRT_DRESS_RE.test(`${pieces.dress} ${pieces.bottom}`)) rejects.push(capsule === 'Professional' ? 'skirt or dress at work' : 'skirt or dress for everyday');
   // The one pear rule a stylist never breaks: nothing that clings at the hip.
   if (rules.body.pear && HIP_CLING_RE.test(`${pieces.bottom} ${pieces.dress}`)) rejects.push('clings at the hip');
   if (rules.body.pear && HIP_VOLUME_RE.test(`${pieces.bottom} ${pieces.dress}`)) rejects.push('adds volume at the hip');
@@ -697,10 +800,23 @@ export function evaluateVerbatimLook(look: VerbatimLook, rules: VerbatimClientRu
   if (!pieces.shoes || MISSING_RE.test(pieces.shoes)) {
     pieces.shoes = neutralShoe(capsule, rules);
     swaps.push(`shoes not shown → ${pieces.shoes.toLowerCase()}`);
-  } else if (rules.heelPreferred && !isHeeledShoe(pieces.shoes) && !/sneaker|trainer|boot/i.test(pieces.shoes)) {
+  } else if (rules.heelPreferred && !isHeeledShoe(pieces.shoes) && !HEEL_SWAP_SKIP_RE.test(pieces.shoes)) {
     const heeled = heeledVersionOfShoe(pieces.shoes, rules.statedHeel);
     swaps.push(`${pieces.shoes.toLowerCase()} → ${heeled.toLowerCase()}`);
     pieces.shoes = heeled;
+  } else if (rules.heelPreferred && isHeeledShoe(pieces.shoes) && statedHeelHeight(rules.statedHeel).maxInches !== null
+    && /stiletto|high[- ]heel|sky[- ]high|platform|\b(?:[3-9]|1\d)(?:\.\d)?[- ]?(?:inch|in\b)/i.test(pieces.shoes)) {
+    // She gave a heel height; a stiletto from the board comes down to it.
+    const capped = `${pieces.shoes
+      .replace(/\bstilettos?\b/gi, 'block-heel pumps')
+      .replace(/\b(?:very |sky[- ])?high[- ]heel(?:ed)?\s*/gi, 'block-heel ')
+      .replace(/\bplatform\s*/gi, '')
+      .replace(/,?\s*\b\d+(?:\.\d+)?[- ]?(?:inch|in)\b(?:\s*heels?)?/gi, '')
+      .replace(/block-heel block-heel/gi, 'block-heel')
+      .replace(/\s{2,}/g, ' ')
+      .trim()}, ${statedHeelHeight(rules.statedHeel).phrase} heel`;
+    swaps.push(`${pieces.shoes.toLowerCase()} → ${capped.toLowerCase()}`);
+    pieces.shoes = capped;
   } else if (rules.flatsOnly && isHeeledShoe(pieces.shoes)) {
     const flat = flatVersionOfShoe(pieces.shoes);
     swaps.push(`${pieces.shoes.toLowerCase()} → ${flat.toLowerCase()}`);
@@ -726,6 +842,10 @@ export function evaluateVerbatimLook(look: VerbatimLook, rules: VerbatimClientRu
   // The report shows at least four pieces per outfit; a sparser pin cannot fill the page.
   if (verbatimFormulaItems({ pieces, swaps }).length < 4) rejects.push('too few pieces');
   const tuck = classifyTuck({ ...look, top: pieces.top, dress: pieces.dress });
+  if (rules.noTuck && (tuck === 'tucked' || tuck === 'half-tucked')) rejects.push('tucked in');
+  // The styling note goes to her and to the image model, so it must describe
+  // the look she gets after the swaps, without the board's own commentary.
+  pieces.styling = stylingAfterSwaps(pieces.styling, swaps, rules);
   const colourBalance = colourBalanceOf(pieces);
   const { score, notes } = scoreLook(look, pieces, tuck, rules, capsule, colourBalance);
   return { look, pieces, rejects, swaps, tuck, colourBalance, score: score - swaps.length * 0.25, scoreNotes: notes };
@@ -744,6 +864,8 @@ export function garmentReadsNeutral(piece: string): boolean | null {
   const colour = colourFromPieceText(piece);
   if (!colour) return DENIM_RE.test(piece) ? true : null;
   const base = colour.name.toLowerCase().split(/\s+/).at(-1) ?? '';
+  // Pale colours read as low-saturation hex values but are colours to a stylist.
+  if (/^(?:sage|mint|blush|lilac|lavender|powder|sky|peach|coral|mauve|rose|pistachio|butter|lemon|pink)$/.test(base)) return false;
   if (WARDROBE_NEUTRALS.has(base)) return true;
   // "Light-wash jeans" and "mid-blue denim" read as denim, not as blue.
   if (DENIM_RE.test(piece) && /blue|wash/i.test(piece)) return true;
@@ -751,6 +873,8 @@ export function garmentReadsNeutral(piece: string): boolean | null {
 }
 
 export function colourBalanceOf(pieces: Pick<EvaluatedLook['pieces'], 'top' | 'dress' | 'layer' | 'bottom' | 'shoes' | 'accessories'>): ColourBalance {
+  // A coloured top over coloured trousers is a colour set even under a neutral vest.
+  if (!pieces.dress && garmentReadsNeutral(pieces.top) === false && garmentReadsNeutral(pieces.bottom) === false) return 'all-colour';
   const garments = pieces.dress ? [pieces.dress, pieces.layer] : [pieces.top, pieces.layer, pieces.bottom];
   const reads = garments.filter(Boolean).map(garmentReadsNeutral).filter((value): value is boolean => value !== null);
   const neutral = reads.filter(Boolean).length;
@@ -823,7 +947,39 @@ function scoreLook(
   }
   if (look.capsules[0] === capsule) add(1, `filed under ${capsule}`);
   if (/not visible/i.test(look.shoes ?? '')) add(-0.5, 'shoes not shown');
+  if (rules.warmClimate && WINTER_RE.test(`${pieces.top} ${pieces.layer} ${pieces.dress}`)) add(-3, 'too warm for her climate');
+  // A small per-client nudge, so near-equal looks differ between clients
+  // instead of every report landing on the same handful.
+  add(Math.round(seededUnit(`${rules.seed}|${look.id}`) * 25) / 10, 'variety');
   return { score, notes };
+}
+
+/** A stable number in [0, 1) for a string. */
+function seededUnit(value: string) {
+  let hash = 2166136261;
+  for (let index = 0; index < value.length; index += 1) {
+    hash ^= value.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+  return ((hash >>> 0) % 10000) / 10000;
+}
+
+/** Board commentary written for us, not for her: "the strongest colour-matching in the set". */
+const CURATOR_NOTE_RE = /\bin the set\b|\bof the set\b|\bon the board\b|\bthe board\b|\bof the (?:board|looks|outfits|layered looks)\b|\bthe pin\b|curat|"designer"|\bstrongest\b|\bthe most\b|\bbest of\b|\bthe only\b/i;
+
+export function stylingAfterSwaps(styling: string, swaps: string[], rules: Pick<VerbatimClientRules, 'metal'>) {
+  if (!styling) return styling;
+  let next = styling;
+  for (const swap of swaps) {
+    const shade = swap.match(/^(.+?) → (.+?) \(closest shade/);
+    if (shade) next = next.replace(new RegExp(`\\b${shade[1].replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'gi'), shade[2]);
+  }
+  const shoeSwap = swaps.find(swap => /→/.test(swap) && /flat|heel|pump/i.test(swap) && !/not shown/.test(swap));
+  if (shoeSwap && /→ .*flat/i.test(shoeSwap)) next = next.replace(/\b(?:heels|pumps|stilettos)\b/gi, 'flats').replace(/\bheeled\b/gi, 'flat');
+  if (shoeSwap && /→ .*(?:heel|pump)/i.test(shoeSwap)) next = next.replace(/\bflats\b/gi, 'heels');
+  if (rules.metal) next = next.replace(new RegExp(`\\b${rules.metal === 'gold' ? 'silver' : 'gold'}\\b`, 'gi'), rules.metal);
+  const clauses = next.split(/\s*(?:—|–|;)\s*/).filter(clause => clause && !CURATOR_NOTE_RE.test(clause));
+  return clauses.join('; ').replace(/\s+/g, ' ').trim();
 }
 
 // --- Choosing the set ------------------------------------------------------------
@@ -850,6 +1006,10 @@ function leadFamily(pieces: EvaluatedLook['pieces']) {
   return colour ? colourFamilyOfHex(colour.hex) : 'unknown';
 }
 
+function isBelted(item: EvaluatedLook) {
+  return /\bbelt/i.test(`${item.pieces.accessories} ${item.pieces.styling}`);
+}
+
 function shapeKey(pieces: EvaluatedLook['pieces']) {
   const top = (pieces.dress || pieces.top).toLowerCase().match(/shirt|blouse|tee|t-shirt|knit|sweater|kurta|tunic|dress|jumpsuit|polo|top|cardigan|turtleneck|saree/)?.[0] ?? 'top';
   return `${top}|${bottomFamily(pieces)}|${layerFamily(pieces)}`;
@@ -869,13 +1029,20 @@ function diversityPenalty(candidate: EvaluatedLook, chosen: EvaluatedLook[], cap
   penalty += chosen.filter(item => bottomFamily(item.pieces) === bottom).length * 0.25;
   if (layer !== 'none') penalty += capsuleChosen.filter(item => layerFamily(item.pieces) === layer).length * 1;
   // A jacket on every look reads as one formula: past two layered looks a capsule pays for more.
-  if (layer !== 'none') penalty += Math.max(0, capsuleChosen.filter(item => layerFamily(item.pieces) !== 'none').length - 1) * 1;
+  if (layer !== 'none') penalty += Math.max(0, capsuleChosen.filter(item => layerFamily(item.pieces) !== 'none').length - 1) * 2;
+  if (layer !== 'none') penalty += Math.max(0, chosen.filter(item => layerFamily(item.pieces) !== 'none').length - 7) * 1;
+  // One peplum and two belted looks per capsule at most before they read as a formula.
+  if (candidate.tuck === 'peplum') penalty += capsuleChosen.filter(item => item.tuck === 'peplum').length * 2.5
+    + Math.max(0, chosen.filter(item => item.tuck === 'peplum').length - 1) * 2;
+  if (isBelted(candidate)) penalty += Math.max(0, capsuleChosen.filter(isBelted).length - 1) * 1.5
+    + Math.max(0, chosen.filter(isBelted).length - 3) * 1.5;
+  if (WINTER_RE.test(`${candidate.pieces.top} ${candidate.pieces.layer}`)) penalty += Math.max(0, chosen.filter(item => WINTER_RE.test(`${item.pieces.top} ${item.pieces.layer}`)).length - 1) * 2;
   // Neutral base, colour on top: head-to-toe colour is rare across the set, and
   // all-neutral looks cannot pile up in a capsule and turn it beige.
   if (candidate.colourBalance === 'all-colour') penalty += chosen.filter(item => item.colourBalance === 'all-colour').length * 2.5;
   if (candidate.colourBalance === 'all-neutral') penalty += capsuleChosen.filter(item => item.colourBalance === 'all-neutral').length * 2;
   if (candidate.colourBalance === 'neutral-with-accent') penalty += Math.max(0, capsuleChosen.filter(item => item.colourBalance !== 'balanced' && item.colourBalance !== 'all-colour').length - 1) * 1;
-  penalty += capsuleChosen.filter(item => leadFamily(item.pieces) === lead).length * 1.2;
+  if (lead !== 'neutral') penalty += capsuleChosen.filter(item => leadFamily(item.pieces) === lead).length * 2;
   penalty += chosen.filter(item => leadFamily(item.pieces) === lead).length * 0.3;
   if (chosen.some(item => shapeKey(item.pieces) === shapeKey(candidate.pieces) && leadFamily(item.pieces) === lead)) penalty += 2;
   const tucked = capsuleChosen.filter(item => item.tuck === 'tucked').length + capsuleChosen.filter(item => item.tuck === 'half-tucked').length * 0.5;
@@ -896,9 +1063,13 @@ export function rankVerbatimLooks(
   submission: StylistIntakeSubmission,
   reportData: Pick<StylistBlueprintReportData, 'classification' | 'pages' | 'version'>,
   looks: VerbatimLook[] = getVerbatimLooks(),
+  options: { relaxSoftRules?: boolean } = {},
 ): VerbatimCandidatePools {
   const outfitCount = getStylistBlueprintOutfitCount(reportData as StylistBlueprintReportData);
-  const rules = buildVerbatimClientRules(submission, reportData, outfitCount);
+  const strict = buildVerbatimClientRules(submission, reportData, outfitCount);
+  const rules: VerbatimClientRules = options.relaxSoftRules
+    ? { ...strict, antiCodePatterns: [], wantsDefinition: false, noTuck: false, body: { ...strict.body, pear: false } }
+    : strict;
   const byCapsule = Object.fromEntries(CAPSULES.map(capsule => [capsule, [] as EvaluatedLook[]])) as Record<VerbatimCapsule, EvaluatedLook[]>;
   let rejected = 0;
   for (const look of looks) {
@@ -909,7 +1080,21 @@ export function rankVerbatimLooks(
     }
   }
   for (const capsule of CAPSULES) byCapsule[capsule].sort((a, b) => b.score - a.score);
-  return { rules, byCapsule, rejected };
+  // Her total ethnic count is the promise. A capsule with too few ethnic looks
+  // that pass her rules hands its share to capsules that have them.
+  const perCapsule = outfitCount / CAPSULES.length;
+  const counts = { ...rules.ethnicByCapsule };
+  const available = (capsule: VerbatimCapsule) => Math.min(perCapsule, byCapsule[capsule].filter(item => item.look.ethnic).length);
+  let carry = 0;
+  for (const capsule of CAPSULES) {
+    const over = (counts[capsule] ?? 0) - available(capsule);
+    if (over > 0) { counts[capsule] -= over; carry += over; }
+  }
+  const order = [...rules.ethnicCapsuleOrder, ...CAPSULES.filter(capsule => !rules.ethnicCapsuleOrder.includes(capsule))];
+  for (const capsule of order) {
+    while (carry > 0 && (counts[capsule] ?? 0) < available(capsule)) { counts[capsule] = (counts[capsule] ?? 0) + 1; carry -= 1; }
+  }
+  return { rules: { ...rules, ethnicByCapsule: counts }, byCapsule, rejected };
 }
 
 /**
@@ -1008,7 +1193,12 @@ export function verbatimFormulaItems(evaluated: Pick<EvaluatedLook, 'pieces' | '
   else push(/kurta|kurti/i.test(pieces.top) ? 'Kurta' : 'Top', pieces.top, 'lead', 'Worn closest to your face.');
   if (pieces.layer) push(/dupatta|stole|shawl/i.test(pieces.layer) ? 'Dupatta' : 'Layer', pieces.layer, 'support', 'Worn exactly as styled.');
   if (pieces.bottom && !pieces.dress) push('Bottom', pieces.bottom, 'support', 'Keeps the line from waist to floor.');
-  push('Footwear', pieces.shoes, 'ground', swapped(pieces.shoes) ? 'The flat version of the shoe in the original look.' : 'As styled in the original look.');
+  const shoeSwap = evaluated.swaps.find(swap => swap.endsWith(pieces.shoes.toLowerCase()));
+  const shoeNote = !shoeSwap || !swapped(pieces.shoes) ? 'As styled in the original look.'
+    : /not shown/.test(shoeSwap) ? 'A plain shoe that suits the look.'
+      : /→ .*flat/.test(shoeSwap) ? 'The flat version of the shoe in the original look.'
+        : 'The same shoe on the heel height you asked for.';
+  push('Footwear', pieces.shoes, 'ground', shoeNote);
   const { bags, belts, rest } = splitAccessories(pieces.accessories);
   for (const bag of bags) push('Bag', bag, 'ground', 'Finishes the outfit.');
   for (const belt of belts) push('Belt', belt, 'accent', 'Part of the original styling.');
@@ -1030,15 +1220,53 @@ export function verbatimHowToWear(evaluated: Pick<EvaluatedLook, 'pieces'>) {
   return styling ? asSentence(styling) : '';
 }
 
+const NOTE_TO_COPY: Array<[RegExp, string]> = [
+  [/balances her hips/, 'balances your hips'],
+  [/interest at the shoulder/, 'brings the eye up to your shoulders'],
+  [/skims her midsection/, 'skims your midsection'],
+  [/one long colour line/, 'keeps one long line of colour'],
+  [/volume below/, 'balances your shoulders with volume below'],
+  [/marks her waist/, 'marks your waist'],
+  [/creates a waist/, 'gives you shape at the waist'],
+  [/palette colour on a neutral base/, 'puts one of your colours on a neutral base'],
+  [/neutral base with a colour accent/, 'keeps a neutral base with a touch of your colour'],
+  [/matches her taste/, 'fits the way you like to dress'],
+];
+
+const FALLBACK_QUOTES = [
+  'One of your colours, on a base you can wear anywhere.',
+  'Easy to put on, and it looks considered all day.',
+  'The shape does the work, so you do not have to.',
+  'A look you can repeat with what you already own.',
+  'Polished without trying too hard.',
+  'Built to move with you from morning to evening.',
+  'Simple pieces, worn the way they look best on you.',
+  'The colour sits by your face, where it does the most for you.',
+];
+
+/** A short garment name cut on a word boundary: "Rust linen shirt", never "rust wide-leg trou". */
+function shortPieceName(piece: string, maxWords = 4) {
+  const head = piece.split(/,|\s+(?:with|in|and|over|under|worn)\s+/i)[0].trim();
+  const words = head.split(/\s+/).slice(0, maxWords);
+  while (words.length > 1 && /^(?:a|an|the|of|on|in|with|and|matching)$/i.test(words[words.length - 1])) words.pop();
+  return words.join(' ');
+}
+
 export function fallbackVerbatimCopy(evaluated: EvaluatedLook, capsule: VerbatimCapsule): VerbatimOutfitCopy {
-  const lead = (evaluated.pieces.dress || evaluated.pieces.top).split(/\s+(?:with|in|and)\s+|,/)[0];
-  const bottom = evaluated.pieces.bottom.split(/\s+(?:with|in)\s+|,/)[0];
-  const reasons = evaluated.scoreNotes.filter(note => note.startsWith('+')).map(note => note.replace(/^\+[\d.]+\s*/, '')).filter(note => !/filed under|palette fit|taste/.test(note));
+  const lead = shortPieceName(evaluated.pieces.dress || evaluated.pieces.top);
+  const bottom = evaluated.pieces.dress ? '' : shortPieceName(evaluated.pieces.bottom, 3);
+  const reasons = evaluated.scoreNotes
+    .filter(note => note.startsWith('+'))
+    .map(note => NOTE_TO_COPY.find(([pattern]) => pattern.test(note))?.[1])
+    .filter((value): value is string => Boolean(value));
+  const why = reasons.length >= 2 ? `This outfit ${reasons[0]} and ${reasons[1]}.`
+    : reasons.length === 1 ? `This outfit ${reasons[0]}, in colours that suit you.`
+      : 'This outfit keeps the proportions clean and the colours close to your palette.';
   return {
-    title: sentenceCase(bottom ? `${lead} and ${bottom}`.toLowerCase() : lead.toLowerCase()).slice(0, 70),
+    title: sentenceCase(bottom ? `${lead}, ${bottom}`.toLowerCase() : lead.toLowerCase()),
     occasion: capsule,
-    pull_quote: 'A real outfit, worn the way it was styled, in colours that sit well on you.',
-    why: reasons.length ? asSentence(`This look ${reasons.slice(0, 2).join(' and ')}`) : 'This look keeps the proportions clean and the colours close to your palette.',
+    pull_quote: FALLBACK_QUOTES[Math.floor(seededUnit(evaluated.look.id) * FALLBACK_QUOTES.length)],
+    why,
   };
 }
 
@@ -1120,10 +1348,11 @@ export async function pickVerbatimLooksByEye(
   reportData: Pick<StylistBlueprintReportData, 'classification'>,
   callJson: VerbatimJsonCaller,
   photoUrls: string[] = [],
+  stylistNote?: string,
 ): Promise<Record<VerbatimCapsule, EvaluatedLook[]>> {
   const prompt = `You are a senior personal stylist choosing outfits for one real client. Her photos are attached.
 ${clientBrief(reportData, rules)}
-
+${stylistNote?.trim() ? `\nHer stylist asked for this change: "${stylistNote.trim().slice(0, 600)}". Honour it in your choice.\n` : ''}
 Below are real outfits from our Pinterest library, already checked against her hard rules. You cannot change them. For each capsule choose exactly ${perCapsule} by id.
 
 Choose by how good each outfit will actually LOOK ON HER, as a stylist would judge it in a mirror:
@@ -1193,13 +1422,19 @@ export function withExactEthnicCount(chosen: EvaluatedLook[], pool: EvaluatedLoo
   return result;
 }
 
-const GARMENT_WORDS = /\b(blazer|jacket|cardigan|coat|trench|scarf|belt|vest|waistcoat|dupatta|shawl|stole|boots?|heels?|pumps?|sneakers?|loafers?|sandals?|hat|sunglasses|necklace|earrings?|bangles?|watch|skirt|dress|jeans|jumpsuit|kurta|shirt|blouse|tee|sweater|turtleneck)\b/gi;
+const GARMENT_WORDS = /\b(blazer|jacket|cardigan|coat|trench|scarf|belt|vest|waistcoat|dupatta|shawl|stole|shrug|kimono|cape|boots?|heels?|pumps?|sneakers?|loafers?|sandals?|hat|sunglasses|necklace|earrings?|bangles?|watch|clutch|tote|skirt|dress|jeans|jumpsuit|kurta|kurti|saree|sari|palazzos?|trousers?|pants|tunic|shirt|blouse|tee|sweater|jumper|turtleneck|cami)\b/gi;
+const COLOUR_WORDS = /\b(red|rust|terracotta|orange|mustard|yellow|ochre|olive|green|emerald|teal|blue|navy|cobalt|indigo|purple|plum|burgundy|wine|maroon|pink|blush|coral|peach|cream|ivory|white|black|grey|gray|brown|camel|tan|beige|taupe|khaki|chocolate|lilac|lavender|mint|sage|silver|champagne)\b/gi;
 
-/** The copy names only garments the look actually has. */
+/** The copy names only garments and colours the look actually has. */
 function copyStaysTrue(copy: VerbatimOutfitCopy, evaluated: EvaluatedLook) {
   const lookText = Object.values(evaluated.pieces).join(' ').toLowerCase();
-  const words = `${copy.title} ${copy.why} ${copy.pull_quote}`.toLowerCase().match(GARMENT_WORDS) ?? [];
-  return words.every(word => lookText.includes(word.replace(/s$/, '')));
+  const text = `${copy.title} ${copy.why} ${copy.pull_quote}`.toLowerCase();
+  const garments = text.match(GARMENT_WORDS) ?? [];
+  // A colour only counts when it describes a garment ("emerald silk top");
+  // "your warm brown skin" is about her, not the outfit.
+  const colouredGarments = [...text.matchAll(new RegExp(`${COLOUR_WORDS.source}(?:[\\s-]+[a-z]+){0,2}?[\\s-]+${GARMENT_WORDS.source.replace('(blazer', '(top|blazer')}`, 'gi'))].map(match => match[1].toLowerCase());
+  return garments.every(word => lookText.includes(word.replace(/s$/, '')))
+    && colouredGarments.every(word => lookText.includes(word) || (/grey|gray/.test(word) && /grey|gray/.test(lookText)));
 }
 
 /** The model writes the titles and "why it works" for looks it did not write. */
@@ -1297,16 +1532,21 @@ export async function generatePinterestVerbatimApplication(
   submission: StylistIntakeSubmission,
   reportData: StylistBlueprintReportData,
   callJson: VerbatimJsonCaller,
+  options: { excludeLookIds?: string[]; stylistNote?: string } = {},
 ): Promise<{ pages: BlueprintPage[]; outfit_engine: PinterestOutfitEngineMetadata }> {
   const outfitCount = getStylistBlueprintOutfitCount(reportData);
   const perCapsule = outfitCount / CAPSULES.length;
   const outfitStart = getStylistBlueprintOutfitStartPage(reportData);
   const pools = rankVerbatimLooks(submission, reportData);
-  const shortlist = shortlistVerbatimLooks(pools, perCapsule, perCapsule + 7);
-  const picked = await pickVerbatimLooksByEye(shortlist, perCapsule, pools.rules, reportData, callJson, photoUrlsOf(submission));
+  // "Regenerate all" should show new looks, as long as enough remain to choose from.
+  const exclude = new Set(options.excludeLookIds ?? []);
+  const roomToExclude = CAPSULES.every(capsule => pools.byCapsule[capsule].filter(item => !exclude.has(item.look.id)).length >= perCapsule + 3);
+  const shortlist = shortlistVerbatimLooks(pools, perCapsule, perCapsule + 7, roomToExclude ? exclude : new Set());
+  fillShortCapsules(shortlist, pools, perCapsule, submission, reportData);
+  const picked = await pickVerbatimLooksByEye(shortlist, perCapsule, pools.rules, reportData, callJson, photoUrlsOf(submission), options.stylistNote);
 
   const ordered = CAPSULES.flatMap(capsule => picked[capsule].map(evaluated => ({ evaluated, capsule })));
-  if (ordered.length !== outfitCount) throw new Error(`Only ${ordered.length} library looks pass this client's rules; ${outfitCount} are needed.`);
+  if (ordered.length !== outfitCount) throw new Error(`Only ${ordered.length} library looks pass this client's rules; ${outfitCount} are needed. Loosen one of her rules in the notes, or write the missing outfits by hand.`);
 
   // Three more looks for the preview page, from what was shortlisted but not used.
   const usedIds = new Set(ordered.map(item => item.evaluated.look.id));
@@ -1314,9 +1554,11 @@ export async function generatePinterestVerbatimApplication(
   const previewSources = transformationPageNumber
     ? (['Professional', 'Everyday', 'Social'] as VerbatimCapsule[])
       .map((capsule, index) => {
-        // One ethnic look at most, so the preview shows the range of the set.
+        // The preview is the first impression: an ethnic look leads it only for
+        // a client whose set is at least half ethnic.
         const unused = [...shortlist[capsule], ...pools.byCapsule[capsule]].filter(item => !usedIds.has(item.look.id));
-        const pick = (index === 0 ? unused.find(item => item.look.ethnic) : unused.find(item => !item.look.ethnic)) ?? unused[0];
+        const ethnicLed = ordered.filter(item => item.evaluated.look.ethnic).length * 2 >= ordered.length;
+        const pick = (index === 0 && ethnicLed ? unused.find(item => item.look.ethnic) : unused.find(item => !item.look.ethnic)) ?? unused[0];
         if (pick) usedIds.add(pick.look.id);
         return { capsule, evaluated: pick };
       })
@@ -1353,6 +1595,38 @@ export async function generatePinterestVerbatimApplication(
   };
 }
 
+/**
+ * A very strict brief can leave a capsule short of looks. Rather than fail the
+ * whole report, borrow looks that pass her rules from the other capsules, then
+ * relax only the softer rules (taste anti-codes, body preferences) and mark
+ * those looks for the stylist to check. Coverage rules are never relaxed.
+ */
+function fillShortCapsules(
+  shortlist: Record<VerbatimCapsule, EvaluatedLook[]>,
+  pools: VerbatimCandidatePools,
+  perCapsule: number,
+  submission: StylistIntakeSubmission,
+  reportData: Pick<StylistBlueprintReportData, 'classification' | 'pages' | 'version'>,
+) {
+  const used = () => new Set(CAPSULES.flatMap(capsule => shortlist[capsule].map(item => item.look.id)));
+  let relaxed: VerbatimCandidatePools | null = null;
+  for (const capsule of CAPSULES) {
+    if (shortlist[capsule].length >= perCapsule) continue;
+    const borrow = CAPSULES.filter(other => other !== capsule).flatMap(other => pools.byCapsule[other]);
+    for (const item of borrow) {
+      if (shortlist[capsule].length >= perCapsule) break;
+      if (!used().has(item.look.id)) shortlist[capsule].push(item);
+    }
+    if (shortlist[capsule].length >= perCapsule) continue;
+    relaxed ??= rankVerbatimLooks(submission, reportData, getVerbatimLooks(), { relaxSoftRules: true });
+    for (const item of [...relaxed.byCapsule[capsule], ...CAPSULES.flatMap(other => relaxed!.byCapsule[other])]) {
+      if (shortlist[capsule].length >= perCapsule) break;
+      if (used().has(item.look.id)) continue;
+      shortlist[capsule].push({ ...item, swaps: [...item.swaps, 'stylist to check: a soft rule was relaxed to fill this capsule'] });
+    }
+  }
+}
+
 // --- Swapping one look --------------------------------------------------------------
 
 function selectedLookIds(reportData: StylistBlueprintReportData) {
@@ -1382,8 +1656,13 @@ export function verbatimAlternativesForPage(
   const capsule = capsuleOfPage(reportData, pageNumber);
   const pools = rankVerbatimLooks(submission, reportData);
   const used = selectedLookIds(reportData);
-  const current = reportData.pages.find(page => page.page_number === pageNumber)?.library_refs?.[0]?.id;
-  const currentLook = current ? pools.byCapsule[capsule].find(item => item.look.id === current) : undefined;
+  const engine = reportData.outfit_engine as Partial<PinterestOutfitEngineMetadata> | undefined;
+  const currentPage = reportData.pages.find(page => page.page_number === pageNumber);
+  const current = currentPage?.library_refs?.[0]?.id ?? engine?.selected?.find(item => item.page_number === pageNumber)?.look_id;
+  // Keep the page on its side of her Western/Indian mix, whatever produced it.
+  const currentEthnic = current
+    ? getVerbatimLooks().find(look => look.id === current)?.ethnic
+    : currentPage ? ETHNIC_RE.test(JSON.stringify(currentPage.blocks)) : undefined;
   const others = reportData.pages
     .filter(page => page.page_type === 'outfit' && page.page_number !== pageNumber)
     .map(page => pools.byCapsule[capsule].find(item => item.look.id === page.library_refs?.[0]?.id))
@@ -1391,7 +1670,7 @@ export function verbatimAlternativesForPage(
   const perCapsule = getStylistBlueprintOutfitCount(reportData) / CAPSULES.length;
   return pools.byCapsule[capsule]
     .filter(item => !used.has(item.look.id))
-    .filter(item => !currentLook || item.look.ethnic === currentLook.look.ethnic || pools.rules.ethnicAllowed)
+    .filter(item => currentEthnic === undefined || item.look.ethnic === currentEthnic)
     .map(item => ({ item, value: item.score - diversityPenalty(item, others, others, capsule, perCapsule) }))
     .sort((a, b) => b.value - a.value)
     .slice(0, limit)
@@ -1405,9 +1684,23 @@ export async function verbatimReplacementPage(
   pageNumber: number,
   callJson: VerbatimJsonCaller,
   lookId?: string,
+  stylistNote?: string,
 ): Promise<{ page: BlueprintPage; outfit_engine: PinterestOutfitEngineMetadata }> {
   const alternatives = verbatimAlternativesForPage(submission, reportData, pageNumber, lookId ? 200 : 8);
-  const choice = lookId ? alternatives.find(item => item.evaluated.look.id === lookId) : alternatives[0];
+  let choice = lookId ? alternatives.find(item => item.evaluated.look.id === lookId) : alternatives[0];
+  // A stylist who says why she is replacing the look gets a replacement chosen for that reason.
+  if (!lookId && stylistNote?.trim() && alternatives.length > 1) {
+    try {
+      const raw = await callJson(`A stylist is replacing one outfit in a client's report. Her reason: "${stylistNote.trim().slice(0, 600)}".
+Pick the one outfit below that best answers her reason. Return only JSON: {"id":""}.
+
+${alternatives.map(item => `- ${item.evaluated.look.id}: ${lookLine(item.evaluated)}`).join('\n')}`);
+      const id = (raw && typeof raw === 'object' ? (raw as Record<string, unknown>).id : null);
+      choice = alternatives.find(item => item.evaluated.look.id === id) ?? choice;
+    } catch {
+      // The best-ranked alternative stands.
+    }
+  }
   if (!choice) throw new Error(lookId ? 'That look is no longer available for this outfit.' : 'No other library look passes this client\'s rules for this outfit.');
   const rules = buildVerbatimClientRules(submission, reportData, getStylistBlueprintOutfitCount(reportData));
   const [copy] = await writeVerbatimCopy([choice], rules, reportData, callJson);
@@ -1460,7 +1753,8 @@ export function clientRuleWarningsForPage(
   };
   look.ethnic = ETHNIC_RE.test(Object.values(look).join(' '));
   const evaluated = evaluateVerbatimLook(look, rules, look.capsules[0]);
-  const warnings = [...evaluated.rejects.filter(item => item !== 'incomplete look' && item !== 'not a complete outfit')];
+  // Structural notes are for library pins, not for an outfit a stylist wrote.
+  const warnings = [...evaluated.rejects.filter(item => !/^(?:incomplete look|not a complete outfit|too few pieces|garbled pin)$/.test(item))];
   if (rules.flatsOnly && isHeeledShoe(look.shoes ?? '')) warnings.push('heels for a flats-only client');
   if (rules.metal && new RegExp(`\\b${rules.metal === 'gold' ? 'silver' : 'gold'}\\b`, 'i').test(`${look.accessories} ${look.shoes}`)) warnings.push(`${rules.metal === 'gold' ? 'silver' : 'gold'} for a ${rules.metal} wearer`);
   return [...new Set(warnings)];
@@ -1468,5 +1762,5 @@ export function clientRuleWarningsForPage(
 
 /** Breaks a stylist cannot save over: coverage, shoes she ruled out, skirts at work. */
 export function isHardClientRuleWarning(warning: string) {
-  return /bare arms|short sleeves|low neckline|backless|short hem|sheer|tight fit|cropped|heels for a flats-only|skirt or dress at work/.test(warning);
+  return /bare arms|short sleeves|low neckline|backless|short hem|sheer|tight fit|cropped|heels for a flats-only|skirt or dress at work|skirt or dress for everyday/.test(warning);
 }

@@ -21,7 +21,7 @@ import {
   generateStylistOutfitScienceApplication,
   isScienceBlueprintReport,
 } from '@/lib/stylistOutfitScience';
-import { resolveConsultationIntakePhotos } from '@/lib/stylistConsultationWorkspace';
+import { resolveConsultationIntakePhotos, withCurrentConsultationAnswers } from '@/lib/stylistConsultationWorkspace';
 import { isPinterestVerbatimEngineEnabled, isPinterestVerbatimReport, verbatimReplacementPage } from '@/lib/stylistPinterestOutfits';
 import { callStylistOutfitJSON } from '@/lib/stylistBlueprintGenerator';
 
@@ -77,7 +77,7 @@ export async function POST(
     if (submissionError || !submission) {
       return NextResponse.json({ error: 'Submission not found' }, { status: 404 });
     }
-    const resolvedSubmission = await resolveConsultationIntakePhotos(submission as StylistIntakeSubmission & { source_photo_paths?: Record<string, string> | null });
+    const resolvedSubmission = await resolveConsultationIntakePhotos(await withCurrentConsultationAnswers(submission as StylistIntakeSubmission & { source_photo_paths?: Record<string, string> | null; consultation_id?: string | null }));
 
     await supabaseAdmin
       .from('stylist_blueprint_reports')
@@ -99,7 +99,7 @@ export async function POST(
         : null;
       // Pinterest reports swap in the next best real look, never a written one.
       const verbatimResult = !scienceResult && (isPinterestVerbatimReport(reportData) || isPinterestVerbatimEngineEnabled())
-        ? await verbatimReplacementPage(resolvedSubmission, reportData, pageNumber, callStylistOutfitJSON)
+        ? await verbatimReplacementPage(resolvedSubmission, reportData, pageNumber, callStylistOutfitJSON, undefined, reason)
         : null;
       const replacementPage = scienceResult
         ? scienceResult.pages.find(page => page.page_number === pageNumber)

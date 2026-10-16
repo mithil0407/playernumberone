@@ -741,7 +741,7 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
           expectedUpdatedAt: report?.updated_at,
         }),
       });
-      const data = await readJsonBody<{ report?: Report; error?: string; invalidatedOutfitImages?: number[]; invalidatedHairImage?: boolean }>(res);
+      const data = await readJsonBody<{ report?: Report; error?: string; invalidatedOutfitImages?: number[]; invalidatedHairImage?: boolean; outfitWarnings?: Array<{ outfit: number; warnings: string[] }> }>(res);
       if (!res.ok) {
         if (res.status === 409) setSaveConflict(true);
         throw new Error(responseErrorMessage(data, 'Failed to save report edits'));
@@ -783,6 +783,9 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
         setReportDataDirty(false);
       }
       setSaveConflict(false);
+      if (data?.outfitWarnings?.length) {
+        setError(`Saved. Check against her brief: ${data.outfitWarnings.map(item => `outfit ${item.outfit}: ${item.warnings.join(', ')}`).join('; ')}.`);
+      }
       return allEditsSaved;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to save report edits.');
