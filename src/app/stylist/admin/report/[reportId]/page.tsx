@@ -1,5 +1,6 @@
 'use client';
 
+import { StylistClientBrief } from '@/components/StylistClientBrief';
 import { use, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
 import Link from 'next/link';
@@ -740,7 +741,7 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
           expectedUpdatedAt: report?.updated_at,
         }),
       });
-      const data = await readJsonBody<{ report?: Report; error?: string; invalidatedOutfitImages?: number[]; invalidatedHairImage?: boolean }>(res);
+      const data = await readJsonBody<{ report?: Report; error?: string; invalidatedOutfitImages?: number[]; invalidatedHairImage?: boolean; outfitWarnings?: Array<{ outfit: number; warnings: string[] }> }>(res);
       if (!res.ok) {
         if (res.status === 409) setSaveConflict(true);
         throw new Error(responseErrorMessage(data, 'Failed to save report edits'));
@@ -782,6 +783,9 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
         setReportDataDirty(false);
       }
       setSaveConflict(false);
+      if (data?.outfitWarnings?.length) {
+        setError(`Saved. Check against her brief: ${data.outfitWarnings.map(item => `outfit ${item.outfit}: ${item.warnings.join(', ')}`).join('; ')}.`);
+      }
       return allEditsSaved;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to save report edits.');
@@ -1263,6 +1267,7 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
       const statusRes = await fetch(`/api/stylist-blueprint/status/${reportId}`, { cache: 'no-store' });
       if (statusRes.ok) setImageCounts((await statusRes.json()).imageCounts ?? null);
       setOutfitInstruction('');
+      if (Array.isArray(data.warnings) && data.warnings.length) setError(`Edit saved. Check it against her brief: ${data.warnings.join('; ')}.`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Outfit edit failed');
       await load(true);
@@ -2141,6 +2146,7 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
               </>
             )}
 
+            {studioPanel === 'outfit' && activePage && versioned && <StylistClientBrief reportId={reportId} />}
             {studioPanel === 'outfit' && activePage && versioned && (
               <StylistOutfitEditor key={activePageNumber} page={activePage} onChange={handlePageChange}
                 saveError={error} onSave={() => saveChangedPagesRef.current()} busy={Boolean(currentBusyReason) && !saving} saving={saving} hasUnsavedEdits={hasUnsavedEdits}
@@ -2158,6 +2164,7 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
                   const data = await response.json();
                   if (!response.ok) throw new Error(data.error || 'Could not read that outfit');
                   handlePageChange(data.page);
+                  if (Array.isArray(data.warnings) && data.warnings.length) setError(`Check this outfit against her brief: ${data.warnings.join('; ')}.`);
                   return typeof data.prompt === 'string' ? data.prompt : null;
                 }}
                 getAlternatives={activeRevisedOutfit ? undefined : async () => {

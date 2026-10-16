@@ -55,7 +55,9 @@ function text(value: unknown) {
 function list(value: unknown) {
   if (Array.isArray(value)) return value.map(text).filter(Boolean);
   const one = text(value);
-  return one ? one.split(/,|;|\n/).map(item => item.trim()).filter(Boolean) : [];
+  // Commas inside brackets belong to one answer: "Earthy colours (Navy blue,
+  // rust, terracotta)" is one preference, not three fragments.
+  return one ? one.split(/[,;\n](?![^()]*\))/).map(item => item.trim()).filter(Boolean) : [];
 }
 
 function compact<T extends JsonRecord>(value: T): T {
@@ -156,16 +158,17 @@ export function consultationSourceToIntake(source: ConsultationSourceBundle) {
     focus_areas: Array.from(new Set([...concerns, ...goals])).filter(Boolean),
     coverage_requirements: compact({
       boundaries: list(data.boundaries),
-      fit_restrictions: list(data.fitRestrictions),
-      fabric_restrictions: list(data.fabricRestrictions),
+      fit_restrictions: [...list(data.fitRestrictions), ...list(data.fitRestrictionsOther)],
+      fabric_restrictions: [...list(data.fabricRestrictions), ...list(data.fabricsAvoided).filter(item => !/^none\.?$/i.test(item))],
       cultural_restrictions: list(data.culturalRestrictions),
       modesty_preference: text(data.modestyPreference),
       modesty_reason: text(data.modestyReason),
     }),
     lifestyle_context: compact({
       occupation: text(data.occupation),
-      occasions: list(data.occasions),
-      upcoming_events: list(data.upcomingEvents),
+      occasions: Array.from(new Set([...list(data.occasions), ...list(data.occasionsNeedHelp)])),
+      upcoming_events: list(data.upcomingEvents).length ? list(data.upcomingEvents) : list(data.upcomingEvent),
+      winterwear: text(data.winterwearNeed),
       consultation_reason: text(data.consultationReason),
       desired_feelings: list(data.desiredFeelings),
       life_changes: list(data.lifeChanges),
@@ -174,6 +177,8 @@ export function consultationSourceToIntake(source: ConsultationSourceBundle) {
     }),
     piece_preferences: compact({
       loved: list(data.itemsLoved),
+      go_to_outfits: list(data.goToOutfits),
+      fabrics_preferred: list(data.fabricsPreferred).filter(item => !/^no preference\.?$/i.test(item)),
       avoided: list(data.itemsHated),
       least_favourites: list(data.wardrobeLeastFavorites),
       footwear: list(data.footwear),
@@ -324,6 +329,34 @@ export async function resolveConsultationIntakePhotos<T extends StylistIntakeSub
     },
     one_outfit_image_url: signed.one_outfit ?? submission.one_outfit_image_url ?? null,
   };
+}
+
+/**
+ * The client's answers as the current mapping reads them. An intake is
+ * snapshotted when a report is first created, so one made before a mapping fix
+ * still lacks answers such as "No dresses and skirts at work" or her go-to
+ * outfits. Outfit routes re-read the consultation so a regenerate sees what
+ * she actually said; the stylist's own overrides still win. Falls back to the
+ * stored intake if the consultation cannot be read.
+ */
+export async function withCurrentConsultationAnswers<T extends StylistIntakeSubmission & { consultation_id?: string | null; workspace_overrides?: unknown }>(submission: T): Promise<T> {
+  if (!submission.consultation_id) return submission;
+  try {
+    const source = await loadConsultationSource(submission.consultation_id);
+    if (!source) return submission;
+    const mapped = consultationSourceToIntake(source);
+    const overrides = record(submission.workspace_overrides);
+    const pick = (key: 'coverage_requirements' | 'piece_preferences' | 'lifestyle_context') =>
+      (overrides[key] as Record<string, unknown> | undefined) ?? mapped[key] ?? submission[key];
+    return {
+      ...submission,
+      coverage_requirements: pick('coverage_requirements'),
+      piece_preferences: pick('piece_preferences'),
+      lifestyle_context: pick('lifestyle_context'),
+    };
+  } catch {
+    return submission;
+  }
 }
 
 export { workspaceBucket } from './stylistWorkspaceQueueModel';

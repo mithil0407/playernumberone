@@ -85,6 +85,15 @@ import {
   outfitProseBlocks,
   type OutfitScienceEngineMetadata,
 } from './stylistOutfitScience.ts';
+import {
+  fallbackVerbatimCopy,
+  generatePinterestVerbatimApplication,
+  isPinterestVerbatimEngineEnabled,
+  isPinterestVerbatimReport,
+  rankVerbatimLooks,
+  verbatimOutfitPage,
+  type PinterestOutfitEngineMetadata,
+} from './stylistPinterestOutfits.ts';
 
 export {
   STYLIST_BLUEPRINT_36_PAGE_COUNT,
@@ -522,7 +531,7 @@ export interface StylistBlueprintReportData {
   analysis: StylistBlueprintAnalysis;
   classification: StylistBlueprintClassification;
   pages: BlueprintPage[];
-  outfit_engine?: OutfitScienceEngineMetadata;
+  outfit_engine?: OutfitScienceEngineMetadata | PinterestOutfitEngineMetadata;
   studio?: StylistReportStudioMetadata;
   /**
    * Looks a stylist wrote after delivery, in answer to a client revision. Kept
@@ -1170,7 +1179,21 @@ const STYLIST_BLUEPRINT_THINKING_LEVEL: ThinkingLevel = ({
   high: ThinkingLevel.HIGH,
 } as const)[(process.env.GEMINI_STYLIST_THINKING_LEVEL || '').trim().toLowerCase()] ?? ThinkingLevel.LOW;
 
+type StylistJsonCaller = (prompt: string, imageUrls: string[]) => Promise<unknown>;
+let jsonCallerOverride: StylistJsonCaller | null = null;
+
+/**
+ * Sends the report's JSON calls to another model, e.g. a local run through the
+ * operator's signed-in ChatGPT. Null restores Gemini. Never set on Vercel.
+ */
+export function setStylistBlueprintJsonCaller(caller: StylistJsonCaller | null) {
+  // A module global is shared by concurrent requests on a server instance.
+  if (caller && process.env.VERCEL) throw new Error('The report model can only be overridden in a local script.');
+  jsonCallerOverride = caller;
+}
+
 async function callGeminiJSON(prompt: string, imageUrls: string[] = []): Promise<unknown> {
+  if (jsonCallerOverride) return jsonCallerOverride(prompt, imageUrls);
   return withRetry(async () => {
     const imageParts = await Promise.all(imageUrls.slice(0, 4).map(fetchImagePart).filter(Boolean));
     const parts = [{ text: prompt }, ...imageParts.filter((part): part is { inlineData: { mimeType: string; data: string } } => Boolean(part))];
@@ -1196,6 +1219,11 @@ async function callGeminiJSON(prompt: string, imageUrls: string[] = []): Promise
  * slower spinner. The 30-second deadline and single retry are the same
  * bargain: for someone watching, a bad minute should fail fast.
  */
+/** The JSON call the Pinterest outfit engine uses to pick and describe looks. */
+export function callStylistOutfitJSON(prompt: string, imageUrls: string[] = []): Promise<unknown> {
+  return callGeminiJSON(prompt, imageUrls);
+}
+
 async function callGeminiJSONFast(prompt: string): Promise<unknown> {
   return withRetry(async () => {
     const response = await ai.models.generateContent({
@@ -3116,7 +3144,8 @@ function stripHarnessMarkdown(value: string) {
 }
 
 function isNoneHarnessValue(value: string) {
-  return /^(none|n\/a|not needed|not required|skip|no)$/i.test(stripHarnessMarkdown(value));
+  // "None." and "None (the top is the layer)" are still empty slots.
+  return /^(none|n\/a|not needed|not required|skip|no)\b[.\s]*(?:\(.*\))?\.?$/i.test(stripHarnessMarkdown(value).trim());
 }
 
 function parseHarnessSection(block: string, key: keyof Omit<ParsedHarnessOutfit, 'outfitNumber' | 'context'>) {
@@ -3170,7 +3199,7 @@ function fillHarnessNarrativeFallbacks(parsed: ParsedHarnessOutfit) {
 }
 
 const NO_LAYER_HARNESS_VALUE = 'None';
-const ARM_COVERAGE_CUT_RE = /\b(sleeve|sleeved|elbow[-\s]?length|bracelet[-\s]?length|three[-\s]?quarter|3\/4|long[-\s]?sleeve|short[-\s]?sleeve|cap[-\s]?sleeve|covered shoulder|shoulder coverage|kimono sleeve|dolman sleeve|batwing sleeve)\b/i;
+const ARM_COVERAGE_CUT_RE = /\b(sleeves?|sleeved|elbow[-\s]?length|bracelet[-\s]?length|three[-\s]?quarter|3\/4|long[-\s]?sleeve|short[-\s]?sleeve|cap[-\s]?sleeve|covered shoulder|shoulder coverage|kimono sleeve|dolman sleeve|batwing sleeve)\b/i;
 const ARM_EXPOSURE_RE = /\b(sleeveless|strapless|spaghetti\s+strap|thin\s+strap|cami|camisole|tank)\b/i;
 
 function sleeveCoveragePhraseForPlan(plan: PlannedOutfit) {
@@ -5970,8 +5999,11 @@ function enforceSilhouetteProofItems(items: NormalisedFormulaItem[], kind: Silho
   return items;
 }
 
-function proofOutfitFromPage(page: BlueprintPage, kind: SilhouetteRuleExampleKind, index: number): SilhouetteProofOutfit {
-  const formulaItems = enforceSilhouetteProofItems(normalisedFormulaItemsForProof(page), kind).slice(0, 7);
+function proofOutfitFromPage(page: BlueprintPage, kind: SilhouetteRuleExampleKind, index: number, enforce = true): SilhouetteProofOutfit {
+  // A library look already shows the principle as styled; only invented
+  // outfits get the waist and length enforcement.
+  const items = normalisedFormulaItemsForProof(page);
+  const formulaItems = (enforce ? enforceSilhouetteProofItems(items, kind) : items).slice(0, 7);
   const palette = page.palette_used?.length
     ? page.palette_used
     : formulaItems
@@ -6156,11 +6188,51 @@ export function buildSilhouetteProofPlanSummariesForTest(
   }));
 }
 
+const PROOF_KIND_SIGNALS: Record<SilhouetteRuleExampleKind, RegExp> = {
+  vertical: /longline|column|tonal|matching|monochrom|duster|long (?:coat|cardigan|kimono)|maxi|straight[- ]leg|wide[- ]leg/gi,
+  waist: /belt|wrap|peplum|tuck|defined waist|tie(?:d)? (?:at the )?waist|cinch/gi,
+  structure: /blazer|structured|tailored|jacket|waistcoat|shoulder|collar/gi,
+  balance: /wide[- ]leg|a-line|flare|palazzo|bootcut|straight[- ]leg|full skirt/gi,
+};
+
+/**
+ * The rules-page example outfits as real library looks: for each rule, the
+ * best look that passes her rules and shows that principle, never one already
+ * in her twenty.
+ */
+function libraryProofOutfits(
+  reportData: StylistBlueprintReportData,
+  submission: StylistIntakeSubmission,
+  targets: SilhouetteRuleProofTarget[],
+): SilhouetteProofOutfit[] | null {
+  const pools = rankVerbatimLooks(submission, reportData);
+  const used = new Set(reportData.pages.flatMap(page => (page.page_type === 'outfit' || page.page_type === 'transformation') ? page.library_refs?.map(ref => ref.id) ?? [] : []));
+  const candidates = Object.values(pools.byCapsule).flat();
+  const proofs: SilhouetteProofOutfit[] = [];
+  for (const [index, target] of targets.entries()) {
+    const kind = target.kind;
+    const best = candidates
+      .filter(item => !used.has(item.look.id))
+      .map(item => ({ item, hits: (Object.values(item.pieces).join(' ').match(PROOF_KIND_SIGNALS[kind]) ?? []).length }))
+      .filter(entry => entry.hits > 0)
+      .sort((a, b) => (b.hits * 3 + b.item.score) - (a.hits * 3 + a.item.score))[0]?.item;
+    if (!best) return null;
+    used.add(best.look.id);
+    const page = verbatimOutfitPage(best, best.look.capsules[0], 0, fallbackVerbatimCopy(best, best.look.capsules[0]), pools.rules);
+    proofs.push(proofOutfitFromPage(page, kind, index, false));
+  }
+  return proofs;
+}
+
 async function generateSilhouetteProofOutfits(
   reportData: StylistBlueprintReportData,
   submission?: StylistIntakeSubmission | null,
   targets: SilhouetteRuleProofTarget[] = [],
 ) {
+  if (submission && !isScienceBlueprintReport(reportData) && (isPinterestVerbatimReport(reportData) || isPinterestVerbatimEngineEnabled())) {
+    const fromLibrary = libraryProofOutfits(reportData, submission, targets);
+    if (fromLibrary) return fromLibrary;
+  }
   const libraryContext = await loadOutfitLibraryContext();
   const plans = buildSilhouetteProofPlans(reportData, submission, targets, libraryContext);
   const pages = await generateHarnessOnlyOutfitPages(
@@ -6220,7 +6292,7 @@ export async function generateStylistBlueprintPages(
   reportData: StylistBlueprintReportData,
   act: 'opening' | 'diagnosis' | 'prescription' | 'application' | 'closing',
   requestedPages?: number[],
-): Promise<BlueprintPage[] | { pages: BlueprintPage[]; outfit_engine: OutfitScienceEngineMetadata }> {
+): Promise<BlueprintPage[] | { pages: BlueprintPage[]; outfit_engine: OutfitScienceEngineMetadata | PinterestOutfitEngineMetadata }> {
   const libraryContext = await loadOutfitLibraryContext();
   const culturalMode = getStylistOutfitCulturalMode(submission);
   const pageCount = getStylistBlueprintPageCount(reportData);
@@ -6233,7 +6305,15 @@ export async function generateStylistBlueprintPages(
   const outfitsPerCapsule = outfitCount / 4;
   const outfitDiversityPlan = buildOutfitDiversityPlan(reportData, libraryContext, culturalMode, submission);
   if (act === 'application') {
-    if (isStylistOutfitScienceHarnessEnabled() || isScienceBlueprintReport(reportData)) {
+    // A report keeps the engine it was made with; new reports get real
+    // Pinterest looks worn as styled unless a deploy opts out.
+    if (isScienceBlueprintReport(reportData)) {
+      return generateStylistOutfitScienceApplication(submission, reportData, libraryContext.outfits);
+    }
+    if (isPinterestVerbatimReport(reportData) || isPinterestVerbatimEngineEnabled()) {
+      return generatePinterestVerbatimApplication(submission, reportData, callStylistOutfitJSON);
+    }
+    if (isStylistOutfitScienceHarnessEnabled()) {
       return generateStylistOutfitScienceApplication(submission, reportData, libraryContext.outfits);
     }
     if (isLatestStylistBlueprintVersion(reportData)) {
@@ -6750,7 +6830,10 @@ ${buildStylistBlueprintIntakeDigest(submission)}`;
 
   nextData = {
     ...nextData,
-    pages: reportData.pages.map(page => normaliseGeneratedPage(page, nextData)),
+    // A new palette must not rewrite finished outfits. Normalising an outfit
+    // page re-derived its swatches and appended texture and pattern text to
+    // every piece, including looks a stylist had already written.
+    pages: reportData.pages.map(page => (page.page_type === 'outfit' || page.page_type === 'transformation') ? page : normaliseGeneratedPage(page, nextData)),
   };
 
   return nextData;

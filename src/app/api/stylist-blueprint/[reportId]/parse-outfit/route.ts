@@ -8,7 +8,10 @@ import {
   parseStylistBlueprintOutfitText,
   validateStylistBlueprintReport,
   type StylistBlueprintReportData,
+  type StylistIntakeSubmission,
 } from '@/lib/stylistBlueprintGenerator';
+import { clientRuleWarningsForPage, isHardClientRuleWarning } from '@/lib/stylistPinterestOutfits';
+import { withCurrentConsultationAnswers } from '@/lib/stylistConsultationWorkspace';
 import {
   buildStylistBlueprintManualImagePrompt,
   type StylistBlueprintImageSlotKey,
@@ -47,7 +50,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
   const { data: report, error } = await supabaseAdmin
     .from('stylist_blueprint_reports')
-    .select('id, report_data, status, progress_stage')
+    .select('id, submission_id, report_data, status, progress_stage')
     .eq('id', reportId)
     .single();
   if (error || !report) return NextResponse.json({ error: 'Report not found' }, { status: 404 });
@@ -89,6 +92,17 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       return NextResponse.json({ error: readableValidationError(invalid, layoutPage) }, { status: 422 });
     }
 
+    // A pasted outfit is held to the client's brief like a generated one.
+    // Pasted looks used to save unchecked: heels for a flats-only client, a
+    // sleeveless shell for a client who ruled sleeveless out.
+    const { data: submission } = await supabaseAdmin
+      .from('stylist_intake_responses').select('*').eq('id', report.submission_id).maybeSingle();
+    const warnings = submission ? clientRuleWarningsForPage(await withCurrentConsultationAnswers(submission as StylistIntakeSubmission & { consultation_id?: string | null }), nextData, parsed) : [];
+    const hard = warnings.filter(isHardClientRuleWarning);
+    if (hard.length) {
+      return NextResponse.json({ error: `This outfit breaks her brief: ${hard.join('; ')}. Change it and paste again.`, warnings }, { status: 422 });
+    }
+
     // Built from the parsed page rather than from storage, so the prompt on
     // screen is the outfit she is looking at — no save round trip in between.
     const slotKey = `application.outfitFlatlays.${layoutPage - outfitStart}` as StylistBlueprintImageSlotKey;
@@ -100,7 +114,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     }
 
     const page = revised ? { ...parsed, page_number: pageNumber } : parsed;
-    return NextResponse.json({ page, prompt });
+    return NextResponse.json({ page, prompt, warnings });
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Could not read that outfit';
     return NextResponse.json({ error: message }, { status: 500 });

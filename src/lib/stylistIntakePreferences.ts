@@ -294,6 +294,9 @@ export function bannedPieceTerms(piecePreferences?: Record<string, unknown> | nu
   const expanded = new Set<string>();
   for (const term of stated) {
     expanded.add(term);
+    // "no skirts" and "dupatta she avoids" name a garment inside the refusal;
+    // the garment is what has to match.
+    for (const garment of avoidedGarments(term)) expanded.add(garment);
     const lower = term.toLowerCase();
     for (const entry of AVOID_TERM_SYNONYMS) {
       if (entry.match.test(lower)) for (const synonym of entry.terms) expanded.add(synonym);
@@ -302,10 +305,40 @@ export function bannedPieceTerms(piecePreferences?: Record<string, unknown> | nu
   return [...expanded];
 }
 
+const REFUSAL_WORDS = /^(?:she\s+)?(?:no|not|never|nothing|avoids?|avoiding|dislikes?|hates?|without|don'?t\s+(?:like|want|wear)|doesn'?t\s+(?:like|want|wear)|not\s+comfortable\s+(?:with|in))\s+/;
+const TRAILING_REFUSAL = /\s+(?:she\s+)?(?:avoids?|dislikes?|hates?|not\s+preferred|please)\s*$/;
+
+function singular(word: string) {
+  if (/(?:ss|us)$/.test(word)) return word;
+  if (/(?:sses|shes|ches|xes)$/.test(word)) return word.slice(0, -2);
+  return word.endsWith('s') ? word.slice(0, -1) : word;
+}
+
+/** The garments inside one refusal: "no dresses and skirts" -> dress, skirt. */
+export function avoidedGarments(term: string): string[] {
+  const cleaned = term.toLowerCase().replace(/[.!()]/g, ' ').replace(/\s+/g, ' ').trim()
+    .replace(REFUSAL_WORDS, '').replace(TRAILING_REFUSAL, '').trim();
+  if (cleaned === term.toLowerCase().trim() && !/\s(?:and|or|&)\s|\//.test(cleaned)) return [];
+  return cleaned
+    .split(/\s*(?:\band\b|\bor\b|&|\/)\s*/)
+    .map(part => part.replace(REFUSAL_WORDS, '').trim())
+    .filter(part => part.length >= 3 && part.split(' ').length <= 3)
+    .map(part => part.split(' ').map((word, index, words) => (index === words.length - 1 ? singular(word) : word)).join(' '));
+}
+
+function escapeTerm(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 /** True when a garment description uses something the client ruled out. */
 export function violatesBannedPieces(text: string, bannedTerms: string[]): string[] {
   const lower = text.toLowerCase();
-  return bannedTerms.filter(term => lower.includes(term.toLowerCase()));
+  return bannedTerms.filter(term => {
+    const value = term.toLowerCase().trim();
+    if (value.length < 3) return false;
+    // Whole words, plural or not: "skirt" bans "skirts", "tee" does not ban "teal".
+    return new RegExp(`\\b${escapeTerm(value)}(?:s|es)?\\b`).test(lower);
+  });
 }
 
 
@@ -327,7 +360,10 @@ export interface EthnicSignalSource {
   coverage_requirements?: Record<string, unknown> | null;
 }
 
-const ETHNIC_PREFERENCE_PATTERN = /\b(indian|ethnic(?:wear)?|kurt[ai]|kurta|kurti|saree|sari|lehenga|anarkali|salwar|churidar|sharara|gharara|dupatta|indo[- ]?western|festive|festival|wedding|shaadi|sangeet|mehendi|mehndi|haldi|diwali|traditional|desi|jutti|juttis|kolhapuri|banarasi|chikankari|bandhani|silk sari)\b/i;
+// Plurals and the misspellings stylists type live ("kurtas", "sarees",
+// "ethnics", "inidan") all count: missing them sent clients who asked for
+// Indianwear twenty Western outfits.
+const ETHNIC_PREFERENCE_PATTERN = /\b(indian\w*|inidan|ethn[iu]c(?:s|wear)?|kurt[ai]s?|sarees?|saris?|lehengas?|anarkalis?|salwars?|churidars?|shararas?|ghararas?|dupattas?|indo[- ]?western|festive|festivals?|weddings?|shaadi|sangeet|mehendi|mehndi|haldi|diwali|traditional|desi|juttis?|kolhapuris?|banarasi|chikankari|bandhani)\b/i;
 
 // Only surface Indian/ethnic outfits when the client's own intake signals interest in them —
 // being an India-market or admin-created intake is NOT sufficient on its own.

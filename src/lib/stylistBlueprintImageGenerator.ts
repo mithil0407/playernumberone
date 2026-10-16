@@ -599,7 +599,8 @@ function compactOutfitRenderText(page: BlueprintPage) {
       const record = formulaItemRecord(item);
       const slot = formulaSlot(item);
       const piece = formulaPiece(item);
-      if (!slot || !piece || /^none$/i.test(piece)) return '';
+      // "None." and "None. (the top is a jacket)" are empty slots, not garments.
+      if (!slot || !piece || /^none\b/i.test(piece)) return '';
       const alreadyColoured = Boolean(colourFromPieceText(piece));
       const fallbackColour = typeof record.colour_name === 'string' ? record.colour_name.trim() : '';
       const described = alreadyColoured || !fallbackColour ? piece : `${fallbackColour} ${piece}`;
@@ -672,7 +673,7 @@ Keep her original body proportions, weight, physique and natural body shape. Kee
 
 Her own hair, same cut, length and colour, but blow-dried and styled for this shoot rather than as photographed: smooth, flyaways controlled. No new cut, fringe or added volume.
 
-She is smiling, straight on to camera in a slightly stylish standing pose, with soft natural flattering makeup.
+She is smiling in a relaxed, natural stance, weight on one leg, arms loose, with soft natural flattering makeup.
 
 Plain studio background in matte slate ${SLATE}. Head to toe in frame, portrait 2:3, nothing cropped. No text, logos or watermarks.`;
 
@@ -684,10 +685,29 @@ Plain studio background in matte slate ${SLATE}. Head to toe in frame, portrait 
  */
 function wornOutfitPromptDelta(reportData: StylistBlueprintReportData, page: BlueprintPage) {
   const coverage = shortCoverageLine(reportData);
+  const styling = outfitStylingLine(page);
   return [
     `Outfit:\n${compactOutfitRenderText(page)}`,
+    styling
+      ? `Worn: ${styling} Nothing tucked, belted or added unless stated.`
+      : 'Nothing tucked, belted or added unless stated.',
     coverage ? `Must stay covered: ${coverage}` : '',
   ].filter(Boolean).join('\n\n');
+}
+
+/**
+ * How the look is worn: tucked or loose, sleeves rolled, layer open. The image
+ * model used to get only the piece list, so it tucked everything into
+ * high-rise trousers whatever the outfit said.
+ */
+function outfitStylingLine(page: BlueprintPage) {
+  const dedicated = page.blocks.find(block => /how to wear/i.test(`${block.label ?? ''} ${block.heading ?? ''}`))?.body?.trim();
+  if (dedicated) return dedicated;
+  for (const block of page.blocks) {
+    const match = `${block.body ?? ''}`.match(/How to wear it:\s*(.+)$/i);
+    if (match) return match[1].trim();
+  }
+  return '';
 }
 
 /** One line, only when the client has real coverage requirements. */

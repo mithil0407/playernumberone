@@ -4,8 +4,6 @@ import { canAccessBlueprintReport } from '@/lib/stylistWorkspaceAuth';
 import { revalidateStylistBlueprintCache } from '@/lib/stylistBlueprintCache';
 import {
   generateStylistBlueprintReplacementPalette,
-  getStylistBlueprintOutfitEndPage,
-  getStylistBlueprintOutfitStartPage,
   getStylistBlueprintPalettePage,
   isVersionedStylistBlueprintReportData,
   type StylistBlueprintReportData,
@@ -76,14 +74,10 @@ export async function POST(
       reason,
     );
 
-    const outfitStart = getStylistBlueprintOutfitStartPage(reportData);
-    const outfitEnd = getStylistBlueprintOutfitEndPage(reportData);
+    // Only the palette page changes now; outfit pages keep their approval.
     const nextApprovals = {
       ...((report.section_approvals as Record<string, boolean> | null) ?? {}),
       [`p${getStylistBlueprintPalettePage(reportData)}`]: false,
-      ...Object.fromEntries(
-        Array.from({ length: outfitEnd - outfitStart + 1 }, (_, index) => [`p${outfitStart + index}`, false]),
-      ),
     };
 
     const { data: updated, error: updateError } = await supabaseAdmin

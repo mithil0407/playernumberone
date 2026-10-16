@@ -17,6 +17,7 @@ import {
   type OutfitScienceQaFeedback,
   type OutfitScienceQaVerdict,
 } from '@/lib/stylistOutfitScience';
+import { isPinterestVerbatimReport, type PinterestOutfitEngineMetadata } from '@/lib/stylistPinterestOutfits';
 
 type Vote = 'like' | 'dislike';
 const SCIENCE_VERDICTS = new Set<OutfitScienceQaVerdict>(['PASS', 'PASS_SURPRISE', 'KILL_EYE', 'KILL_WOW', 'KILL_REAL']);
@@ -94,7 +95,7 @@ export async function GET(
   }
 
   const report = await loadReport(reportId);
-  if (report && isScienceBlueprintReport(report)) {
+  if (report && (isScienceBlueprintReport(report) || isPinterestVerbatimReport(report))) {
     const feedback = report.outfit_engine?.qa_feedback?.find(item => item.page_number === pageNumber) ?? null;
     return NextResponse.json({ feedback });
   }
@@ -133,6 +134,41 @@ export async function POST(
     return NextResponse.json({ error: 'Feedback is only available for outfit pages' }, { status: 400 });
   }
 
+  // Pinterest reports keep the same Pass/Kill QA as science reports, stored on
+  // the engine record next to the look it judges. They used to fall through
+  // to the legacy like/dislike path and fail with a 400 on every click.
+  if (isPinterestVerbatimReport(reportData)) {
+    const engine = reportData.outfit_engine as PinterestOutfitEngineMetadata;
+    const qaVerdict: OutfitScienceQaVerdict = verdict ?? (vote === 'like' ? 'PASS' : 'KILL_WOW');
+    const now = new Date().toISOString();
+    const existing: OutfitScienceQaFeedback[] = engine.qa_feedback ?? [];
+    const previous = existing.find(item => item.page_number === pageNumber);
+    const lookId = reportData.pages.find(item => item.page_number === pageNumber)?.library_refs?.[0]?.id
+      ?? engine.selected.find(item => item.page_number === pageNumber)?.look_id
+      ?? null;
+    const feedback: OutfitScienceQaFeedback = {
+      id: previous?.id ?? `${reportId}:p${pageNumber}`,
+      page_number: pageNumber,
+      candidate_id: lookId,
+      library_anchor_id: lookId,
+      verdict: qaVerdict,
+      reason: reason || scienceQaSummary(qaVerdict),
+      technique_ids: [],
+      created_at: previous?.created_at ?? now,
+      updated_at: now,
+    };
+    const nextReportData: StylistBlueprintReportData = {
+      ...reportData,
+      outfit_engine: {
+        ...engine,
+        qa_feedback: [...existing.filter(item => item.page_number !== pageNumber), feedback].sort((a, b) => a.page_number - b.page_number),
+      },
+    };
+    await supabaseAdmin.from('stylist_blueprint_reports').update({ report_data: nextReportData, updated_at: now }).eq('id', reportId);
+    await revalidateStylistBlueprintCache(reportId, reportRow?.share_token ?? null);
+    return NextResponse.json({ feedback, libraryEntry: null, summary: scienceQaSummary(qaVerdict) });
+  }
+
   if (isScienceBlueprintReport(reportData)) {
     const qaVerdict: OutfitScienceQaVerdict = verdict ?? (vote === 'like' ? 'PASS' : 'KILL_WOW');
     const candidate = scienceCandidateForPage(reportData, pageNumber);
@@ -145,11 +181,11 @@ export async function POST(
       library_anchor_id: candidate?.library_ref?.id ?? null,
       verdict: qaVerdict,
       reason: reason || scienceQaSummary(qaVerdict),
-      technique_ids: candidate?.techniques.map(item => item.id) ?? [],
+      technique_ids: candidate?.techniques.map((item: { id: string }) => item.id) ?? [],
       created_at: existingFeedback?.created_at ?? now,
       updated_at: now,
     };
-    const existing = reportData.outfit_engine?.qa_feedback ?? [];
+    const existing: OutfitScienceQaFeedback[] = reportData.outfit_engine?.qa_feedback ?? [];
     const nextFeedback = [
       ...existing.filter(item => item.page_number !== pageNumber),
       feedback,
