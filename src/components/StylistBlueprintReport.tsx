@@ -855,14 +855,83 @@ function CoverPage({ page, data }: { page: BlueprintPage; data: StylistBlueprint
 }
 
 function SummaryPage({ page, data }: { page: BlueprintPage; data: StylistBlueprintReportData }) {
+  const { onPageChange, onReportDataChange } = useContext(EditableReportContext);
   const colourSummary = `Your palette is built from grounded neutrals you can wear every day, plus a smaller set of colours chosen to suit your skin.`;
-  const cards = [
-    ['01 - YOUR SHAPE', data.analysis.silhouette_profile, 'how your body reads', firstBody(page.blocks, data.classification.body.proportion_directive)],
-    ['02 - YOUR COLOURS', data.analysis.chromatic_family, `${data.classification.colour.depth} depth`, colourSummary],
-    ['03 - YOUR FACE', data.classification.face_hair_accessories.face_shape, 'necklines and collars', data.classification.face_hair_accessories.face_direction],
-    ['04 - YOUR STYLE', data.analysis.style_direction, data.classification.taste.moodboard, data.classification.client.lifestyle_summary],
+  // Everything on this page is read from the report-wide analysis, not from
+  // page blocks, so edits write back to the same fields the rest of the report
+  // reads. The titles mirror into classification the way the Analysis panel does.
+  const updateData = (patch: (current: StylistBlueprintReportData) => StylistBlueprintReportData) => onReportDataChange?.(patch(data));
+  const updateAnalysis = (field: 'silhouette_profile' | 'chromatic_family' | 'style_direction', value: string) => updateData(current => {
+    const classification = { ...current.classification };
+    if (field === 'silhouette_profile') classification.body = { ...classification.body, geometry: value };
+    if (field === 'chromatic_family') classification.colour = { ...classification.colour, palette_name: value };
+    if (field === 'style_direction') classification.taste = { ...classification.taste, style_archetype: value };
+    return { ...current, classification, analysis: { ...current.analysis, [field]: value } };
+  });
+  const updateClassification = <K extends keyof StylistBlueprintReportData['classification']>(
+    key: K,
+    patch: Partial<StylistBlueprintReportData['classification'][K]>,
+  ) => updateData(current => ({
+    ...current,
+    classification: { ...current.classification, [key]: { ...current.classification[key], ...patch } },
+  }));
+  const shapeBodyIndex = page.blocks.findIndex(block => block.body);
+  const shapeReasonIndex = page.blocks.findIndex(block => block.reason);
+  const updateShapeBody = (value: string) => {
+    if (shapeBodyIndex >= 0) onPageChange?.(updateBlock(page, shapeBodyIndex, { body: value }));
+    else if (shapeReasonIndex >= 0) onPageChange?.(updateBlock(page, shapeReasonIndex, { reason: value }));
+    else updateClassification('body', { proportion_directive: value });
+  };
+  type Card = {
+    label: string;
+    title: string;
+    onTitle: (value: string) => void;
+    sub: string;
+    onSub?: (value: string) => void;
+    body: string;
+    onBody?: (value: string) => void;
+  };
+  const cards: Card[] = [
+    {
+      label: '01 - YOUR SHAPE',
+      title: data.analysis.silhouette_profile,
+      onTitle: value => updateAnalysis('silhouette_profile', value),
+      sub: 'how your body reads',
+      body: firstBody(page.blocks, data.classification.body.proportion_directive),
+      onBody: updateShapeBody,
+    },
+    {
+      label: '02 - YOUR COLOURS',
+      title: data.analysis.chromatic_family,
+      onTitle: value => updateAnalysis('chromatic_family', value),
+      sub: `${data.classification.colour.depth} depth`,
+      body: colourSummary,
+    },
+    {
+      label: '03 - YOUR FACE',
+      title: data.classification.face_hair_accessories.face_shape,
+      onTitle: value => updateClassification('face_hair_accessories', { face_shape: value }),
+      sub: 'necklines and collars',
+      body: data.classification.face_hair_accessories.face_direction,
+      onBody: value => updateClassification('face_hair_accessories', { face_direction: value }),
+    },
+    {
+      label: '04 - YOUR STYLE',
+      title: data.analysis.style_direction,
+      onTitle: value => updateAnalysis('style_direction', value),
+      sub: data.classification.taste.moodboard,
+      onSub: value => updateClassification('taste', { moodboard: value }),
+      body: data.classification.client.lifestyle_summary,
+      onBody: value => updateClassification('client', { lifestyle_summary: value }),
+    },
   ];
   const focusAreas = data.analysis.proportional_focus.filter(area => area.trim());
+  // Clearing a chip's text removes it from the report.
+  const updateFocusArea = (index: number, value: string) => updateData(current => {
+    const areas = current.analysis.proportional_focus.filter(area => area.trim());
+    const next = areas.map((area, areaIndex) => areaIndex === index ? value : area).filter(area => area.trim());
+    return { ...current, analysis: { ...current.analysis, proportional_focus: next } };
+  });
   return (
     <PageFrame page={page} className="summary-page">
       <div className="summary-grid">
@@ -877,25 +946,39 @@ function SummaryPage({ page, data }: { page: BlueprintPage; data: StylistBluepri
           <h2><span className="display">Four things</span><span className="display-it">we found.</span></h2>
           <div className="rule" />
           <div className="dossier-cards">
-            {cards.map(([label, title, sub, body]) => (
-              <div key={label} className="dossier-card">
-                <div className="mono dossier-label">{label}</div>
-                <div className="display dossier-title">{title}</div>
-                <div className="display-it dossier-subtitle">{sub}</div>
+            {cards.map(card => (
+              <div key={card.label} className="dossier-card">
+                <div className="mono dossier-label">{card.label}</div>
+                <EditableNode as="div" className="display dossier-title" value={card.title} pageNumber={page.page_number} placeholder="Title" onCommit={value => { if (value) card.onTitle(value); }} />
+                {card.onSub
+                  ? <EditableNode as="div" className="display-it dossier-subtitle" value={card.sub} pageNumber={page.page_number} placeholder="Subtitle" onCommit={card.onSub} />
+                  : <div className="display-it dossier-subtitle">{card.sub}</div>}
                 <div className="rule-thin" />
-                <p>{body}</p>
+                {card.onBody
+                  ? <EditableNode as="p" value={card.body} pageNumber={page.page_number} placeholder="What this means for her" onCommit={card.onBody} />
+                  : <p>{card.body}</p>}
               </div>
             ))}
           </div>
           <div className="rule thesis-rule" />
           <div className="thesis">
             <div>
-              <p className="display-it">&quot;{page.pull_quote || data.classification.body.proportion_directive}&quot;</p>
+              <p className="display-it">
+                &quot;<EditableText
+                  page={page}
+                  value={page.pull_quote || data.classification.body.proportion_directive}
+                  update={value => ({ ...page, pull_quote: value })}
+                  placeholder="The one line she should remember"
+                />&quot;
+              </p>
               {focusAreas.length > 0 && (
                 <>
                   <div className="micro faded">What we keep coming back to</div>
                   <div className="focus-chips">
-                    {focusAreas.map(area => <span key={area} className="focus-chip">{area}</span>)}
+                    {/* Keyed by position: keying by text would remount the chip mid-edit and drop the caret. */}
+                    {focusAreas.map((area, index) => (
+                      <EditableNode key={index} as="span" className="focus-chip" value={area} pageNumber={page.page_number} onCommit={value => updateFocusArea(index, value)} />
+                    ))}
                   </div>
                 </>
               )}
