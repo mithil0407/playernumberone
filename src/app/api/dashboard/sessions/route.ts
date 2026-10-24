@@ -1,7 +1,9 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
+import { isAdminAuthenticated } from '@/lib/adminAuth';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  if (!isAdminAuthenticated(request)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   try {
     const { data, error } = await supabase
       .from('sessions')
@@ -13,7 +15,7 @@ export async function GET() {
       return NextResponse.json({ error: 'Failed to fetch sessions' }, { status: 500 });
     }
 
-    return NextResponse.json({ data });
+    return NextResponse.json({ data }, { headers: { 'Cache-Control': 'private, no-store' } });
   } catch (error) {
     console.error('Error in sessions API:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
