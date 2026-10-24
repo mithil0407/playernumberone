@@ -100,7 +100,7 @@ export default function OutfitRatingsSheet({ open, onClose, reportId, section4, 
   const ratings = useMemo(() => new Map((data?.feedback ?? []).map(row => [row.outfit_number, row])), [data]);
   const downCount = [...ratings.values()].filter(row => row.verdict === 'down').length;
   const upCount = [...ratings.values()].filter(row => row.verdict === 'up').length;
-  const tasteLed = data?.libraryVersion === 'v4-taste-led';
+  const tasteLed = data?.libraryVersion === 'v4-taste-led' || data?.libraryVersion === 'v5-portfolio';
 
   const rate = async (outfitNumber: number, verdict: Verdict | null, reasons: string[] = []) => {
     setSaving(outfitNumber);

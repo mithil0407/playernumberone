@@ -315,8 +315,50 @@ export interface ManClientColouring {
   soft: boolean;
   paletteFamilies: Set<ManColourFamily>;
   avoidFamilies: Set<ManColourFamily>;
+  /**
+   * v5: what his avoid list actually rules out. "Icy blue" rules out light blues,
+   * not navy or cobalt; "neon yellow" rules out loud yellows, not mustard.
+   */
+  avoidRules: ManAvoidRule[];
   /** From the intake white test. */
   whitePreference?: 'bright_white' | 'cream' | 'both' | 'avoids' | string;
+}
+
+export interface ManAvoidRule {
+  family: ManColourFamily;
+  /** Only this depth, e.g. icy/pale/pastel → light. */
+  depth?: ManColourInfo['depth'];
+  /** Only loud shades, e.g. neon/electric/hot. */
+  loud?: boolean;
+  /** Only stark, cool whites (optic/pure/stark white), not off-white or ivory. */
+  stark?: boolean;
+}
+
+const LIGHT_WORDS = /\b(icy|ice|pale|pastel|light|baby|powder|washed[-\s]out)\b/i;
+const LOUD_WORDS = /\b(neon|electric|hot|fluorescent|acid|vivid|bright|loud|saturated)\b/i;
+const STARK_WORDS = /\b(stark|optic|pure|bright|true|brilliant|snow)\b/i;
+
+/** Reads one avoid-list name into the shades it really rules out. */
+export function readManAvoidRule(name: string): ManAvoidRule | null {
+  const mention = findManColourMentions(name).at(-1);
+  if (!mention) return null;
+  const { family } = mention.info;
+  if (family === 'white' && STARK_WORDS.test(name)) return { family, stark: true };
+  if (LOUD_WORDS.test(name)) return { family, loud: true };
+  // Light blues are their own family: "icy blue" means pale and light blues, not navy or cobalt.
+  if (LIGHT_WORDS.test(name)) return family === 'blue' ? { family: 'light-blue' } : { family, depth: 'light' };
+  // A named shade rules out shades like it, not its whole family: "cobalt" is the loud blues, not navy or slate.
+  if (mention.info.loudness === 2) return { family, loud: true };
+  if (mention.info.depth === 'light' && !['white', 'cream', 'beige', 'light-blue', 'sage', 'pink'].includes(family)) return { family, depth: 'light' };
+  return { family };
+}
+
+/** v5: is this shade one his avoid list rules out? */
+export function isManColourAvoided(info: ManColourInfo, client: ManClientColouring): boolean {
+  return client.avoidRules.some(rule => rule.family === info.family
+    && (!rule.depth || info.depth === rule.depth)
+    && (!rule.loud || info.loudness === 2)
+    && (!rule.stark || info.temperature === 'cool'));
 }
 
 export function readManClientColouring(colour: {
@@ -340,12 +382,17 @@ export function readManClientColouring(colour: {
   ]);
   const avoidFamilies = families(colour.colours_to_avoid);
   for (const family of paletteFamilies) avoidFamilies.delete(family);
+  // A palette colour is never ruled out wholesale; a qualified avoid ("icy blue") still narrows it.
+  const avoidRules = (colour.colours_to_avoid ?? [])
+    .map(item => readManAvoidRule(item.name))
+    .filter((rule): rule is ManAvoidRule => Boolean(rule) && !(paletteFamilies.has(rule!.family) && !rule!.depth && !rule!.loud && !rule!.stark));
   return {
     temperature,
     depth,
     soft: /soft|muted/.test(season),
     paletteFamilies,
     avoidFamilies,
+    avoidRules,
     whitePreference,
   };
 }
@@ -362,6 +409,43 @@ export function scoreManColourNearFace(info: ManColourInfo, client: ManClientCol
     if (client.whitePreference === 'avoids') score -= 0.6;
     if (client.whitePreference === 'cream' && info.family === 'white') score -= 0.3;
     if (client.whitePreference === 'bright_white' && info.family === 'cream') score -= 0.1;
+  }
+  return Math.max(-1, Math.min(1, score));
+}
+
+/** Menswear neutrals: they go with anything, so they never count as one of his colours. */
+export function isManNeutralColour(info: ManColourInfo): boolean {
+  return info.loudness === 0;
+}
+
+/**
+ * v5: how good a colour looks near his face, -1 … +1, judged by the colour's
+ * own depth, brightness and temperature against his colouring. His palette is a
+ * nudge, not a gate: a warm-skinned man still wears navy, teal, cobalt or a
+ * slate blue well, because what clashes is an icy pastel or a neon, not a whole
+ * temperature. Neutrals sit in the safe middle and never score as a best colour.
+ */
+export function scoreManColourSuitability(info: ManColourInfo, client: ManClientColouring): number {
+  if (isManColourAvoided(info, client)) return -1;
+  const inPalette = client.paletteFamilies.has(info.family);
+  let score: number;
+  if (isManNeutralColour(info)) {
+    score = 0.35 + (inPalette ? 0.05 : 0);
+    // Stark and icy neutrals are what drain warm or deep skin; warm pales can flatten cool, fair skin.
+    if (client.temperature === 'warm' && info.temperature === 'cool' && info.depth === 'light') score -= 0.2;
+    if (client.temperature === 'cool' && client.depth === 'light' && ['beige', 'tan'].includes(info.family)) score -= 0.1;
+  } else {
+    score = 0.45 + (inPalette ? 0.3 : 0);
+    const strong = info.loudness === 2 || info.depth === 'light';
+    if (client.temperature === 'warm' && info.temperature === 'cool') score -= strong ? 0.35 : 0.05;
+    if (client.temperature === 'cool' && info.temperature === 'warm') score -= strong ? 0.45 : 0.15;
+    if (client.soft && info.loudness === 2) score -= 0.35;
+    if (client.depth === 'deep' && info.depth === 'light' && info.loudness >= 1) score -= 0.15;
+  }
+  if (client.depth === 'light' && info.family === 'black') score -= 0.4;
+  if (info.family === 'white' || info.family === 'cream') {
+    if (client.whitePreference === 'avoids') score -= 0.5;
+    if (client.whitePreference === 'cream' && info.family === 'white') score -= 0.25;
   }
   return Math.max(-1, Math.min(1, score));
 }
