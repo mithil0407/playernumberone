@@ -119,7 +119,12 @@ export async function POST(request: NextRequest) {
                 ...attribution,
             });
         } catch (dbErr) {
-            console.warn('Edit subscription DB save failed (non-fatal):', dbErr);
+            console.error('Edit subscription DB save failed:', dbErr);
+            return NextResponse.json({
+                success: false,
+                error_code: 'subscription_save_failed',
+                error: 'Could not prepare ICONIK Edit. Please try again.',
+            }, { status: 500 });
         }
 
         return NextResponse.json({

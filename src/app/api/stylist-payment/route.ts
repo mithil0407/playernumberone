@@ -1,3 +1,5 @@
+import { priceForDedicatedCheckout } from '@/lib/checkoutPricing';
+import { qualifiesForStylistEditDiscount } from '@/lib/stylistEditDiscount';
 import { NextRequest, NextResponse } from 'next/server';
 import { saveStyleScanLead, saveStylistOrder, supabaseStyleScan } from '@/lib/supabaseStyleScan';
 import { attributionToColumns, firstTouchAttribution } from '@/lib/attribution';
@@ -20,9 +22,12 @@ export async function POST(request: NextRequest) {
         const body = await request.json();
         const { customer_name, customer_email, customer_phone, amount } = body;
         let { lead_id } = body;
+        const editSelected = body.edit_selected === true;
+        const expectedPrice = priceForDedicatedCheckout('stylist', editSelected);
+        if (Number(amount) !== expectedPrice.amount) return NextResponse.json({ error: 'The checkout price changed. Please refresh and try again.' }, { status: 400 });
         const incomingAttribution = attributionToColumns(body.attribution);
 
-        if (!customer_email || !amount) {
+        if (typeof customer_email !== 'string' || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customer_email) || !amount) {
             return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
         }
 
@@ -30,8 +35,52 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ success: false, error: 'Payment gateway not configured.' }, { status: 500 });
         }
 
+        const razorpay = new Razorpay({
+            key_id: process.env.RAZORPAY_KEY_ID,
+            key_secret: process.env.RAZORPAY_KEY_SECRET,
+        });
+        const editSubscriptionId = editSelected && typeof body.edit_subscription_id === 'string'
+            ? body.edit_subscription_id.trim() : '';
+        if (editSelected) {
+            if (!/^sub_[A-Za-z0-9]+$/.test(editSubscriptionId)) {
+                return NextResponse.json({ error: 'Authorize ICONIK Edit before using the Blueprint discount.' }, { status: 403 });
+            }
+            const { data: savedEdit, error: editError } = await supabaseStyleScan
+                .from('style_edit_subscriptions')
+                .select('customer_email, razorpay_subscription_id, plan_id, plan_type, amount, currency')
+                .eq('razorpay_subscription_id', editSubscriptionId).maybeSingle();
+            if (editError) return NextResponse.json({ error: 'Could not verify ICONIK Edit. Please retry.' }, { status: 503 });
+            if (!savedEdit || savedEdit.customer_email?.trim().toLowerCase() !== customer_email.trim().toLowerCase()) {
+                return NextResponse.json({ error: 'An Edit subscription for this email is required.' }, { status: 403 });
+            }
+            try {
+                const activeEdit = await razorpay.subscriptions.fetch(editSubscriptionId);
+                if (activeEdit.status !== 'active') {
+                    const retryable = activeEdit.status === 'created' || activeEdit.status === 'authenticated';
+                    return NextResponse.json({
+                        error: retryable
+                            ? 'Your Edit authorization is still being confirmed. Please retry the Blueprint checkout shortly.'
+                            : 'An active ICONIK Edit subscription is required for the Blueprint discount.',
+                        error_code: retryable ? 'edit_not_ready' : 'edit_not_active',
+                    }, { status: retryable ? 409 : 403 });
+                }
+                if (!qualifiesForStylistEditDiscount({
+                    email: customer_email, subscriptionId: editSubscriptionId,
+                    monthlyPlanId: process.env.ICONIK_EDIT_MONTHLY_PLAN_ID_USD || '',
+                    saved: savedEdit, razorpay: activeEdit,
+                })) {
+                    return NextResponse.json({
+                        error: 'This Edit subscription does not qualify for the Blueprint discount.',
+                        error_code: 'edit_ineligible',
+                    }, { status: 403 });
+                }
+            } catch {
+                return NextResponse.json({ error: 'Could not verify ICONIK Edit. Please retry.' }, { status: 503 });
+            }
+        }
+
         const orderId = `stylist_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-        const amountInCents = Math.round(amount * 100);
+        const amountInCents = expectedPrice.amount * 100;
 
         let dbOrderId = 'mock-order-id';
 
@@ -92,7 +141,7 @@ export async function POST(request: NextRequest) {
                 customer_email,
                 customer_name,
                 customer_phone,
-                amount,
+                amount: expectedPrice.amount,
                 currency: 'USD',
                 status: 'pending',
                 razorpay_order_id: orderId,
@@ -121,15 +170,11 @@ export async function POST(request: NextRequest) {
                     .eq('id', lead_id);
             }
         } catch (err) {
-            console.log('Stylist payment Supabase error, using mock IDs:', err);
+            console.error('Stylist payment order save failed:', err);
+            return NextResponse.json({ error: 'Could not create your order. Please try again.' }, { status: 500 });
         }
 
         try {
-            const razorpay = new Razorpay({
-                key_id: process.env.RAZORPAY_KEY_ID!,
-                key_secret: process.env.RAZORPAY_KEY_SECRET!,
-            });
-
             const razorpayOrder = await razorpay.orders.create({
                 amount: amountInCents,
                 currency: 'USD',
@@ -141,6 +186,7 @@ export async function POST(request: NextRequest) {
                     base_product: 'ICONIK Style Blueprint',
                     service: 'ICONIK Stylist Blueprint',
                     db_order_id: dbOrderId,
+                    edit_subscription_id: editSubscriptionId,
                     lead_id: lead_id || '',
                     utm_source: incomingAttribution.utm_source || '',
                     utm_medium: incomingAttribution.utm_medium || '',
@@ -151,10 +197,11 @@ export async function POST(request: NextRequest) {
 
             if (!razorpayOrder?.id) throw new Error('Failed to create Razorpay order');
 
-            await supabaseStyleScan
+            const { error: updateIdError } = await supabaseStyleScan
                 .from('stylist_orders')
                 .update({ razorpay_order_id: razorpayOrder.id })
                 .eq('id', dbOrderId);
+            if (updateIdError) throw updateIdError;
 
             return NextResponse.json({
                 success: true,
