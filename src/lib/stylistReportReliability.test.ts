@@ -101,8 +101,17 @@ test('each contents section is one unbroken run once the manual moves', () => {
 });
 
 test('a stylist who reordered pages by hand keeps their order', () => {
-  const handOrder = [1, 3, 2, ...Array.from({ length: 52 }, (_, index) => index + 4)];
+  const range = (from: number, to: number) => Array.from({ length: to - from + 1 }, (_, index) => from + index);
+  const handOrder = [1, 3, 2, ...range(4, 16), ...range(31, 51), ...range(17, 30), ...range(52, 55)];
   assert.deepEqual(getVisibleStylistBlueprintPages(allPages(handOrder), {}).map(page => page.page_number), handOrder);
+});
+
+test('a hand order saved manual-first still shows the outfits before the manual', () => {
+  // What the move buttons used to save: one swap on top of the numbered order.
+  const range = (from: number, to: number) => Array.from({ length: to - from + 1 }, (_, index) => from + index);
+  const saved = [1, 3, 2, ...range(4, 55)];
+  const order = getVisibleStylistBlueprintPages(allPages(saved), {}).map(page => page.page_number);
+  assert.deepEqual(order, [1, 3, 2, ...range(4, 16), ...range(31, 51), ...range(17, 30), ...range(52, 55)]);
 });
 
 test('truthy string approvals and nonexistent pages cannot bypass review', () => {

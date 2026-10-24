@@ -1862,8 +1862,6 @@ function OutfitPage({ page, data, imageUrls }: { page: BlueprintPage; data: Styl
           <p className="display-it outfit-quote">&quot;<EditableText page={page} value={quoteText || data.classification.body.proportion_directive} update={value => ({ ...page, pull_quote: value })} />&quot;</p>
           <div className="rule" />
           <div className="outfit-meta">
-            <div className="mono faded">Occasion</div>
-            <EditableText as="p" page={page} value={page.subtitle || getField(page.blocks[0], ['body'], 'Context-specific formula')} update={value => ({ ...page, subtitle: value })} />
             <div className="mono faded">Palette</div>
             <div>{palette.map((colour, index) => <SwatchDot key={`${colour.hex}-${colour.name}-${index}`} hex={colour.hex} />)}</div>
             <div className="mono faded">Why it works</div>

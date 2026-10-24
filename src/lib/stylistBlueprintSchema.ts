@@ -242,6 +242,42 @@ export function getStylistBlueprintReadingOrder(dataOrVersion?: Pick<StylistBlue
   return order;
 }
 
+/**
+ * Every page number in the order the report reads, for the studio, its move
+ * buttons and the client link alike. A stylist who has reordered pages by hand
+ * keeps her order; anything else — no stored order, or the untouched 1..N order
+ * some studio actions write — reads in the layout's reading order.
+ *
+ * Either way the outfits read before the wardrobe manual. The move buttons used
+ * to start from the numbered order, so a single move saved the manual ahead of
+ * the outfits and the client link went back to fourteen text pages first.
+ */
+export function getStylistBlueprintPageOrder(data: Pick<StylistBlueprintReportData, 'version' | 'studio'>): number[] {
+  const pageCount = getStylistBlueprintPageCount(data);
+  const stored = data.studio?.page_order ?? [];
+  const stylistReordered = stored.length === pageCount && stored.some((pageNumber, index) => pageNumber !== index + 1);
+  const order = stylistReordered
+    ? [...stored]
+    : getStylistBlueprintReadingOrder(data) ?? Array.from({ length: pageCount }, (_, index) => index + 1);
+  return withOutfitsBeforeManual(order, data);
+}
+
+function withOutfitsBeforeManual(order: number[], data: Pick<StylistBlueprintReportData, 'version'>): number[] {
+  const manual = getStylistBlueprintWardrobeManualRange(data);
+  if (!manual) return order;
+  const outfitFirst = getStylistBlueprintOutfitSystemPage(data);
+  const outfitLast = getStylistBlueprintOutfitEndPage(data);
+  const isOutfit = (pageNumber: number) => pageNumber >= outfitFirst && pageNumber <= outfitLast;
+  const isManual = (pageNumber: number) => pageNumber >= manual.firstPage && pageNumber <= manual.lastPage;
+  const firstManualAt = order.findIndex(isManual);
+  const lastOutfitAt = order.reduce((last, pageNumber, index) => (isOutfit(pageNumber) ? index : last), -1);
+  if (firstManualAt < 0 || lastOutfitAt < firstManualAt) return order;
+  // Lift the outfit run, keeping the stylist's order inside it, to just ahead of the manual.
+  const rest = order.filter(pageNumber => !isOutfit(pageNumber));
+  const at = rest.findIndex(isManual);
+  return [...rest.slice(0, at), ...order.filter(isOutfit), ...rest.slice(at)];
+}
+
 export function getStylistBlueprintContinuationPage(dataOrVersion?: Pick<StylistBlueprintReportData, 'version'> | string | null) {
   return getStylistBlueprintPageCount(dataOrVersion);
 }
@@ -333,12 +369,7 @@ function getVisibleLayoutPages<T extends { page_number: number }>(
 ): T[] {
   const continuationPage = getStylistBlueprintContinuationPage(data);
   const hiddenPages = new Set(data.studio?.hidden_page_numbers ?? []);
-  // A stylist who has reordered pages by hand wins. Anything else — no stored
-  // order, or the untouched 1..N identity order some studio actions write —
-  // reads in the layout's own order, which puts the outfits before the manual.
-  const storedOrder = data.studio?.page_order ?? [];
-  const stylistReordered = storedOrder.length > 0 && storedOrder.some((pageNumber, index) => pageNumber !== index + 1);
-  const order = stylistReordered ? storedOrder : getStylistBlueprintReadingOrder(data) ?? storedOrder;
+  const order = getStylistBlueprintPageOrder(data);
   const orderIndex = new Map(order.map((pageNumber, index) => [pageNumber, index]));
   return [...data.pages]
     .filter(page => !options.hideContinuationPage || page.page_number !== continuationPage)
