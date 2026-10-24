@@ -57,7 +57,7 @@ export async function middleware(request: NextRequest) {
   }
 
   // ── 1. Admin routes: simple cookie check ────────────────────────────────
-  if (pathname.startsWith('/iconik-club/admin')) {
+  if (pathname.startsWith('/iconik-club/admin') || pathname === '/dashboard' || pathname.startsWith('/dashboard/')) {
     if (!pathname.startsWith('/iconik-club/admin/login')) {
       if (!isAdminAuthenticated(request)) {
         const loginUrl = new URL('/iconik-club/admin/login', request.url);

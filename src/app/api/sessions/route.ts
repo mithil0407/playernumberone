@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import { updateSessionInSheet } from '@/lib/googleSheets';
+import { isAdminAuthenticated } from '@/lib/adminAuth';
 
 export async function POST(request: NextRequest) {
+  if (!isAdminAuthenticated(request)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   try {
     // Check if Supabase is properly configured
     if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
@@ -14,7 +16,6 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    console.log('Sessions API received:', body);
     
     const { customer_id, order_id, scheduled_date, scheduled_time, status } = body;
 
@@ -152,7 +153,8 @@ export async function POST(request: NextRequest) {
   }
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  if (!isAdminAuthenticated(request)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   try {
     // Check if Supabase is properly configured
     if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
