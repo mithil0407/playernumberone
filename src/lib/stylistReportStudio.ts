@@ -1,5 +1,5 @@
 import type { BlueprintBlock, BlueprintColourUse, BlueprintPage, StylistBlueprintReportData } from './stylistBlueprintGenerator.ts';
-import { getStylistBlueprintOutfitEndPage, getStylistBlueprintOutfitStartPage, getStylistBlueprintPageCount } from './stylistBlueprintSchema.ts';
+import { getStylistBlueprintOutfitEndPage, getStylistBlueprintOutfitStartPage, getStylistBlueprintPageCount, getStylistBlueprintPageOrder } from './stylistBlueprintSchema.ts';
 
 type RecordValue = Record<string, unknown>;
 
@@ -74,10 +74,8 @@ export function formatOutfitDraft(draft: string, existingPage: BlueprintPage): B
 }
 
 export function moveStudioPage(data: StylistBlueprintReportData, pageNumber: number, direction: -1 | 1): StylistBlueprintReportData {
-  const pageCount = getStylistBlueprintPageCount(data);
-  const order = data.studio?.page_order?.length === pageCount
-    ? [...data.studio.page_order]
-    : Array.from({ length: pageCount }, (_, index) => index + 1);
+  // Move within the order the stylist sees, not the numbered order underneath it.
+  const order = getStylistBlueprintPageOrder(data);
   const from = order.indexOf(pageNumber);
   const to = from + direction;
   if (from < 0 || to < 0 || to >= order.length) return data;

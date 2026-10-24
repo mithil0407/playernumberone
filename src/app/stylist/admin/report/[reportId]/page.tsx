@@ -45,13 +45,12 @@ import type { LegacyStylistBlueprintReportData, StylistBlueprintReportData } fro
 import {
   STYLIST_BLUEPRINT_LEGACY_VERSION,
   STYLIST_BLUEPRINT_VERSION,
-  getStylistBlueprintContinuationPage,
   getStylistBlueprintOutfitEndPage,
   getStylistBlueprintOutfitStartPage,
-  getStylistBlueprintOutfitSystemPage,
   getStylistBlueprintPageCount,
   getStylistBlueprintPalettePage,
   getStylistBlueprintRulesStartPage,
+  getVisibleStylistBlueprintPages,
   isVersionedStylistBlueprintReportData,
 } from '@/lib/stylistBlueprintSchema';
 import type { ResolvedStylistBlueprintImageUrls, StylistBlueprintImageGroup, StylistBlueprintImageSlotKey } from '@/lib/stylistBlueprintImageGenerator';
@@ -62,7 +61,6 @@ import type { StylistReportRevision } from '@/lib/stylistReportRevisions';
 import {
   findRevisedOutfit,
   isRevisedOutfitPageNumber,
-  orderedRevisedOutfits,
   removeRevisedOutfit,
   replaceRevisedOutfitPage,
   revisedOutfitIssues,
@@ -386,17 +384,10 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
   const reviewData = draftData ?? versioned;
   const hideContinuationPage = isManualReportIntake(report?.stylist_intake_responses ?? null);
   const visiblePages = useMemo(() => {
-    const rawPages = reviewData?.pages ?? [];
-    if (!reviewData) return rawPages;
-    const continuationPage = getStylistBlueprintContinuationPage(reviewData);
-    const orderIndex = new Map((reviewData.studio?.page_order ?? []).map((pageNumber, index) => [pageNumber, index]));
-    const layout = rawPages
-      .filter(page => !hideContinuationPage || page.page_number !== continuationPage)
-      .sort((a, b) => (orderIndex.get(a.page_number) ?? a.page_number) - (orderIndex.get(b.page_number) ?? b.page_number));
-    // Revised looks sit just before the outfits, where the client reads them.
-    const revised = orderedRevisedOutfits(reviewData).map(entry => entry.page);
-    const at = layout.findIndex(page => page.page_number === getStylistBlueprintOutfitSystemPage(reviewData) || page.page_number === getStylistBlueprintOutfitStartPage(reviewData));
-    return at < 0 ? [...layout, ...revised] : [...layout.slice(0, at), ...revised, ...layout.slice(at)];
+    if (!reviewData) return [];
+    // The same order the client link reads in, including hidden pages and
+    // unstarted revised looks the stylist still has to work on.
+    return getVisibleStylistBlueprintPages(reviewData, { hideContinuationPage, includeHidden: true });
   }, [hideContinuationPage, reviewData]);
   const pages = visiblePages;
   const activePage = pages.find(page => page.page_number === activePageNumber) ?? pages[0] ?? null;

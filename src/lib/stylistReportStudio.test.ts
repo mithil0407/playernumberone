@@ -48,8 +48,10 @@ test('module order moves independently of canonical page numbers', () => {
     studio: { analysis_confirmed: false, hidden_page_numbers: [], page_order: Array.from({ length: 55 }, (_, index) => index + 1) },
   } as unknown as StylistBlueprintReportData;
   const moved = moveStudioPage(data, 22, -1);
-  assert.equal(moved.studio?.page_order[20], 22);
-  assert.equal(moved.studio?.page_order[21], 21);
+  const order = moved.studio!.page_order;
+  assert.equal(order.indexOf(22) + 1, order.indexOf(21));
+  // The move starts from the reading order, so the outfits still lead the manual.
+  assert.ok(order.indexOf(getStylistBlueprintOutfitStartPage(STYLIST_BLUEPRINT_VERSION)) < order.indexOf(17));
 });
 
 test('quality check blocks delivery for unconfirmed analysis and incomplete outfit formulas', () => {
