@@ -220,6 +220,7 @@ function AUIntakePageInner() {
     const [submitError, setSubmitError] = useState('');
     const [direction, setDirection] = useState(1);
     const [contactPrefilled, setContactPrefilled] = useState(false);
+    const [paymentId, setPaymentId] = useState('');
 
     const [form, setForm] = useState<FormState>({
         email: '',
@@ -241,13 +242,15 @@ function AUIntakePageInner() {
     useEffect(() => {
         const urlEmail = searchParams.get('email') || '';
         const urlPhone = searchParams.get('phone') || '';
+        const resolvedPaymentId = searchParams.get('payment_id') || sessionStorage.getItem('au_purchaseTracked') || '';
+        setPaymentId(resolvedPaymentId);
         const lsEmail = typeof window !== 'undefined' ? localStorage.getItem('au_customerEmail') || '' : '';
         const lsPhone = typeof window !== 'undefined' ? localStorage.getItem('au_customerPhone') || '' : '';
         const resolvedEmail = urlEmail || lsEmail;
         const resolvedPhone = urlPhone || lsPhone;
         if (resolvedEmail || resolvedPhone) {
             setForm(prev => ({ ...prev, email: resolvedEmail, phone: resolvedPhone }));
-            if (resolvedEmail && resolvedPhone) setContactPrefilled(true);
+            if (resolvedEmail && resolvedPhone && resolvedPaymentId) setContactPrefilled(true);
         }
     }, [searchParams]);
 
@@ -290,15 +293,15 @@ function AUIntakePageInner() {
             if (form.photoFullBody) {
                 try {
                     const baseName = form.photoFullBody.name.replace(/\.[^.]+$/, '');
-                    photoFullBodyUrl = await uploadAUIntakePhoto(form.photoFullBody, `${Date.now()}_fullbody_${baseName}.jpg`);
-                } catch (err) { console.warn('Full body photo upload failed:', err); }
+                    photoFullBodyUrl = await uploadAUIntakePhoto(form.photoFullBody, `${Date.now()}_fullbody_${baseName}.jpg`, { customerEmail: form.email, paymentId });
+                } catch (err) { throw new Error(`Full body photo upload failed: ${err instanceof Error ? err.message : 'please retry'}`); }
             }
 
             if (form.photoHeadshot) {
                 try {
                     const baseName = form.photoHeadshot.name.replace(/\.[^.]+$/, '');
-                    photoHeadshotUrl = await uploadAUIntakePhoto(form.photoHeadshot, `${Date.now()}_headshot_${baseName}.jpg`);
-                } catch (err) { console.warn('Headshot upload failed:', err); }
+                    photoHeadshotUrl = await uploadAUIntakePhoto(form.photoHeadshot, `${Date.now()}_headshot_${baseName}.jpg`, { customerEmail: form.email, paymentId });
+                } catch (err) { throw new Error(`Headshot upload failed: ${err instanceof Error ? err.message : 'please retry'}`); }
             }
 
             await saveAUIntakeSubmission({
@@ -316,14 +319,14 @@ function AUIntakePageInner() {
                 style_outcome: form.styleOutcome,
                 style_restrictions: form.coveragePrefs.join(','),
                 hair_type: form.hairType.join(','),
-            });
+            }, paymentId);
 
             trackCompleteRegistration(97, 'ICONIK Blueprint AU — Intake Submitted', 'AUD');
             setDirection(1);
             setStep(CONFIRMATION_STEP);
         } catch (err) {
             console.error('Intake submit error:', err);
-            setSubmitError('Something went wrong. Please try again or email help.iconikfashion@gmail.com');
+            setSubmitError(err instanceof Error ? err.message : 'Something went wrong. Please try again or email help.iconikfashion@gmail.com');
         } finally {
             setSubmitting(false);
         }
@@ -334,7 +337,7 @@ function AUIntakePageInner() {
     const stepValid = useCallback((): boolean => {
         switch (step) {
             case 0: return true;
-            case 1: return form.email.includes('@') && form.phone.length >= 8;
+            case 1: return form.email.includes('@') && form.phone.length >= 8 && /^pay_[A-Za-z0-9_-]{8,64}$/.test(paymentId);
             case 2: return !!form.photoFullBody;
             case 3: return !!form.photoHeadshot;
             case 4: return form.frustrations.length >= 1 || form.frustrationsCustom.trim().length > 0;
@@ -444,6 +447,10 @@ function AUIntakePageInner() {
                                             <div>
                                                 <label className="block text-sm font-semibold luxury-body text-luxury-charcoal/70 mb-2">Phone Number *</label>
                                                 <input type="tel" value={form.phone} onChange={e => setForm(p => ({ ...p, phone: e.target.value.replace(/[^\d\s+()-]/g, '') }))} className="w-full px-4 py-4 border-2 border-luxury-cream rounded-xl focus:ring-2 focus:ring-luxury-accent focus:border-luxury-accent transition-all text-base bg-white luxury-body" placeholder="04XX XXX XXX" />
+                                            </div>
+                                            <div>
+                                                <label className="block text-sm font-semibold luxury-body text-luxury-charcoal/70 mb-2">Payment reference *</label>
+                                                <input type="text" value={paymentId} onChange={e => setPaymentId(e.target.value.trim())} className="w-full px-4 py-4 border-2 border-luxury-cream rounded-xl focus:ring-2 focus:ring-luxury-accent transition-all text-base bg-white luxury-body" placeholder="pay_... from your receipt" />
                                             </div>
                                         </div>
                                     )}
