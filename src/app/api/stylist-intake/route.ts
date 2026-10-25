@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseStyleScan } from '@/lib/supabaseStyleScan';
-import { findPaidGlobeOrderByEmail, mirrorPaidGlobeOrderToStylist } from '@/lib/globeStylistMirror';
+import { findPaidStylistIntakeOrder } from '@/lib/stylistIntakeAccess';
 import { sendStylistIntakeNotificationEmail, sendStylistIntakeReceivedEmail } from '@/lib/email';
 
 function cleanEmail(value: string | null) {
@@ -39,41 +39,20 @@ function errorSummary(error: unknown) {
     };
 }
 
-async function findPaidOrder(email: string) {
-    const { data, error } = await supabaseStyleScan
-        .from('stylist_orders')
-        .select('*')
-        .ilike('customer_email', email)
-        .eq('status', 'paid')
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-    if (error) throw error;
-    if (data) return data;
-
-    const globeOrder = await findPaidGlobeOrderByEmail(email);
-    if (!globeOrder) return null;
-
-    return mirrorPaidGlobeOrderToStylist({
-        globeOrder,
-        customerEmail: email,
-    });
-}
-
 export async function GET(request: NextRequest) {
     const email = cleanEmail(request.nextUrl.searchParams.get('email'));
+    const paymentId = request.nextUrl.searchParams.get('payment_id');
     try {
-        if (!email) {
-            return NextResponse.json({ success: false, error: 'Missing email' }, { status: 400 });
+        if (!email || !paymentId) {
+            return NextResponse.json({ success: false, error: 'Missing purchase access details' }, { status: 401 });
         }
 
-        const order = await findPaidOrder(email);
+        const order = await findPaidStylistIntakeOrder(email, paymentId);
         if (!order) {
             return NextResponse.json({ success: false, error: 'No paid Stylist Blueprint order found for this email.' }, { status: 403 });
         }
 
-        const { data: existingIntake } = await supabaseStyleScan
+        const { data: existingIntake, error: existingIntakeError } = await supabaseStyleScan
             .from('stylist_intake_responses')
             .select([
                 'id',
@@ -102,8 +81,9 @@ export async function GET(request: NextRequest) {
             .order('created_at', { ascending: false })
             .limit(1)
             .maybeSingle();
+        if (existingIntakeError) throw existingIntakeError;
 
-        return NextResponse.json({ success: true, order, existingIntake });
+        return NextResponse.json({ success: true, order, existingIntake }, { headers: { 'Cache-Control': 'no-store' } });
     } catch (error) {
         console.error('Stylist intake access error:', {
             email,
@@ -125,11 +105,11 @@ export async function POST(request: NextRequest) {
         const body = await request.json();
         const email = cleanEmail(body.customer_email);
         logContext.email = email;
-        if (!email) {
-            return NextResponse.json({ success: false, error: 'Missing customer_email' }, { status: 400 });
+        if (!email || !body.payment_id) {
+            return NextResponse.json({ success: false, error: 'Missing purchase access details' }, { status: 401 });
         }
 
-        const order = await findPaidOrder(email);
+        const order = await findPaidStylistIntakeOrder(email, body.payment_id);
         if (!order) {
             return NextResponse.json({ success: false, error: 'No paid Stylist Blueprint order found for this email.' }, { status: 403 });
         }

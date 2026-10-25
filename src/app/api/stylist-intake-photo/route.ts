@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
+import { findPaidStylistIntakeOrder } from '@/lib/stylistIntakeAccess';
 
 const BUCKET = 'stylist-intake-photos';
 const MAX_FILE_SIZE = 12 * 1024 * 1024;
@@ -34,7 +35,10 @@ function extensionFor(fileName: string, contentType: string) {
 }
 
 async function prepareDirectUpload(request: NextRequest) {
-  const body = await request.json() as { fileName?: unknown; contentType?: unknown; size?: unknown };
+  const body = await request.json() as { fileName?: unknown; contentType?: unknown; size?: unknown; customer_email?: unknown; payment_id?: unknown };
+  if (!await findPaidStylistIntakeOrder(body.customer_email, body.payment_id)) {
+    return NextResponse.json({ error: 'Purchase access required' }, { status: 403 });
+  }
   const fileName = safeFileName(String(body.fileName || 'stylist-upload.jpg'));
   const contentType = String(body.contentType || 'image/jpeg').toLowerCase();
   const size = Number(body.size || 0);
@@ -126,6 +130,9 @@ export async function POST(request: NextRequest) {
     }
 
     const formData = await request.formData();
+    if (!await findPaidStylistIntakeOrder(formData.get('customer_email'), formData.get('payment_id'))) {
+      return NextResponse.json({ error: 'Purchase access required' }, { status: 403 });
+    }
     const file = formData.get('file');
     const fileName = safeFileName(String(formData.get('fileName') || 'stylist-upload.jpg'));
     uploadContext.fileName = fileName;

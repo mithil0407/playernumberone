@@ -141,6 +141,8 @@ function StylistSuccessInner() {
     const intakeParams = new URLSearchParams();
     if (email) intakeParams.set('email', email);
     if (phone) intakeParams.set('phone', phone);
+    const paymentId = searchParams.get('payment_id') || '';
+    if (paymentId) intakeParams.set('payment_id', paymentId);
     const intakeHref = `/stylist/intake${intakeParams.toString() ? `?${intakeParams.toString()}` : ''}`;
 
     // Edit state

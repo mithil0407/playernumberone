@@ -885,7 +885,7 @@ export async function sendGlobeOrderConfirmationEmail(
   try {
     const transporter = getTransporter();
     const firstName = data.customer_name.split(' ')[0] || 'there';
-    const intakeLink = `https://www.iconik.pro/stylist/intake?email=${encodeURIComponent(data.customer_email)}&phone=${encodeURIComponent(data.customer_phone)}`;
+    const intakeLink = `https://www.iconik.pro/stylist/intake?email=${encodeURIComponent(data.customer_email)}&payment_id=${encodeURIComponent(data.payment_id || '')}`;
     const subject = `✅ Your ICONIK Blueprint is confirmed — complete your intake to unlock it`;
     const text = `Hi ${firstName},\n\nThank you for purchasing your ICONIK Blueprint (USD $${data.order_amount}).\n\nYour Blueprint cannot be prepared until you complete your 4-minute intake form:\n${intakeLink}\n\nAfter your 30-minute consultation, your Blueprint will be delivered within 5 working days.\n\nBest regards,\nThe ICONIK Team\nhelp.iconikfashion@gmail.com`;
 
@@ -960,7 +960,7 @@ export async function sendStylistOrderConfirmationEmail(
     const firstName = htmlEscape(data.customer_name.split(' ')[0] || 'there');
     const email = htmlEscape(data.customer_email);
     const phone = htmlEscape(data.customer_phone || '');
-    const intakeLink = `https://www.iconik.pro/stylist/intake?email=${encodeURIComponent(data.customer_email)}&phone=${encodeURIComponent(data.customer_phone)}`;
+    const intakeLink = `https://www.iconik.pro/stylist/intake?email=${encodeURIComponent(data.customer_email)}&payment_id=${encodeURIComponent(data.payment_id || '')}`;
     const amount = Number(data.order_amount || 0).toFixed(0);
 
     const subject = `Your ICONIK Style Blueprint is confirmed`;

@@ -391,6 +391,7 @@ function StylistIntakeInner() {
     const searchParams = useSearchParams();
     const [step, setStep] = useState(0);
     const [accessEmail, setAccessEmail] = useState('');
+    const [accessPaymentId, setAccessPaymentId] = useState('');
     const [accessState, setAccessState] = useState<'idle' | 'checking' | 'allowed' | 'denied'>('idle');
     const [accessError, setAccessError] = useState('');
     const [order, setOrder] = useState<Record<string, unknown> | null>(null);
@@ -441,12 +442,12 @@ function StylistIntakeInner() {
         priorServiceResult: lifestyle.priorService === 'Yes, I have tried one before',
     };
 
-    const verifyAccess = useCallback(async (email: string, fallbackPhone = '') => {
-        if (!email) return;
+    const verifyAccess = useCallback(async (email: string, paymentId: string, fallbackPhone = '') => {
+        if (!email || !paymentId) return;
         setAccessState('checking');
         setAccessError('');
         try {
-            const res = await fetch(`/api/stylist-intake?email=${encodeURIComponent(email)}`);
+            const res = await fetch(`/api/stylist-intake?email=${encodeURIComponent(email)}&payment_id=${encodeURIComponent(paymentId)}`);
             const data = await res.json();
             if (!res.ok || !data.success) throw new Error(data.error || 'Unable to verify purchase');
             setOrder(data.order);
@@ -540,7 +541,9 @@ function StylistIntakeInner() {
     useEffect(() => {
         const email = searchParams.get('email') || localStorage.getItem('stylist_customerEmail') || '';
         const phone = searchParams.get('phone') || localStorage.getItem('stylist_customerPhone') || '';
+        const paymentId = searchParams.get('payment_id') || '';
         setAccessEmail(email);
+        setAccessPaymentId(paymentId);
         if (phone) {
             setProfile(prev => ({
                 ...prev,
@@ -548,7 +551,7 @@ function StylistIntakeInner() {
                 country: prev.country || deriveCountryFromPhone(phone),
             }));
         }
-        if (email) verifyAccess(email, phone);
+        if (email && paymentId) verifyAccess(email, paymentId, phone);
     }, [searchParams, verifyAccess]);
 
     const toggleArray = <T extends string,>(value: T, values: T[], setter: (next: T[]) => void) => {
@@ -595,7 +598,10 @@ function StylistIntakeInner() {
     const uploadOne = async (file: File | undefined, key: string) => {
         if (!file) return null;
         const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '-');
-        return uploadStyleScanPhoto(file, `${Date.now()}_stylist_${key}_${safeName}`);
+        return uploadStyleScanPhoto(file, `${Date.now()}_stylist_${key}_${safeName}`, {
+            customerEmail: accessEmail,
+            paymentId: accessPaymentId,
+        });
     };
 
     const requiredPhotoMissing = () => requiredPhotoKeys.filter(key => {
@@ -699,6 +705,7 @@ function StylistIntakeInner() {
             const completionPercentage = selectedMoodboard ? 100 : Math.max(65, progress);
             await postIntake({
                 customer_email: accessEmail,
+                payment_id: accessPaymentId,
                 customer_phone: profile.phone,
                 full_name: profile.fullName,
                 age_range: profile.ageRange,
@@ -749,7 +756,7 @@ function StylistIntakeInner() {
                 <div className="w-full max-w-md rounded-2xl p-6 border" style={{ background: 'var(--luxury-warm-white)', borderColor: 'var(--luxury-cream)' }}>
                     <div className="iconik-micro text-luxury-charcoal/35 mb-4">ICONIK Intake</div>
                     <h1 className="iconik-display text-luxury-charcoal mb-3" style={{ fontSize: '28px' }}>Verify your Blueprint purchase</h1>
-                    <p className="luxury-body text-luxury-charcoal/50 text-sm mb-5" style={{ fontWeight: 300 }}>Enter the email used at checkout.</p>
+                    <p className="luxury-body text-luxury-charcoal/50 text-sm mb-5" style={{ fontWeight: 300 }}>Open the link in your order confirmation email, or enter the email and payment ID from your receipt.</p>
                     <input
                         value={accessEmail}
                         onChange={e => setAccessEmail(e.target.value)}
@@ -757,9 +764,16 @@ function StylistIntakeInner() {
                         style={{ border: '1.5px solid var(--luxury-cream)', background: 'var(--luxury-warm-white)' }}
                         placeholder="your@email.com"
                     />
+                    <input
+                        value={accessPaymentId}
+                        onChange={e => setAccessPaymentId(e.target.value.trim())}
+                        className="w-full rounded-xl px-4 py-3 mb-3 luxury-body outline-none"
+                        style={{ border: '1.5px solid var(--luxury-cream)', background: 'var(--luxury-warm-white)' }}
+                        placeholder="Payment ID"
+                    />
                     {accessError && <p className="luxury-body text-red-600 text-sm mb-3">{accessError}</p>}
                     <button
-                        onClick={() => verifyAccess(accessEmail)}
+                        onClick={() => verifyAccess(accessEmail, accessPaymentId)}
                         disabled={accessState === 'checking'}
                         className="w-full rounded-full py-3 luxury-body disabled:opacity-50"
                         style={{ background: 'var(--luxury-charcoal)', color: 'var(--luxury-warm-white)' }}
