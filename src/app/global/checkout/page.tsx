@@ -160,6 +160,7 @@ export default function GlobalCheckoutPage() {
                                     stylist_order_id: data.stylist_order_id,
                                     razorpay_payment_id: rzpResponse.razorpay_payment_id,
                                     razorpay_order_id: rzpResponse.razorpay_order_id,
+                                    razorpay_signature: rzpResponse.razorpay_signature,
                                     customer_name: email.split('@')[0],
                                     customer_email: email,
                                     customer_phone: phone,

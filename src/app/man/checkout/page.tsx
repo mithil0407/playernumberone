@@ -320,6 +320,7 @@ export default function ManCheckoutPage() {
                     db_order_id: responseData.db_order_id,
                     razorpay_payment_id: response.razorpay_payment_id,
                     razorpay_order_id: response.razorpay_order_id,
+                    razorpay_signature: response.razorpay_signature,
                     customer_email: formData.email,
                     customer_phone: formData.phone,
                     amount: totalAmount,

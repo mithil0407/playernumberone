@@ -148,6 +148,7 @@ export default function AUCheckoutPage() {
                                     db_order_id: data.db_order_id,
                                     razorpay_payment_id: rzpResponse.razorpay_payment_id,
                                     razorpay_order_id: rzpResponse.razorpay_order_id,
+                                    razorpay_signature: rzpResponse.razorpay_signature,
                                     // Pass customer details for order confirmation email
                                     customer_name: email.split('@')[0],
                                     customer_email: email,
