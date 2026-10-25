@@ -187,8 +187,16 @@ function readCachedPhotoUrls(email: string, orderId: unknown): Record<string, st
     if (typeof window === 'undefined' || !email) return {};
     try {
         const parsed = JSON.parse(localStorage.getItem(photoUploadCacheKey(email, orderId)) || '{}') as Record<string, unknown>;
+        const projectOrigin = new URL(process.env.NEXT_PUBLIC_SUPABASE_URL || '').origin;
+        const privatePrefix = `/storage/v1/object/sign/stylist-intake-private/orders/${String(orderId)}/`;
         return Object.fromEntries(
-            Object.entries(parsed).filter(([, value]) => typeof value === 'string' && value.trim()),
+            Object.entries(parsed).filter(([, value]) => {
+                if (typeof value !== 'string') return false;
+                try {
+                    const url = new URL(value);
+                    return url.origin === projectOrigin && url.pathname.startsWith(privatePrefix) && url.searchParams.has('token');
+                } catch { return false; }
+            }),
         ) as Record<string, string>;
     } catch {
         return {};
@@ -456,9 +464,9 @@ function StylistIntakeInner() {
             const cachedPhotoUrls = readCachedPhotoUrls(email, data.order.id);
             const outfitUrl = stringValue(existingIntake.one_outfit_image_url);
             const restoredPhotoUrls = {
+                ...cachedPhotoUrls,
                 ...savedPhotoUrls,
                 ...(outfitUrl ? { one_outfit: outfitUrl } : {}),
-                ...cachedPhotoUrls,
             };
             setUploadedUrls(restoredPhotoUrls);
             setProfile(prev => {
