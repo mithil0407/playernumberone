@@ -79,6 +79,8 @@ export interface AUIntakeSubmission {
     customer_phone?: string;
     photo_fullbody_url?: string;
     photo_headshot_url?: string;
+    photo_fullbody_path?: string | null;
+    photo_headshot_path?: string | null;
     // New question fields (Steps 4–12)
     frustrations?: string;        // comma-separated
     frustrations_custom?: string; // free text
@@ -175,48 +177,43 @@ export const saveAUSubscription = async (subscription: AUSubscription) => {
     return data;
 };
 
-export const saveAUIntakeSubmission = async (submission: AUIntakeSubmission) => {
-    const { error } = await supabaseAU
-        .from('au_intake_submissions')
-        .insert([submission]);
-
-    if (error) throw error;
-
-    // ── Mark quiz reminder as no longer needed for this customer ──────────
-    // This prevents the cron from sending a reminder to customers who have
-    // already submitted the intake form.
-    if (submission.customer_email) {
-        await supabaseAU
-            .from('au_orders')
-            .update({ quiz_reminder_sent: true })
-            .eq('customer_email', submission.customer_email)
-            .eq('status', 'paid')
-            .eq('quiz_reminder_sent', false);
-        // Fire-and-forget: don't throw if this update fails
-    }
-
-    return null;
+export const saveAUIntakeSubmission = async (submission: AUIntakeSubmission, paymentId: string) => {
+    const response = await fetch('/api/au-intake', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...submission, payment_id: paymentId }),
+    });
+    const result = await response.json() as { success?: boolean; error?: string };
+    if (!response.ok || !result.success) throw new Error(result.error || 'Could not save AU intake');
 };
 
 export const uploadAUIntakePhoto = async (
     file: File,
-    fileName: string
+    _fileName: string,
+    access: { customerEmail: string; paymentId: string },
 ): Promise<string> => {
-    // Bucket policy requires files to be under public/ folder with .jpg extension
-    const storagePath = `public/${fileName}`;
-
-    const { data, error } = await supabaseAU.storage
-        .from('au-intake-photos')
-        .upload(storagePath, file, {
-            upsert: true,
-            contentType: 'image/jpeg', // required: bucket policy checks extension = 'jpg'
-        });
-
+    const inferredType = (() => {
+        if (file.type) return file.type.toLowerCase();
+        const extension = file.name.split('.').pop()?.toLowerCase();
+        return extension === 'png' ? 'image/png'
+            : extension === 'webp' ? 'image/webp'
+                : extension === 'heic' ? 'image/heic'
+                    : extension === 'heif' ? 'image/heif'
+                        : extension === 'jpg' || extension === 'jpeg' ? 'image/jpeg' : '';
+    })();
+    const preparedResponse = await fetch('/api/au-intake-photo', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ customer_email: access.customerEmail, payment_id: access.paymentId, contentType: inferredType, size: file.size }),
+    });
+    const prepared = await preparedResponse.json() as { path?: string; token?: string; error?: string };
+    if (!preparedResponse.ok || !prepared.path || !prepared.token) throw new Error(prepared.error || 'Could not prepare AU photo upload');
+    const { error } = await supabaseAU.storage.from('au-intake-private').uploadToSignedUrl(prepared.path, prepared.token, file, { contentType: inferredType });
     if (error) throw error;
-
-    const { data: publicData } = supabaseAU.storage
-        .from('au-intake-photos')
-        .getPublicUrl(data.path);
-
-    return publicData.publicUrl;
+    const confirmation = await fetch('/api/au-intake-photo', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'confirm', customer_email: access.customerEmail, payment_id: access.paymentId, path: prepared.path }),
+    });
+    const result = await confirmation.json() as { url?: string; error?: string };
+    if (!confirmation.ok || !result.url) throw new Error(result.error || 'Could not confirm AU photo upload');
+    return result.url;
 };

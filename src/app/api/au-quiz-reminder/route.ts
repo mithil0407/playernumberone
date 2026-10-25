@@ -12,7 +12,10 @@ async function handleReminder(request: NextRequest) {
     const authHeader = request.headers.get('authorization');
     const cronSecret = process.env.CRON_SECRET;
 
-    if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
+    if (!cronSecret) {
+        return NextResponse.json({ error: 'Cron is not configured' }, { status: 503 });
+    }
+    if (authHeader !== `Bearer ${cronSecret}`) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -24,7 +27,7 @@ async function handleReminder(request: NextRequest) {
         // ── Find paid orders in the 30–90 min window ────────────────────────
         const { data: orders, error: ordersError } = await supabaseAU
             .from('au_orders')
-            .select('id, customer_email, customer_name, customer_phone, amount, created_at')
+            .select('id, customer_email, customer_name, customer_phone, razorpay_payment_id, amount, created_at')
             .eq('status', 'paid')
             .or('quiz_reminder_sent.is.null,quiz_reminder_sent.eq.false')
             .gte('created_at', windowStart.toISOString())
@@ -46,7 +49,7 @@ async function handleReminder(request: NextRequest) {
 
         for (const order of orders) {
             const email = order.customer_email;
-            if (!email) {
+            if (!email || !order.razorpay_payment_id) {
                 skipped++;
                 continue;
             }
@@ -71,7 +74,7 @@ async function handleReminder(request: NextRequest) {
             // ── Send the reminder ────────────────────────────────────────────
             const name = order.customer_name || email.split('@')[0];
             const phone = order.customer_phone || '';
-            const intakeLink = `https://www.iconik.pro/au/intake?email=${encodeURIComponent(email)}&phone=${encodeURIComponent(phone)}`;
+            const intakeLink = `https://www.iconik.pro/au/intake?email=${encodeURIComponent(email)}&phone=${encodeURIComponent(phone)}&payment_id=${encodeURIComponent(order.razorpay_payment_id)}`;
 
             const result = await sendAUQuizReminderEmail({
                 customer_name: name,
