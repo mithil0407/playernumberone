@@ -86,12 +86,12 @@ function setStoredEditState(state: StylistEditCheckoutState) {
 
 function editSetupMessage(data: { error?: string; error_code?: string }) {
     if (data.error_code === 'plan_not_configured') {
-        return 'Your Blueprint is confirmed, but ICONIK Edit needs a payment plan configured before it can be authorized. Please contact support and we will activate it for you.';
+        return 'ICONIK Edit is temporarily unavailable. Please contact support or deselect Edit to buy the Blueprint at its regular price.';
     }
     if (data.error_code === 'razorpay_plan_invalid') {
-        return 'Your Blueprint is confirmed, but the ICONIK Edit payment plan is not available in this Razorpay mode. Please contact support and we will activate it for you.';
+        return 'The ICONIK Edit payment plan is unavailable. Please contact support or deselect Edit to buy the Blueprint at its regular price.';
     }
-    return data.error || 'Your Blueprint is confirmed, but we could not set up ICONIK Edit yet. Please retry from this page.';
+    return data.error || 'We could not set up ICONIK Edit. Please retry or deselect Edit to buy the Blueprint at its regular price.';
 }
 
 const COUNTRY_CODES = [
@@ -156,7 +156,7 @@ function EditCard({ selected, onToggle }: { selected: boolean; onToggle: () => v
 
             {/* Discount panel */}
             <div className="rounded-xl p-4 mb-4 border" style={{ background: 'var(--luxury-warm-white)', borderColor: 'var(--luxury-cream)' }}>
-                <div className="iconik-micro text-luxury-accent mb-2">Blueprint discount unlocked</div>
+                <div className="iconik-micro text-luxury-accent mb-2">Blueprint discount after Edit confirmation</div>
                 <div className="flex items-baseline gap-2">
                     <span className="iconik-display text-luxury-charcoal/25 line-through" style={{ fontSize: '18px' }}>${BLUEPRINT_PRICE}</span>
                     <span className="iconik-display text-luxury-charcoal" style={{ fontSize: '32px' }}>${BLUEPRINT_PRICE_WITH_EDIT}</span>
@@ -180,7 +180,7 @@ function EditCard({ selected, onToggle }: { selected: boolean; onToggle: () => v
             </div>
 
             <div className="iconik-mono text-luxury-charcoal/35" style={{ fontSize: '10px' }}>
-                Pay ${BLUEPRINT_PRICE_WITH_EDIT} for your Blueprint now, then authorize ${EDIT_PRICE}/month for your Edit.
+                Authorize your ${EDIT_PRICE}/month Edit first, then pay ${BLUEPRINT_PRICE_WITH_EDIT} for your Blueprint.
             </div>
         </div>
     );
@@ -193,6 +193,7 @@ export default function StylistCheckoutPage() {
     const [phone, setPhone] = useState('');
     const [countryCode, setCountryCode] = useState('+1');
     const [editSelected, setEditSelected] = useState(false);
+    const [editAuthorized, setEditAuthorized] = useState(false);
     const [isProcessing, setIsProcessing] = useState(false);
     const [paymentStage, setPaymentStage] = useState<'creating_order' | 'opening_razorpay' | 'confirming_payment' | 'setting_up_edit' | 'authorizing_edit' | 'redirecting' | null>(null);
     const [razorpayLoaded, setRazorpayLoaded] = useState(false);
@@ -226,6 +227,13 @@ export default function StylistCheckoutPage() {
     }, []);
 
     useEffect(() => {
+        setEditAuthorized(Boolean(
+            email && localStorage.getItem('stylist_editAuthorizedSubscriptionId')
+            && localStorage.getItem('stylist_editAuthorizedEmail') === email.trim().toLowerCase(),
+        ));
+    }, [email]);
+
+    useEffect(() => {
         const timer = setInterval(() => {
             setTimeLeft(prev => {
                 if (prev.seconds > 0) return { ...prev, seconds: prev.seconds - 1 };
@@ -236,7 +244,7 @@ export default function StylistCheckoutPage() {
         return () => clearInterval(timer);
     }, []);
 
-    const processPayment = useCallback(async () => {
+    const processPayment = useCallback(async function payForBlueprint(confirmedSubscriptionId?: string) {
         setFormError('');
         if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
             setFormError('Please enter a valid email address.');
@@ -257,46 +265,146 @@ export default function StylistCheckoutPage() {
         const rawScanPayload = typeof window !== 'undefined' ? localStorage.getItem('style_scan_result') : null;
         const checkoutBlueprintPrice = editSelected ? BLUEPRINT_PRICE_WITH_EDIT : BLUEPRINT_PRICE;
 
-        try {
-            const response = await fetch('/api/stylist-payment', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    customer_name: email.split('@')[0],
-                    customer_email: email,
-                    customer_phone: fullPhone,
-                    amount: checkoutBlueprintPrice,
-                    lead_id: leadId,
-                    scan_payload: rawScanPayload ? JSON.parse(rawScanPayload) : null,
-                    attribution: getAttributionPayload(),
-                }),
-            });
+        if (editSelected && !confirmedSubscriptionId) {
+            const savedId = localStorage.getItem('stylist_editAuthorizedSubscriptionId');
+            const savedEmail = localStorage.getItem('stylist_editAuthorizedEmail');
+            if (savedId && savedEmail === email.trim().toLowerCase()) return payForBlueprint(savedId);
 
-            const data = await response.json();
-            if (!data.success) throw new Error(data.error || 'Payment initialisation failed');
+            setIsProcessing(true);
+            setPaymentStage('setting_up_edit');
+            const editContext: StylistEditRetryContext = {
+                customer_email: email, customer_phone: fullPhone, customer_name: email.split('@')[0],
+                lead_id: leadId, order_id: null, plan_type: 'monthly', source: 'checkout',
+                attribution: getAttributionPayload(),
+            };
+            try {
+                const subRes = await fetch('/api/stylist-edit-subscribe', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(editContext),
+                });
+                const subData = await subRes.json();
+                if (!subRes.ok || !subData.success || !subData.subscription_id || !subData.key) {
+                    throw new Error(editSetupMessage(subData));
+                }
+                localStorage.setItem('stylist_editSubscriptionId', subData.subscription_id);
+                localStorage.setItem('stylist_editKey', subData.key);
+                localStorage.setItem(EDIT_RETRY_CONTEXT_KEY, JSON.stringify(editContext));
+                setStoredEditState('selected_ready_to_authorize');
+
+                const openEdit = () => {
+                    let completed = false;
+                    const editRzp = new window.Razorpay!({
+                        key: subData.key,
+                        subscription_id: subData.subscription_id,
+                        name: 'ICONIK Style Intelligence',
+                        description: `THE ICONIK EDIT — $${EDIT_PRICE}/month`,
+                        handler: async (subResponse: RazorpaySubResponse) => {
+                            completed = true;
+                            const subscriptionId = subResponse.razorpay_subscription_id || subData.subscription_id;
+                            localStorage.setItem('stylist_editAuthorizedSubscriptionId', subscriptionId);
+                            localStorage.setItem('stylist_editAuthorizedEmail', email.trim().toLowerCase());
+                            setEditAuthorized(true);
+                            try {
+                                await payForBlueprint(subscriptionId);
+                                if (subResponse.razorpay_payment_id) {
+                                    trackPurchase(EDIT_PRICE, 'THE ICONIK EDIT', ['iconik_edit_subscription'], 1,
+                                        'USD', 'style_scan_edit', subResponse.razorpay_payment_id);
+                                }
+                            } catch (err) {
+                                setIsProcessing(false);
+                                setPaymentStage(null);
+                                setFormError(err instanceof Error ? err.message : 'Edit was authorized, but Blueprint checkout could not open. Please retry.');
+                            }
+                        },
+                        prefill: { name: email.split('@')[0], email, contact: fullPhone },
+                        theme: { color: '#C9A96E' },
+                        modal: {
+                            ondismiss: () => {
+                                if (completed) return;
+                                setIsProcessing(false);
+                                setPaymentStage(null);
+                                setFormError('Authorize ICONIK Edit to unlock the $110 Blueprint, or deselect Edit to pay $149.');
+                            },
+                        },
+                    });
+                    setPaymentStage(null);
+                    editRzp.open();
+                };
+                if (razorpayLoaded && window.Razorpay) openEdit();
+                else {
+                    const check = setInterval(() => {
+                        if (window.Razorpay) { clearInterval(check); openEdit(); }
+                    }, 100);
+                    setTimeout(() => {
+                        clearInterval(check);
+                        if (!window.Razorpay) {
+                            setIsProcessing(false);
+                            setPaymentStage(null);
+                            setFormError('Failed to load payment system. Please try again.');
+                        }
+                    }, 10000);
+                }
+            } catch (err) {
+                setIsProcessing(false);
+                setPaymentStage(null);
+                setFormError(err instanceof Error ? err.message : 'Could not prepare ICONIK Edit. Please try again.');
+            }
+            return;
+        }
+
+        try {
+            let data: { success?: boolean; error?: string; error_code?: string; key?: string; amount?: number; razorpay_order_id?: string; db_order_id?: string } = {};
+            for (let attempt = 0; attempt < (confirmedSubscriptionId ? 6 : 1); attempt++) {
+                const response = await fetch('/api/stylist-payment', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        customer_name: email.split('@')[0], customer_email: email, customer_phone: fullPhone,
+                        amount: checkoutBlueprintPrice, edit_selected: editSelected,
+                        edit_subscription_id: confirmedSubscriptionId || null, lead_id: leadId,
+                        scan_payload: rawScanPayload ? JSON.parse(rawScanPayload) : null,
+                        attribution: getAttributionPayload(),
+                    }),
+                });
+                data = await response.json();
+                if (response.ok && data.success) break;
+                if (response.status === 403 && confirmedSubscriptionId) {
+                    localStorage.removeItem('stylist_editAuthorizedSubscriptionId');
+                    localStorage.removeItem('stylist_editAuthorizedEmail');
+                    setEditAuthorized(false);
+                }
+                if (response.status !== 409 || data.error_code !== 'edit_not_ready' || attempt === 5) {
+                    throw new Error(data.error || 'Payment initialisation failed');
+                }
+                await new Promise(resolve => setTimeout(resolve, 1500));
+            }
+            if (!data.success || !data.key || !data.amount || !data.razorpay_order_id) {
+                throw new Error(data.error || 'Payment initialisation failed');
+            }
+            const orderKey = data.key;
+            const orderAmount = data.amount;
+            const razorpayOrderId = data.razorpay_order_id;
 
             const initRazorpay = () => {
                 setPaymentStage('opening_razorpay');
                 const options: RazorpayOrderOptions = {
-                    key: data.key,
-                    amount: data.amount,
+                    key: orderKey,
+                    amount: orderAmount,
                     currency: 'USD',
                     name: 'ICONIK Style Intelligence',
                     description: 'ICONIK Style Blueprint',
-                    order_id: data.razorpay_order_id,
+                    order_id: razorpayOrderId,
                     handler: async (rzpResponse: RazorpayOrderResponse) => {
                         setIsProcessing(true);
                         setPaymentStage('confirming_payment');
-                        sessionStorage.setItem('stylist_purchaseTracked', rzpResponse.razorpay_payment_id);
-
                         try {
-                            await fetch('/api/stylist-confirm-payment', {
+                            const confirmationResponse = await fetch('/api/stylist-confirm-payment', {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
                                 body: JSON.stringify({
                                     db_order_id: data.db_order_id,
                                     razorpay_payment_id: rzpResponse.razorpay_payment_id,
                                     razorpay_order_id: rzpResponse.razorpay_order_id,
+                                    razorpay_signature: rzpResponse.razorpay_signature,
                                     customer_email: email,
                                     customer_phone: fullPhone,
                                     customer_name: email.split('@')[0],
@@ -305,9 +413,19 @@ export default function StylistCheckoutPage() {
                                     edit_selected: editSelected,
                                 }),
                             });
+                            const confirmation = await confirmationResponse.json();
+                            if (!confirmationResponse.ok || !confirmation.success) {
+                                throw new Error('Blueprint payment is awaiting confirmation. Please contact support with your Razorpay payment receipt.');
+                            }
                         } catch (err) {
                             console.warn('Could not confirm stylist payment in DB:', err);
+                            setIsProcessing(false);
+                            setPaymentStage(null);
+                            setFormError(err instanceof Error ? err.message : 'Blueprint payment is awaiting confirmation. Please contact support with your Razorpay payment receipt.');
+                            return;
                         }
+
+                        sessionStorage.setItem('stylist_purchaseTracked', rzpResponse.razorpay_payment_id);
 
                         localStorage.setItem('stylist_purchaseAmount', checkoutBlueprintPrice.toString());
                         localStorage.setItem('stylist_customerEmail', email);
@@ -320,106 +438,15 @@ export default function StylistCheckoutPage() {
 
                         const successHref = `/stylist/checkout/success?payment_id=${rzpResponse.razorpay_payment_id}&email=${encodeURIComponent(email)}`;
 
-                        // If Edit selected, create and open the subscription authorization immediately.
-                        if (editSelected) {
-                            setPaymentStage('setting_up_edit');
-                            const editRetryContext: StylistEditRetryContext = {
-                                customer_email: email,
-                                customer_phone: fullPhone,
-                                customer_name: email.split('@')[0],
-                                lead_id: leadId,
-                                order_id: data.db_order_id && data.db_order_id !== 'mock-order-id' ? data.db_order_id : null,
-                                plan_type: 'monthly',
-                                source: 'checkout',
-                                attribution: getAttributionPayload(),
-                            };
-                            setStoredEditState('selected_pending_setup');
-                            localStorage.setItem(EDIT_RETRY_CONTEXT_KEY, JSON.stringify(editRetryContext));
-
-                            try {
-                                const subRes = await fetch('/api/stylist-edit-subscribe', {
-                                    method: 'POST',
-                                    headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify(editRetryContext),
-                                });
-                                const subData = await subRes.json();
-                                if (subData.success && subData.subscription_id && subData.key) {
-                                    localStorage.setItem('stylist_editSubscriptionId', subData.subscription_id);
-                                    localStorage.setItem('stylist_editKey', subData.key);
-                                    localStorage.removeItem(EDIT_SETUP_ERROR_KEY);
-                                    setStoredEditState('selected_ready_to_authorize');
-                                    window.fbq?.('trackCustom', 'edit_checkout_added', { funnel: 'style_scan' });
-
-                                    let editModalCompleted = false;
-                                    const subOptions: RazorpaySubOptions = {
-                                        key: subData.key,
-                                        subscription_id: subData.subscription_id,
-                                        name: 'ICONIK Style Intelligence',
-                                        description: `THE ICONIK EDIT — $${EDIT_PRICE}/month`,
-                                        handler: async (subResponse: RazorpaySubResponse) => {
-                                            editModalCompleted = true;
-                                            setPaymentStage('confirming_payment');
-                                            try {
-                                                await fetch('/api/stylist-edit-confirm', {
-                                                    method: 'POST',
-                                                    headers: { 'Content-Type': 'application/json' },
-                                                    body: JSON.stringify({
-                                                        razorpay_subscription_id: subResponse.razorpay_subscription_id || subData.subscription_id,
-                                                        razorpay_payment_id: subResponse.razorpay_payment_id || '',
-                                                        customer_email: email,
-                                                        customer_phone: fullPhone,
-                                                        customer_name: email.split('@')[0],
-                                                    }),
-                                                });
-                                            } catch (err) {
-                                                console.warn('Could not confirm Stylist Edit subscription in DB:', err);
-                                            }
-
-                                            localStorage.setItem('stylist_editPurchased', 'true');
-                                            localStorage.removeItem('stylist_editSubscriptionId');
-                                            localStorage.removeItem('stylist_editKey');
-                                            localStorage.removeItem(EDIT_SETUP_ERROR_KEY);
-                                            localStorage.setItem('stylist_editSelected', 'false');
-                                            setStoredEditState('authorized');
-                                            if (subResponse.razorpay_payment_id) {
-                                                trackPurchase(
-                                                    EDIT_PRICE,
-                                                    'THE ICONIK EDIT',
-                                                    ['iconik_edit_subscription'],
-                                                    1,
-                                                    'USD',
-                                                    'style_scan_edit',
-                                                    subResponse.razorpay_payment_id,
-                                                );
-                                            }
-                                            setPaymentStage('redirecting');
-                                            window.location.href = successHref;
-                                        },
-                                        prefill: { name: email.split('@')[0], email, contact: fullPhone },
-                                        theme: { color: '#C9A96E' },
-                                        modal: {
-                                            ondismiss: () => {
-                                                if (editModalCompleted) return;
-                                                setPaymentStage('redirecting');
-                                                window.location.href = successHref;
-                                            },
-                                        },
-                                    };
-
-                                    const editRzp = new window.Razorpay!(subOptions);
-                                    setPaymentStage('authorizing_edit');
-                                    editRzp.open();
-                                    return;
-                                } else {
-                                    localStorage.setItem(EDIT_SETUP_ERROR_KEY, editSetupMessage(subData));
-                                    setStoredEditState('selected_setup_failed');
-                                }
-                            } catch (err) {
-                                const message = err instanceof Error ? err.message : 'Your Blueprint is confirmed, but we could not set up ICONIK Edit yet. Please retry from this page.';
-                                localStorage.setItem(EDIT_SETUP_ERROR_KEY, message);
-                                setStoredEditState('selected_setup_failed');
-                                console.warn('Edit subscription creation failed:', err);
-                            }
+                        if (editSelected && confirmedSubscriptionId) {
+                            localStorage.setItem('stylist_editPurchased', 'true');
+                            localStorage.setItem('stylist_editSelected', 'false');
+                            localStorage.removeItem('stylist_editSubscriptionId');
+                            localStorage.removeItem('stylist_editKey');
+                            localStorage.removeItem('stylist_editAuthorizedSubscriptionId');
+                            localStorage.removeItem('stylist_editAuthorizedEmail');
+                            localStorage.removeItem(EDIT_RETRY_CONTEXT_KEY);
+                            setStoredEditState('authorized');
                         } else {
                             setStoredEditState('not_selected');
                             localStorage.removeItem(EDIT_RETRY_CONTEXT_KEY);
@@ -440,7 +467,6 @@ export default function StylistCheckoutPage() {
 
                 const rzp = new window.Razorpay!(options);
                 rzp.open();
-                setIsProcessing(false);
             };
 
             if (razorpayLoaded && window.Razorpay) {
@@ -467,7 +493,9 @@ export default function StylistCheckoutPage() {
     }, [email, phone, countryCode, editSelected, razorpayLoaded]);
 
     const totalLabel = editSelected
-        ? `Pay $${BLUEPRINT_PRICE_WITH_EDIT} now — then authorize $${EDIT_PRICE} Edit`
+        ? editAuthorized
+            ? `Pay $${BLUEPRINT_PRICE_WITH_EDIT} Blueprint — Edit confirmed`
+            : `Authorize $${EDIT_PRICE} Edit — then pay $${BLUEPRINT_PRICE_WITH_EDIT} Blueprint`
         : `Pay $${BLUEPRINT_PRICE} — Get My Blueprint`;
 
     const paymentStageText: Record<NonNullable<typeof paymentStage>, string> = {
@@ -539,7 +567,7 @@ export default function StylistCheckoutPage() {
                     </div>
                     {editSelected && (
                         <p className="luxury-body text-luxury-charcoal/50 text-sm mb-3" style={{ fontWeight: 300 }}>
-                            Pay ${BLUEPRINT_PRICE_WITH_EDIT} for your Blueprint now, then authorize THE ICONIK EDIT at ${EDIT_PRICE}/month.
+                            Authorize THE ICONIK EDIT at ${EDIT_PRICE}/month first to unlock your ${BLUEPRINT_PRICE_WITH_EDIT} Blueprint.
                         </p>
                     )}
                     <div className="inline-block px-4 py-1.5 rounded-full iconik-micro text-luxury-warm-white mb-4" style={{ background: 'var(--luxury-accent)' }}>
@@ -660,11 +688,11 @@ export default function StylistCheckoutPage() {
                                 <span className="iconik-mono" style={{ fontSize: '12px' }}>${EDIT_PRICE}/mo</span>
                             </div>
                             <div className="pt-2 flex justify-between luxury-body text-sm" style={{ borderTop: '1px solid var(--luxury-warm-white)' }}>
-                                <span className="text-luxury-charcoal/40" style={{ fontWeight: 300 }}>First-day total</span>
+                                <span className="text-luxury-charcoal/40" style={{ fontWeight: 300 }}>Total after both payments</span>
                                 <span className="iconik-mono text-luxury-charcoal" style={{ fontSize: '12px' }}>${BLUEPRINT_PRICE}</span>
                             </div>
                             <p className="luxury-body text-luxury-charcoal/35 leading-relaxed" style={{ fontSize: '10px', fontWeight: 300 }}>
-                                Razorpay opens twice: first for ${BLUEPRINT_PRICE_WITH_EDIT}, then for ${EDIT_PRICE}/month.
+                                Razorpay opens twice: first for your ${EDIT_PRICE}/month Edit, then for your ${BLUEPRINT_PRICE_WITH_EDIT} Blueprint. The discounted Blueprint opens only after Edit is confirmed.
                             </p>
                         </div>
                     )}
