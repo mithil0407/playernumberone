@@ -23,6 +23,7 @@ import {
 import type { ClassificationResult, ReportData } from '@/lib/globeReportGenerator';
 import type { GlobeIntakeSubmission } from '@/lib/supabaseGlobe';
 import { revalidateGlobeReportCache } from '@/lib/globeReportCache';
+import { resolveMarketIntakePhotos } from '@/lib/marketIntakePhotoResolver';
 
 const ALLOWED_IMAGE_MODELS = ['gemini-3.1-flash-image-preview', 'gemini-2.5-flash-image'];
 const STALE_MS = 10 * 60 * 1000; // 10 minutes — if pipeline hasn't written in this long, it's dead
@@ -178,6 +179,8 @@ export async function POST(
     return NextResponse.json({ error: 'Submission not found' }, { status: 404 });
   }
 
+  const resolvedSubmission = await resolveMarketIntakePhotos(submission, 'globe');
+
   const reportData       = report.report_data as ReportData;
   const existingImageUrls = report.image_urls as GlobeReportImagePaths | null;
 
@@ -198,7 +201,7 @@ export async function POST(
     await runImagePipeline(
       reportId,
       report.share_token ?? null,
-      submission as GlobeIntakeSubmission,
+      resolvedSubmission as GlobeIntakeSubmission,
       reportData.classification,
       reportData.sections,
       imageModel,
