@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseStyleScan } from '@/lib/supabaseStyleScan';
 import { findPaidStylistIntakeOrder } from '@/lib/stylistIntakeAccess';
+import { getPrivateStylistPhotoPath, isAllowedStylistPhotoValue } from '@/lib/stylistPhotoPolicy';
+import { PRIVATE_STYLIST_INTAKE_BUCKET, signedIntakePhotoUrls } from '@/lib/stylistConsultationWorkspace';
 import { sendStylistIntakeNotificationEmail, sendStylistIntakeReceivedEmail } from '@/lib/email';
 
 function cleanEmail(value: string | null) {
@@ -65,6 +67,7 @@ export async function GET(request: NextRequest) {
                 'primary_language',
                 'body_measurements',
                 'photo_urls',
+                'source_photo_paths',
                 'focus_areas',
                 'coverage_requirements',
                 'lifestyle_context',
@@ -83,7 +86,19 @@ export async function GET(request: NextRequest) {
             .maybeSingle();
         if (existingIntakeError) throw existingIntakeError;
 
-        return NextResponse.json({ success: true, order, existingIntake }, { headers: { 'Cache-Control': 'no-store' } });
+        const intakeForResponse = existingIntake as Record<string, unknown> | null;
+        if (intakeForResponse) {
+            const photoUrls = asRecord(intakeForResponse.photo_urls);
+            const paths = asRecord(intakeForResponse.source_photo_paths) as Record<string, string>;
+            for (const [key, value] of Object.entries(photoUrls)) {
+                const path = getPrivateStylistPhotoPath(value, order.id, process.env.NEXT_PUBLIC_SUPABASE_URL || '');
+                if (path && !paths[key]) paths[key] = `${PRIVATE_STYLIST_INTAKE_BUCKET}/${path}`;
+            }
+            const refreshed: Record<string, unknown> = { ...photoUrls, ...await signedIntakePhotoUrls(paths, 7 * 24 * 60 * 60) };
+            intakeForResponse.photo_urls = refreshed;
+            intakeForResponse.one_outfit_image_url = typeof refreshed.one_outfit === 'string' ? refreshed.one_outfit : intakeForResponse.one_outfit_image_url;
+        }
+        return NextResponse.json({ success: true, order, existingIntake: intakeForResponse }, { headers: { 'Cache-Control': 'no-store' } });
     } catch (error) {
         console.error('Stylist intake access error:', {
             email,
@@ -125,12 +140,42 @@ export async function POST(request: NextRequest) {
             }, { status: 400 });
         }
 
+        const { data: priorIntake, error: priorIntakeError } = await supabaseStyleScan
+            .from('stylist_intake_responses')
+            .select('id, completed_at, photo_urls, source_photo_paths')
+            .eq('order_id', order.id)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+        if (priorIntakeError) throw priorIntakeError;
+        const existingPhotos = asRecord(priorIntake?.photo_urls);
+        const sourcePhotoPaths: Record<string, string> = { ...asRecord(priorIntake?.source_photo_paths) } as Record<string, string>;
+        const allowedPhotoKeys = new Set(['headshot', 'full_body_front', 'full_body_side', 'one_outfit']);
+        for (const [key, value] of Object.entries(photoUrls)) {
+            if (!allowedPhotoKeys.has(key) || !isAllowedStylistPhotoValue({
+                value, existingValue: existingPhotos[key], orderId: order.id,
+                supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL || '',
+            })) {
+                return NextResponse.json({ success: false, error: 'Invalid intake photo' }, { status: 400 });
+            }
+            const path = getPrivateStylistPhotoPath(value, order.id, process.env.NEXT_PUBLIC_SUPABASE_URL || '');
+            if (path) {
+                const { data: object, error: objectError } = await supabaseStyleScan.storage.from('stylist-intake-private').info(path);
+                if (objectError || !object) return NextResponse.json({ success: false, error: 'Photo upload is incomplete' }, { status: 400 });
+                sourcePhotoPaths[key] = `${PRIVATE_STYLIST_INTAKE_BUCKET}/${path}`;
+                const { data: signed, error: signedError } = await supabaseStyleScan.storage.from(PRIVATE_STYLIST_INTAKE_BUCKET)
+                    .createSignedUrl(path, 7 * 24 * 60 * 60);
+                if (signedError || !signed?.signedUrl) throw signedError || new Error('Could not sign intake photo');
+                photoUrls[key] = signed.signedUrl;
+            }
+        }
+
         const completionPercentage = Math.max(0, Math.min(100, Math.round(Number(body.completion_percentage ?? 0))));
         logContext.completionPercentage = completionPercentage;
         const now = new Date().toISOString();
         const payload = {
             order_id: order.id,
-            lead_id: order.lead_id ?? body.lead_id ?? null,
+            lead_id: order.lead_id ?? null,
             customer_email: email,
             customer_phone: body.customer_phone || order.customer_phone || null,
             full_name: body.full_name || order.customer_name || null,
@@ -139,6 +184,7 @@ export async function POST(request: NextRequest) {
             primary_language: body.primary_language || null,
             body_measurements: body.body_measurements || {},
             photo_urls: photoUrls,
+            source_photo_paths: sourcePhotoPaths,
             focus_areas: Array.isArray(body.focus_areas) ? body.focus_areas : [],
             coverage_requirements: body.coverage_requirements || {},
             lifestyle_context: body.lifestyle_context || {},
@@ -151,21 +197,13 @@ export async function POST(request: NextRequest) {
             shopping_relationship: body.shopping_relationship || null,
             prior_styling_experience: body.prior_styling_experience || {},
             one_outfit_description: body.one_outfit_description || null,
-            one_outfit_image_url: body.one_outfit_image_url || null,
+            one_outfit_image_url: typeof photoUrls.one_outfit === 'string' ? photoUrls.one_outfit : null,
             completion_percentage: completionPercentage,
             completed_at: completionPercentage >= 90 ? now : null,
             updated_at: now,
         };
 
-        const { data: existingIntake, error: existingIntakeError } = await supabaseStyleScan
-            .from('stylist_intake_responses')
-            .select('id, completed_at')
-            .eq('order_id', order.id)
-            .order('created_at', { ascending: false })
-            .limit(1)
-            .maybeSingle();
-
-        if (existingIntakeError) throw existingIntakeError;
+        const existingIntake = priorIntake;
 
         // If a browser loses the HTTP response after the database commit, its retry must
         // update the same order's intake instead of creating a duplicate submission.
@@ -233,7 +271,9 @@ export async function POST(request: NextRequest) {
             }
         }
 
-        return NextResponse.json({ success: true, intake: data, email_status: emailStatus });
+        return NextResponse.json({ success: true, intake: { id: data.id, completion_percentage: data.completion_percentage }, email_status: emailStatus }, {
+            headers: { 'Cache-Control': 'no-store' },
+        });
     } catch (error) {
         console.error('Stylist intake submit error:', {
             ...logContext,

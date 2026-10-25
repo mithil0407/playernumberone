@@ -1,10 +1,9 @@
 import { supabase as primarySupabase, supabaseAdmin } from '@/lib/supabase';
-import { readStyleScanPhotoUploadResponse } from '@/lib/styleScanPhotoUploadResponse';
 
 export { readStyleScanPhotoUploadResponse } from '@/lib/styleScanPhotoUploadResponse';
 
 const db = typeof window === 'undefined' ? supabaseAdmin : primarySupabase;
-const STYLIST_INTAKE_PHOTOS_BUCKET = 'stylist-intake-photos';
+const STYLIST_INTAKE_PHOTOS_BUCKET = 'stylist-intake-private';
 
 export { db as supabaseStyleScan };
 
@@ -187,10 +186,11 @@ export const uploadStyleScanPhoto = async (file: File, fileName: string, access:
         size: file.size,
         customer_email: access.customerEmail,
         payment_id: access.paymentId,
+        uploadProtocol: 2,
       }),
     });
     const responseText = await prepareResponse.text();
-    let prepared: { path?: unknown; token?: unknown; url?: unknown; error?: unknown } = {};
+    let prepared: { path?: unknown; token?: unknown; error?: unknown } = {};
     try {
       prepared = responseText
         ? JSON.parse(responseText) as typeof prepared
@@ -199,7 +199,7 @@ export const uploadStyleScanPhoto = async (file: File, fileName: string, access:
       throw new Error('We could not prepare this photo upload. Please try again.');
     }
 
-    if (!prepareResponse.ok || typeof prepared.path !== 'string' || typeof prepared.token !== 'string' || typeof prepared.url !== 'string') {
+    if (!prepareResponse.ok || typeof prepared.path !== 'string' || typeof prepared.token !== 'string') {
       const serverError = typeof prepared.error === 'string' ? prepared.error : '';
       throw new Error(serverError || 'We could not prepare this photo upload. Please try again.');
     }
@@ -216,22 +216,19 @@ export const uploadStyleScanPhoto = async (file: File, fileName: string, access:
       throw new Error('We could not upload this photo. Please check your connection and try again.');
     }
 
-    return prepared.url;
+    const confirmation = await fetch(`/api/stylist-intake-photo?${new URLSearchParams({
+      path: prepared.path,
+      customer_email: access.customerEmail,
+      payment_id: access.paymentId,
+    })}`);
+    const confirmed = await confirmation.json() as { url?: unknown; error?: string };
+    if (!confirmation.ok || typeof confirmed.url !== 'string') {
+      throw new Error(confirmed.error || 'We could not confirm this photo upload. Please try again.');
+    }
+    return confirmed.url;
   }
 
-  const storagePath = `public/${fileName}`;
-
-  const { data, error } = await db.storage
-    .from(STYLIST_INTAKE_PHOTOS_BUCKET)
-    .upload(storagePath, file, { upsert: true, contentType: 'image/jpeg' });
-
-  if (error) throw error;
-
-  const { data: publicData } = db.storage
-    .from(STYLIST_INTAKE_PHOTOS_BUCKET)
-    .getPublicUrl(data.path);
-
-  return publicData.publicUrl;
+  throw new Error(`Stylist photo uploads require browser purchase access: ${fileName}`);
 };
 
 export interface StyleEditSubscription {

@@ -3,28 +3,22 @@ import { cookies } from 'next/headers';
 import { supabaseAdmin } from '@/lib/supabase';
 import { ADMIN_COOKIE, isAdminAuthenticatedFromCookieValue } from '@/lib/adminAuth';
 import { parseManualStylistNotes } from '@/lib/stylistManualNotesParser';
+import { randomUUID } from 'crypto';
 
-const BUCKET = 'stylist-intake-photos';
+const BUCKET = 'stylist-intake-private';
+const MAX_FILE_SIZE = 12 * 1024 * 1024;
+const EXTENSIONS: Record<string, string> = {
+  'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp',
+  'image/heic': 'heic', 'image/heif': 'heif',
+};
 const REQUIRED_PHOTOS = [
   ['headshot', 'Headshot'] as const,
   ['full_body_front', 'Full body front'] as const,
   ['full_body_side', 'Full body side profile'] as const,
 ];
 
-function safeSegment(value: string) {
-  return value
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9._-]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .slice(0, 80) || 'client';
-}
-
 function extensionFor(file: File) {
-  const fromName = file.name.includes('.') ? file.name.split('.').pop()?.toLowerCase() : '';
-  if (fromName && /^[a-z0-9]+$/.test(fromName)) return fromName;
-  const fromType = file.type.split('/')[1]?.toLowerCase();
-  return fromType || 'jpg';
+  return EXTENSIONS[file.type.toLowerCase()] || null;
 }
 
 function cleanOptional(value: FormDataEntryValue | null) {
@@ -33,15 +27,16 @@ function cleanOptional(value: FormDataEntryValue | null) {
 
 async function uploadPhoto(file: File, path: string) {
   const buffer = Buffer.from(await file.arrayBuffer());
-  const { data, error } = await supabaseAdmin.storage
+  const { error } = await supabaseAdmin.storage
     .from(BUCKET)
     .upload(path, buffer, {
       contentType: file.type || 'image/jpeg',
-      upsert: true,
+      upsert: false,
     });
   if (error) throw error;
-  const { data: publicData } = supabaseAdmin.storage.from(BUCKET).getPublicUrl(data.path);
-  return publicData.publicUrl;
+  const signed = await supabaseAdmin.storage.from(BUCKET).createSignedUrl(path, 7 * 24 * 60 * 60);
+  if (signed.error || !signed.data?.signedUrl) throw signed.error || new Error('Could not sign photo');
+  return signed.data.signedUrl;
 }
 
 export async function POST(request: NextRequest) {
@@ -63,8 +58,8 @@ export async function POST(request: NextRequest) {
       if (!(file instanceof File) || !file.size) {
         return NextResponse.json({ error: `${label} image is required.` }, { status: 400 });
       }
-      if (!file.type.startsWith('image/')) {
-        return NextResponse.json({ error: `${label} must be an image file.` }, { status: 400 });
+      if (!extensionFor(file) || file.size > MAX_FILE_SIZE) {
+        return NextResponse.json({ error: `${label} must be a JPG, PNG, WEBP, HEIC or HEIF image under 12MB.` }, { status: 400 });
       }
     }
 
@@ -78,12 +73,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Client phone is required. Add it in the notes or override field.' }, { status: 400 });
     }
 
-    const folder = `manual/${Date.now()}-${safeSegment(fullName)}`;
+    const folder = `manual/${randomUUID()}`;
     const photoUrls: Record<string, string> = {};
+    const sourcePhotoPaths: Record<string, string> = {};
     for (const [key] of REQUIRED_PHOTOS) {
       const file = formData.get(key) as File;
       const path = `${folder}/${key}.${extensionFor(file)}`;
       photoUrls[key] = await uploadPhoto(file, path);
+      sourcePhotoPaths[key] = `${BUCKET}/${path}`;
     }
 
     const now = new Date().toISOString();
@@ -98,6 +95,7 @@ export async function POST(request: NextRequest) {
       primary_language: 'English',
       body_measurements: parsed.bodyMeasurements,
       photo_urls: photoUrls,
+      source_photo_paths: sourcePhotoPaths,
       focus_areas: parsed.focusAreas,
       coverage_requirements: parsed.coverageRequirements,
       lifestyle_context: parsed.lifestyleContext,

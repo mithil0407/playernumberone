@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { supabaseAdmin } from '@/lib/supabase';
 import { ADMIN_COOKIE, isAdminAuthenticatedFromCookieValue } from '@/lib/adminAuth';
+import { resolveConsultationIntakePhotos } from '@/lib/stylistConsultationWorkspace';
+import type { StylistIntakeSubmission } from '@/lib/stylistBlueprintGenerator';
 
 export async function GET(
   _request: NextRequest,
@@ -35,8 +37,9 @@ export async function GET(
     return NextResponse.json({ error: submissionRes.error.message }, { status: 500 });
   }
 
+  const submission = await resolveConsultationIntakePhotos(submissionRes.data as StylistIntakeSubmission & { source_photo_paths?: Record<string, string> | null });
   return NextResponse.json({
-    submission: submissionRes.data,
+    submission,
     reports: reportsRes.data ?? [],
-  });
+  }, { headers: { 'Cache-Control': 'no-store' } });
 }

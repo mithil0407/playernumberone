@@ -1,12 +1,14 @@
 import 'server-only';
 
 import { supabaseAdmin } from './supabase';
+import { classifyIntakePhotoStoragePath, PRIVATE_STYLIST_PHOTO_BUCKET } from './stylistIntakeStoragePath';
 import type { StylistIntakeSubmission } from './stylistBlueprintGenerator';
 import { consultationReadiness } from './stylistConsultationReadiness';
 export { consultationReadiness } from './stylistConsultationReadiness';
 export type { ConsultationReadiness } from './stylistConsultationReadiness';
 
 export const CONSULTATION_UPLOAD_BUCKET = 'consultation-client-uploads';
+export const PRIVATE_STYLIST_INTAKE_BUCKET = PRIVATE_STYLIST_PHOTO_BUCKET;
 
 type JsonRecord = Record<string, unknown>;
 
@@ -314,18 +316,28 @@ export async function signedConsultationPhotoUrls(paths: Record<string, string>,
 
 }
 
+export async function signedIntakePhotoUrls(paths: Record<string, string>, expiresIn = 60 * 60) {
+  const entries = Object.entries(paths).filter(([, value]) => typeof value === 'string' && value.trim());
+  if (!entries.length) return {} as Record<string, string | null>;
+  const signed = await Promise.all(entries.map(async ([key, rawPath]) => {
+    const classified = classifyIntakePhotoStoragePath(rawPath);
+    if (!classified) throw new Error('Invalid intake photo path');
+    const { data, error } = await supabaseAdmin.storage.from(classified.bucket).createSignedUrl(classified.path, expiresIn);
+    if (error || !data?.signedUrl) throw new Error(`Could not load ${key} photo. Please retry.`);
+    return [key, data.signedUrl] as const;
+  }));
+  return Object.fromEntries(signed) as Record<string, string | null>;
+}
+
 export async function resolveConsultationIntakePhotos<T extends StylistIntakeSubmission & { source_photo_paths?: Record<string, string> | null }>(submission: T): Promise<T> {
   const paths = record(submission.source_photo_paths) as Record<string, string>;
   if (!Object.keys(paths).length) return submission;
-  const signed = await signedConsultationPhotoUrls(paths, 2 * 60 * 60);
+  const signed = await signedIntakePhotoUrls(paths, 2 * 60 * 60);
   return {
     ...submission,
     photo_urls: {
       ...(submission.photo_urls ?? {}),
-      headshot: signed.headshot ?? null,
-      full_body_front: signed.full_body_front ?? null,
-      full_body_side: signed.full_body_side ?? null,
-      one_outfit: signed.one_outfit ?? null,
+      ...signed,
     },
     one_outfit_image_url: signed.one_outfit ?? submission.one_outfit_image_url ?? null,
   };
