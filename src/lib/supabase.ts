@@ -218,7 +218,7 @@ export const saveSession = async (session: Session) => {
 };
 
 export const getCustomerByEmail = async (email: string) => {
-  const { data, error } = await supabase
+  const { data, error } = await supabaseAdmin
     .from('customers')
     .select('*')
     .eq('email', email)
