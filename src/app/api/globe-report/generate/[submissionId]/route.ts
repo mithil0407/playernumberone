@@ -12,6 +12,7 @@
 
 import { NextRequest, NextResponse, after } from 'next/server';
 import { supabaseGlobeServer } from '@/lib/serverSupabaseGlobe';
+import { resolveMarketIntakePhotos } from '@/lib/marketIntakePhotoResolver';
 import { isAdminAuthenticatedFromCookieValue, ADMIN_COOKIE } from '@/lib/adminAuth';
 import { cookies } from 'next/headers';
 import { runClassification, runSection1, runSection2, runSection3, runSection4, runSection5, runSection6, type ReportData, type ClassificationResult } from '@/lib/globeReportGenerator';
@@ -192,7 +193,7 @@ export async function POST(
 
   // 4. Schedule the pipeline to run after this response is sent
   after(async () => {
-    await runPipeline(reportId, submission as GlobeIntakeSubmission, report.share_token ?? null);
+    await runPipeline(reportId, await resolveMarketIntakePhotos(submission as GlobeIntakeSubmission, 'globe'), report.share_token ?? null);
   });
 
   // 5. Return immediately — admin dashboard starts polling

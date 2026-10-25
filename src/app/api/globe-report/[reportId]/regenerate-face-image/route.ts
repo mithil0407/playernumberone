@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { isAdminAuthenticatedFromCookieValue, ADMIN_COOKIE } from '@/lib/adminAuth';
 import { supabaseGlobeServer } from '@/lib/serverSupabaseGlobe';
+import { resolveMarketIntakePhotos } from '@/lib/marketIntakePhotoResolver';
 import {
   regenerateSingleFaceImage,
   mergeGlobeReportImagePathsForReport,
@@ -45,11 +46,11 @@ export async function POST(
 
   const { data: submission, error: subErr } = await supabaseGlobeServer
     .from('globe_intake_submissions')
-    .select('photo_headshot_url, photo_fullbody_url')
+    .select('photo_headshot_url, photo_fullbody_url, photo_headshot_path, photo_fullbody_path')
     .eq('id', report.submission_id)
     .single();
 
-  if (subErr || (!submission?.photo_headshot_url && !submission?.photo_fullbody_url)) {
+  if (subErr || (!submission?.photo_headshot_url && !submission?.photo_fullbody_url && !submission?.photo_headshot_path && !submission?.photo_fullbody_path)) {
     return NextResponse.json(
       { error: 'No usable source photo found on submission — cannot regenerate face image' },
       { status: 400 },
@@ -65,7 +66,7 @@ export async function POST(
   try {
     const newPath = await regenerateSingleFaceImage(
       reportId,
-      submission,
+      await resolveMarketIntakePhotos(submission, 'globe'),
       classification,
       kind,
       optionIndex,

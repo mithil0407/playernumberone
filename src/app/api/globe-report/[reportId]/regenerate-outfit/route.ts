@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabaseGlobeServer } from '@/lib/serverSupabaseGlobe';
 import { isAdminAuthenticatedFromCookieValue, ADMIN_COOKIE } from '@/lib/adminAuth';
 import { cookies } from 'next/headers';
+import { resolveMarketIntakePhotos } from '@/lib/marketIntakePhotoResolver';
 import {
   regenerateSingleOutfitImage,
   mergeGlobeReportImagePathsForReport,
@@ -57,11 +58,11 @@ export async function POST(
   // Fetch full-body photo URL from the submission
   const { data: submission, error: subErr } = await supabaseGlobeServer
     .from('globe_intake_submissions')
-    .select('photo_fullbody_url')
+    .select('photo_fullbody_url, photo_fullbody_path')
     .eq('id', report.submission_id)
     .single();
 
-  if (subErr || !submission?.photo_fullbody_url) {
+  if (subErr || (!submission?.photo_fullbody_url && !submission?.photo_fullbody_path)) {
     return NextResponse.json({ error: 'No full-body photo found on submission — cannot regenerate outfit image' }, { status: 400 });
   }
 
@@ -83,11 +84,12 @@ export async function POST(
     hairstyleHeadshotUrl = signed?.signedUrl ?? null;
   }
 
+  const signedSubmission = await resolveMarketIntakePhotos(submission, 'globe');
   const newPath = await regenerateSingleOutfitImage(
     reportId,
     outfitNumber,
     outfitText,
-    submission.photo_fullbody_url,
+    signedSubmission.photo_fullbody_url!,
     classification,
     imageModel ?? 'gemini-3.1-flash-image-preview',
     hairstyleHeadshotUrl,

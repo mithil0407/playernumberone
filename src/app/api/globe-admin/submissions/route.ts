@@ -3,6 +3,7 @@ import { supabaseGlobeServer } from '@/lib/serverSupabaseGlobe';
 import { isAdminAuthenticatedFromCookieValue } from '@/lib/adminAuth';
 import { ADMIN_COOKIE } from '@/lib/adminAuth';
 import { cookies } from 'next/headers';
+import { resolveMarketIntakePhotos } from '@/lib/marketIntakePhotoResolver';
 
 export async function GET(request: NextRequest) {
   const cookieStore = await cookies();
@@ -32,6 +33,7 @@ export async function GET(request: NextRequest) {
         primary_goal,
         location_tier,
         photo_headshot_url,
+        photo_headshot_path,
         created_at,
         globe_reports(id, status, progress_stage, share_token, generated_at, sent_at, error_message, created_at)
       `, { count: 'exact' })
@@ -50,12 +52,12 @@ export async function GET(request: NextRequest) {
     }
 
     // Each submission can have multiple report rows; pick the most recent one
-    const submissions = (data ?? []).map(row => {
+    const submissions = await Promise.all((data ?? []).map(async row => {
       const reports = (row.globe_reports as GlobeReportRow[] ?? [])
         .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
       const latestReport = reports[0] ?? null;
-      return { ...row, globe_reports: undefined, latest_report: latestReport };
-    });
+      return { ...await resolveMarketIntakePhotos(row, 'globe'), globe_reports: undefined, latest_report: latestReport };
+    }));
 
     // Filter by report status after the JOIN (simpler than a complex SQL filter)
     const filtered = status

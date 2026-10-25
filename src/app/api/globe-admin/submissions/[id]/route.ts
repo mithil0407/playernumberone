@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabaseGlobeServer } from '@/lib/serverSupabaseGlobe';
 import { isAdminAuthenticatedFromCookieValue, ADMIN_COOKIE } from '@/lib/adminAuth';
 import { cookies } from 'next/headers';
+import { resolveMarketIntakePhotos } from '@/lib/marketIntakePhotoResolver';
 
 export async function GET(
   _request: NextRequest,
@@ -37,9 +38,9 @@ export async function GET(
     }
 
     return NextResponse.json({
-      submission: submissionRes.data,
+      submission: await resolveMarketIntakePhotos(submissionRes.data, 'globe'),
       reports: reportsRes.data ?? [],
-    });
+    }, { headers: { 'Cache-Control': 'no-store' } });
   } catch (err) {
     console.error('globe-admin submission detail API error:', err);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

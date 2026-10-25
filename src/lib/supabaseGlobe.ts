@@ -83,6 +83,8 @@ export interface GlobeIntakeSubmission {
     customer_phone?: string;
     photo_fullbody_url?: string;
     photo_headshot_url?: string;
+    photo_fullbody_path?: string | null;
+    photo_headshot_path?: string | null;
     // Legacy fields (kept for historical rows)
     frustrations?: string;
     frustrations_custom?: string;
@@ -231,23 +233,10 @@ export const saveGlobeIntakeSubmission = async (submission: GlobeIntakeSubmissio
 };
 
 export const uploadGlobeIntakePhoto = async (
-    file: File,
-    fileName: string
+    _file: File,
+    _fileName: string
 ): Promise<string> => {
-    const storagePath = `public/${fileName}`;
-
-    const { data, error } = await activeSupabaseGlobe.storage
-        .from('globe-intake-photos')
-        .upload(storagePath, file, {
-            upsert: true,
-            contentType: 'image/jpeg',
-        });
-
-    if (error) throw error;
-
-    const { data: publicData } = activeSupabaseGlobe.storage
-        .from('globe-intake-photos')
-        .getPublicUrl(data.path);
-
-    return publicData.publicUrl;
+    void _file;
+    void _fileName;
+    throw new Error('Legacy public Globe photo uploads are disabled. Use the verified private intake flow.');
 };
