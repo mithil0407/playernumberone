@@ -176,7 +176,7 @@ export const saveStylistOrder = async (order: StylistOrder) => {
   return data;
 };
 
-export const uploadStyleScanPhoto = async (file: File, fileName: string): Promise<string> => {
+export const uploadStyleScanPhoto = async (file: File, fileName: string, access: { customerEmail: string; paymentId: string }): Promise<string> => {
   if (typeof window !== 'undefined') {
     const prepareResponse = await fetch('/api/stylist-intake-photo', {
       method: 'POST',
@@ -185,6 +185,8 @@ export const uploadStyleScanPhoto = async (file: File, fileName: string): Promis
         fileName,
         contentType: file.type || 'image/jpeg',
         size: file.size,
+        customer_email: access.customerEmail,
+        payment_id: access.paymentId,
       }),
     });
     const responseText = await prepareResponse.text();
