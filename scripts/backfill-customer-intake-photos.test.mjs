@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { MARKETS, destinationPath, parseLegacyPhotoUrl } from './backfill-customer-intake-photos.mjs';
+import { MARKETS, destinationPath, parseLegacyPhotoUrl, sourceContentType } from './backfill-customer-intake-photos.mjs';
 
 const origin = 'https://example.supabase.co';
 test('accepts only same-project legacy public object URLs', () => {
@@ -20,4 +20,9 @@ test('destination keys are deterministic and do not contain customer paths', () 
   assert.match(first, /^legacy\/[0-9a-f]{64}\.jpg$/);
   assert.equal(first.includes('customer@example.com'), false);
   assert.notEqual(first, destinationPath('globe-intake-photos', 'public/customer@example.com/headshot.jpeg'));
+});
+test('preserves Supabase Storage top-level content type and rejects missing metadata', () => {
+  assert.equal(sourceContentType({ contentType: 'image/heic', metadata: {} }), 'image/heic');
+  assert.equal(sourceContentType({ metadata: { mimetype: 'image/png' } }), 'image/png');
+  assert.throws(() => sourceContentType({ metadata: {} }));
 });

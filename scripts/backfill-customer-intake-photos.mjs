@@ -33,6 +33,12 @@ export function destinationPath(bucket, sourcePath) {
   return `legacy/${digest}.${ext === 'jpeg' ? 'jpg' : ext}`;
 }
 
+export function sourceContentType(info) {
+  const contentType = info?.contentType || info?.metadata?.mimetype || info?.metadata?.contentType;
+  if (!ALLOWED_TYPES.has(contentType)) throw new Error('Unsupported or missing source MIME type');
+  return contentType;
+}
+
 function references(row, config, supabaseUrl) {
   if (!config.fields) {
     const photos = row.photo_urls && typeof row.photo_urls === 'object' && !Array.isArray(row.photo_urls) ? row.photo_urls : {};
@@ -91,8 +97,7 @@ async function copyAndVerify(client, config, sourcePath, targetPath) {
   if (!existing) {
     const { data: info, error: infoError } = await client.storage.from(config.source).info(sourcePath);
     if (infoError || !info) throw new Error(`Could not inspect source object in ${config.source}`);
-    const contentType = info.metadata?.mimetype || info.metadata?.contentType || 'image/jpeg';
-    if (!ALLOWED_TYPES.has(contentType)) throw new Error(`Unsupported source MIME type in ${config.source}`);
+    const contentType = sourceContentType(info);
     const { error } = await client.storage.from(config.target).upload(targetPath, source, { contentType, upsert: false });
     if (error && !/already exists|duplicate|409/i.test(error.message)) throw new Error(`Private upload failed: ${error.message}`);
   }
