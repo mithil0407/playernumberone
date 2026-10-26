@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
-import { AlertTriangle, ArrowRight, Check, ChevronLeft, MessageSquarePlus, RefreshCw, Search } from 'lucide-react';
+import { AlertTriangle, ArrowRight, Check, ChevronLeft, MessageSquarePlus, Plus, RefreshCw, Search } from 'lucide-react';
 import { REPORT_DUE_DAYS, WORKSPACE_CATEGORIES, WORKSPACE_STAGE_LABELS, WORKSPACE_VIEWS, firstDeliveredAt, isOverdue, lateLabel, queryWorkspaceItems, workspaceDue, workspaceNextAction, type DeliveryRecord, type WorkspaceQueueItem } from '@/lib/stylistWorkspaceQueueModel';
 import StylistRevisionRequestDialog, { type RevisionCreated } from '@/components/StylistRevisionRequestDialog';
 import StylistManualDeliveryDialog from '@/components/StylistManualDeliveryDialog';
@@ -308,6 +308,7 @@ export default function StylistWorkspaceDashboard({ admin = false, stylistSlug, 
         </p>
       </div>
       <div className="flex items-center gap-2">
+        {!admin && stylistSlug && <Link href={`/stylist/${stylistSlug}/new-client`} className="ma-btn ma-btn--primary shrink-0"><Plus size={15} /> New client</Link>}
         <label className="relative block w-full sm:w-72">
           <Search size={15} className="ma-faint pointer-events-none absolute left-4 top-1/2 -translate-y-1/2" aria-hidden="true" />
           <input aria-label="Search client or phone" value={search} onChange={event => { setSearch(event.target.value); updateParams({ search: event.target.value, page: '' }, true); }} placeholder="Search name or phone" className="ma-input" style={{ borderRadius: 999, paddingLeft: 40 }} />

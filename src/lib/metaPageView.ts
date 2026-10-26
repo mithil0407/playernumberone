@@ -21,7 +21,7 @@ export const INTERNAL_PAGE_VIEW_PATTERNS = [
   /^\/(?:globe|man|stylist)\/admin(?:\/|$)/,
   /^\/iconik-club\/(?:admin|client)(?:\/|$)/,
   /^\/stylist\/login(?:\/|$)/,
-  /^\/stylist\/[^/]+\/(?:dashboard|consultations|reports)(?:\/|$)/,
+  /^\/stylist\/[^/]+\/(?:dashboard|consultations|reports|new-client)(?:\/|$)/,
   /^\/(?:globe|man|stylist)\/report(?:\/|$)/,
   /^\/stylist\/edit(?:\/|$)/,
   /^\/iconik-club\/preview(?:\/|$)/,
