@@ -9,6 +9,8 @@ import {
 } from 'lucide-react';
 import { Avatar, Button, Pill } from '@/components/manAdmin/ui';
 import StylistManualDeliveryDialog from '@/components/StylistManualDeliveryDialog';
+import StylistUploadLinkActions from '@/components/StylistUploadLinkActions';
+import { inferMeasurementUnit } from '@/lib/consultationMeasurements';
 type Json = Record<string, unknown>;
 type PhotoKey = 'headshot' | 'full_body_front' | 'full_body_side' | 'one_outfit';
 type MeasurementKey = 'shoulders' | 'bust' | 'chest' | 'waist' | 'hips';
@@ -64,7 +66,7 @@ export default function ConsultationWorkspacePage({ params, adminMode = false }:
     setDetail(body);
     if (!preserveNotes) setNotes(body.intake?.raw_consultation_notes || body.source.consultation.notes || '');
     const storedMeasurements = (body.source.upload?.measurements ?? {}) as Json;
-    setMeasurementUnit(['in', 'inch', 'inches'].includes(String(storedMeasurements.unit ?? '').toLowerCase()) ? 'in' : 'cm');
+    setMeasurementUnit(inferMeasurementUnit(storedMeasurements));
     setMeasurementValues({
       shoulders: storedMeasurements.shoulders == null ? '' : String(storedMeasurements.shoulders),
       bust: storedMeasurements.bust == null ? '' : String(storedMeasurements.bust),
@@ -280,7 +282,9 @@ export default function ConsultationWorkspacePage({ params, adminMode = false }:
               <div><p className="text-[14px]" style={{ fontWeight: 600 }}>{detail.readiness.ready ? 'Ready to generate' : 'Waiting for inputs'}</p><p className="ma-faint mt-0.5 text-[13px]">{detail.readiness.ready ? 'Photos and measurements are complete.' : `${detail.readiness.missing.length} required items are missing.`}</p></div>
             </div>
             {!detail.readiness.ready && <div className="flex flex-wrap gap-1.5">{detail.readiness.missing.map(item => <Pill key={item} tone="red">{item}</Pill>)}</div>}
-            {!detail.readiness.ready && detail.uploadLink?.url && <a href={detail.uploadLink.url} target="_blank" rel="noreferrer" className="ma-btn ma-btn--dark mt-4 w-full"><ImageIcon size={15} /> Open client upload link</a>}
+            {!detail.readiness.ready && detail.uploadLink?.url && (detail.uploadLink.expiresAt && new Date(detail.uploadLink.expiresAt).getTime() < Date.now()
+              ? <p className="ma-faint mt-4 text-[13px]">The client upload link has expired. Add the photos and measurements here instead.</p>
+              : <div className="mt-4"><p className="ma-faint mb-2 text-[13px]">Send the client this private upload link{detail.uploadLink.expiresAt ? ` (works until ${new Date(detail.uploadLink.expiresAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })})` : ''}.</p><StylistUploadLinkActions uploadUrl={detail.uploadLink.url} clientName={consultation.client_name || ''} clientPhone={consultation.client_phone || ''} /></div>)}
           </Section>
           <Section title="Reference photos">
             <div className="grid grid-cols-2 gap-3">{photos.map(([key, label]) => <div key={key} className="overflow-hidden rounded-2xl" style={{ border: '1px solid var(--ma-line)', background: 'var(--ma-surface-2)' }}><div className="flex aspect-[3/4] items-center justify-center">{detail.photoUrls[key] ? <img loading="lazy" decoding="async" src={detail.photoUrls[key]!} alt={label} className="h-full w-full object-cover" /> : <ImageIcon size={22} className="ma-faint" />}</div><p className="flex items-center gap-1.5 px-3 py-2 text-[12px]" style={{ fontWeight: 500, color: detail.photoUrls[key] ? 'var(--ma-green)' : 'var(--ma-ink-3)' }}>{detail.photoUrls[key] && <Check size={12} />}{label}</p></div>)}</div>

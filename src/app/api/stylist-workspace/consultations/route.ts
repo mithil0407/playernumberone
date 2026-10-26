@@ -4,6 +4,7 @@ import { getStylistWorkspaceIdentity, getWorkspaceStylistBySlug, isAdminCookieAu
 import { clearWorkspaceQueueCache } from '@/lib/stylistWorkspaceQueue';
 import { parseNewClientIntake } from '@/lib/stylistNewClientIntake';
 import { isCrossOriginWorkspaceMutation } from '@/lib/stylistWorkspaceSecurity';
+import { consultationUploadUrl } from '@/lib/consultationUploadLink';
 
 export async function POST(request: NextRequest) {
   if (isCrossOriginWorkspaceMutation('POST', request.headers, request.url)) {
@@ -53,11 +54,6 @@ export async function POST(request: NextRequest) {
   await logStylistReportActivity({ action: 'consultation_created', consultationId: data.id, stylistId });
   const { data: uploadLink } = await supabaseAdmin.from('consultation_upload_links')
     .select('token').eq('consultation_id', data.id).maybeSingle();
-  const uploadTemplate = process.env.CONSULTATION_UPLOAD_URL_TEMPLATE?.trim();
-  const uploadUrl = uploadTemplate && uploadLink?.token
-    ? uploadTemplate.includes('{token}')
-      ? uploadTemplate.replace('{token}', encodeURIComponent(uploadLink.token))
-      : `${uploadTemplate.replace(/\/$/, '')}/${encodeURIComponent(uploadLink.token)}`
-    : null;
+  const uploadUrl = consultationUploadUrl(uploadLink?.token);
   return NextResponse.json({ id: data.id, uploadUrl }, { status: 201, headers: { 'Cache-Control': 'private, no-store' } });
 }

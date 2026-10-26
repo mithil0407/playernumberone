@@ -5,6 +5,7 @@ import { classifyIntakePhotoStoragePath, PRIVATE_STYLIST_PHOTO_BUCKET } from './
 import type { StylistIntakeSubmission } from './stylistBlueprintGenerator';
 import { consultationReadiness } from './stylistConsultationReadiness';
 export { consultationReadiness } from './stylistConsultationReadiness';
+import { inferMeasurementUnit, type MeasurementUnit } from './consultationMeasurements';
 export type { ConsultationReadiness } from './stylistConsultationReadiness';
 
 export const CONSULTATION_UPLOAD_BUCKET = 'consultation-client-uploads';
@@ -79,11 +80,10 @@ function numeric(value: unknown) {
   return Number.isFinite(parsed) ? parsed : undefined;
 }
 
-function measurementCentimetres(value: unknown, unit: unknown) {
+function measurementCentimetres(value: unknown, unit: MeasurementUnit) {
   const parsed = numeric(value);
   if (parsed === undefined) return undefined;
-  const normalizedUnit = String(unit ?? '').toLowerCase();
-  return Math.round((['in', 'inch', 'inches'].includes(normalizedUnit) ? parsed * 2.54 : parsed) * 10) / 10;
+  return Math.round((unit === 'in' ? parsed * 2.54 : parsed) * 10) / 10;
 }
 
 export async function loadConsultationSource(consultationId: string): Promise<ConsultationSourceBundle | null> {
@@ -125,6 +125,7 @@ export function consultationSourceToIntake(source: ConsultationSourceBundle) {
   const consultation = source.consultation;
   const data = consultation.client_data;
   const uploadMeasurements = source.upload?.measurements ?? {};
+  const measurementUnit = inferMeasurementUnit(uploadMeasurements);
   const aesthetics = list(data.aesthetics);
   const goals = [
     ...list(data.styleGoal1),
@@ -138,11 +139,11 @@ export function consultationSourceToIntake(source: ConsultationSourceBundle) {
   ];
 
   const bodyMeasurements = compact({
-    shoulders_cm: measurementCentimetres(uploadMeasurements.shoulders, uploadMeasurements.unit),
-    bust_cm: measurementCentimetres(uploadMeasurements.bust, uploadMeasurements.unit),
-    chest_cm: measurementCentimetres(uploadMeasurements.chest, uploadMeasurements.unit),
-    waist_cm: measurementCentimetres(uploadMeasurements.waist, uploadMeasurements.unit),
-    hips_cm: measurementCentimetres(uploadMeasurements.hips, uploadMeasurements.unit),
+    shoulders_cm: measurementCentimetres(uploadMeasurements.shoulders, measurementUnit),
+    bust_cm: measurementCentimetres(uploadMeasurements.bust, measurementUnit),
+    chest_cm: measurementCentimetres(uploadMeasurements.chest, measurementUnit),
+    waist_cm: measurementCentimetres(uploadMeasurements.waist, measurementUnit),
+    hips_cm: measurementCentimetres(uploadMeasurements.hips, measurementUnit),
     height_cm: numeric(data.height),
     weight_kg: numeric(data.weight),
     body_shape: text(data.bodyShape),

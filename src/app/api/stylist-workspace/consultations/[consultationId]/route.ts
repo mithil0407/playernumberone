@@ -10,6 +10,7 @@ import {
   loadConsultationSource,
   signedConsultationPhotoUrls,
 } from '@/lib/stylistConsultationWorkspace';
+import { consultationUploadUrl } from '@/lib/consultationUploadLink';
 
 export async function GET(
   _request: NextRequest,
@@ -33,12 +34,7 @@ export async function GET(
   if (intakeResult.error || uploadLinkResult.error) return NextResponse.json({ error: 'Could not load client inputs. Please retry.' }, { status: 500 });
   const intake = intakeResult.data;
   const uploadLinkRow = uploadLinkResult.data;
-  const uploadTemplate = process.env.CONSULTATION_UPLOAD_URL_TEMPLATE?.trim();
-  const uploadUrl = uploadTemplate && uploadLinkRow?.token
-    ? (uploadTemplate.includes('{token}')
-      ? uploadTemplate.replace('{token}', encodeURIComponent(uploadLinkRow.token))
-      : `${uploadTemplate.replace(/\/$/, '')}/${encodeURIComponent(uploadLinkRow.token)}`)
-    : null;
+  const uploadUrl = consultationUploadUrl(uploadLinkRow?.token);
   const { data: reports, error: reportError } = intake?.id
     ? await supabaseAdmin
       .from('stylist_blueprint_reports')

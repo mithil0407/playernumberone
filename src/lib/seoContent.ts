@@ -627,6 +627,8 @@ export const noindexSeoPages: SeoPageInventoryEntry[] = [
   { path: "/l", status: "noindex" },
   { path: "/man/edit", status: "noindex" },
   { path: "/stylist/login", status: "noindex" },
+  { path: "/stylist/[stylistSlug]/new-client", status: "noindex" },
+  { path: "/upload/[token]", status: "noindex" },
   { path: "/style-scan/result", status: "noindex" },
   { path: "/instant-report/checkout", status: "noindex" },
   { path: "/instant-report/refine", status: "noindex" },

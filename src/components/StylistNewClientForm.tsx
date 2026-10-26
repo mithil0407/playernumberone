@@ -2,7 +2,8 @@
 
 import { FormEvent, useState } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, ArrowRight, Check, Copy } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Check } from 'lucide-react';
+import StylistUploadLinkActions from '@/components/StylistUploadLinkActions';
 import { intakeChoices } from '@/lib/stylistNewClientIntake';
 
 type Values = Record<string, string | string[]>;
@@ -35,8 +36,7 @@ export default function StylistNewClientForm({ stylistSlug }: { stylistSlug: str
   const [values, setValues] = useState<Values>(defaults);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
-  const [created, setCreated] = useState<{ id: string; uploadUrl: string | null } | null>(null);
-  const [copied, setCopied] = useState(false);
+  const [created, setCreated] = useState<{ id: string; uploadUrl: string | null; clientName: string; clientPhone: string } | null>(null);
   const dashboard = `/stylist/${stylistSlug}/dashboard`;
   const set = (key: string, value: string | string[]) => setValues(current => ({ ...current, [key]: value }));
   const text = (key: string) => typeof values[key] === 'string' ? values[key] as string : '';
@@ -81,7 +81,7 @@ export default function StylistNewClientForm({ stylistSlug }: { stylistSlug: str
         return;
       }
       if (!response.ok) throw new Error(result.error || 'Could not save the client.');
-      setCreated({ id: result.id, uploadUrl: result.uploadUrl });
+      setCreated({ id: result.id, uploadUrl: result.uploadUrl, clientName: text('clientName'), clientPhone: text('clientPhone') });
       setValues(defaults);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : 'Could not save the client.');
@@ -92,12 +92,14 @@ export default function StylistNewClientForm({ stylistSlug }: { stylistSlug: str
     <div className="ma-card p-7 text-center sm:p-10">
       <div className="mx-auto mb-5 flex h-12 w-12 items-center justify-center rounded-full" style={{ background: 'var(--ma-green-soft)', color: 'var(--ma-green)' }}><Check size={24} /></div>
       <h1 className="ma-title">Client added</h1>
-      <p className="ma-muted mt-3 text-[14px]">The consultation is saved in your workspace. Open it to add photos, measurements and notes.</p>
-      <div className="mt-7 flex flex-wrap justify-center gap-3">
-        <Link href={`/stylist/${stylistSlug}/consultations/${created.id}`} className="ma-btn ma-btn--primary">Open client <ArrowRight size={15} /></Link>
-        {created.uploadUrl && <button type="button" className="ma-btn ma-btn--dark" onClick={async () => { await navigator.clipboard.writeText(created.uploadUrl!); setCopied(true); }}><Copy size={15} /> {copied ? 'Upload link copied' : 'Copy client upload link'}</button>}
+      <p className="ma-muted mt-3 text-[14px]">{created.uploadUrl
+        ? `Now send ${created.clientName.split(/\s+/)[0] || 'the client'} the private upload link. Photos and measurements sent there appear in this client automatically.`
+        : 'The consultation is saved, but the upload link could not be created. Open the client to add photos and measurements yourself.'}</p>
+      {created.uploadUrl && <StylistUploadLinkActions className="mt-7" uploadUrl={created.uploadUrl} clientName={created.clientName} clientPhone={created.clientPhone} />}
+      <div className="mt-3 flex flex-wrap justify-center gap-3">
+        <Link href={`/stylist/${stylistSlug}/consultations/${created.id}`} className="ma-btn ma-btn--ghost">Open client <ArrowRight size={15} /></Link>
       </div>
-      <button type="button" className="ma-btn ma-btn--ghost mt-5" onClick={() => { setCreated(null); setCopied(false); }}>Add another client</button>
+      <button type="button" className="ma-btn ma-btn--ghost mt-5" onClick={() => setCreated(null)}>Add another client</button>
     </div>
   </div>;
 
