@@ -9,6 +9,11 @@ export function isStylistPrivatePath(pathname: string) {
     || /^\/api\/(?:stylist-workspace|stylist-blueprint)(?:\/|$)/.test(pathname);
 }
 
+/** Client photo upload page and its API: public by token, never cached, indexed or tracked. */
+export function isClientUploadPath(pathname: string) {
+  return /^\/upload\/[^/]+\/?$/.test(pathname) || /^\/api\/consultation-upload\//.test(pathname);
+}
+
 export function isCrossOriginWorkspaceMutation(method: string, headers: Headers, requestUrl: string) {
   if (['GET', 'HEAD', 'OPTIONS'].includes(method.toUpperCase())) return false;
   if (headers.get('sec-fetch-site') === 'cross-site') return true;

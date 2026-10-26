@@ -3,7 +3,7 @@ import type { NextRequest } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 import { ADMIN_COOKIE } from '@/lib/adminSessionCore';
 import { verifyAdminCookieEdge } from '@/lib/adminAuthEdge';
-import { isCrossOriginWorkspaceMutation, isStylistPrivatePath, isStylistWorkspacePage, WORKSPACE_SECURITY_HEADERS } from '@/lib/stylistWorkspaceSecurity';
+import { isClientUploadPath, isCrossOriginWorkspaceMutation, isStylistPrivatePath, isStylistWorkspacePage, WORKSPACE_SECURITY_HEADERS } from '@/lib/stylistWorkspaceSecurity';
 
 // Pages that belong to the India-only root funnel
 const INDIA_ONLY_PATHS = ['/', '/checkout', '/checkout-monthly', '/monthly', '/offer-2699', '/offer-2699/checkout'];
@@ -35,6 +35,16 @@ export async function middleware(request: NextRequest) {
   // headers below would stop browsers and the CDN reusing image redirects.
   if (pathname.startsWith('/api/stylist-blueprint/share/') && request.method === 'GET') {
     return NextResponse.next();
+  }
+
+  // The token in this URL is the client's key, so the page must never be
+  // cached, indexed, framed or leak through a Referer header.
+  if (isClientUploadPath(pathname)) {
+    const response = pathname.startsWith('/api/') && isCrossOriginWorkspaceMutation(request.method, request.headers, request.url)
+      ? NextResponse.json({ error: 'Invalid request origin.' }, { status: 403 })
+      : NextResponse.next();
+    for (const [key, value] of Object.entries(WORKSPACE_SECURITY_HEADERS)) response.headers.set(key, value);
+    return response;
   }
 
   if (isStylistPrivatePath(pathname)) {

@@ -39,7 +39,7 @@ test('the actual bootstrap exits before loading any advertising SDK on private p
   const layout = readFileSync(new URL('../app/layout.tsx', import.meta.url), 'utf8');
   const template = layout.split('<Script id="meta-signals-gateway"')[1].split('{`')[1].split('`}')[0];
   const script = vm.runInNewContext('`' + template + '`', { INTERNAL_PAGE_VIEW_PATTERNS, META_PIXEL_ID: 'test' });
-  for (const pathname of ['/stylist/login', '/stylist/jazz/dashboard', '/stylist/jazz/reports/abc', '/stylist/jazz/new-client', '/stylist/admin/workspace', '/stylist/report/token']) {
+  for (const pathname of ['/stylist/login', '/stylist/jazz/dashboard', '/stylist/jazz/reports/abc', '/stylist/jazz/new-client', '/stylist/admin/workspace', '/stylist/report/token', '/upload/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa']) {
     const window = { location: { pathname } };
     vm.runInNewContext(script, { window }); // No document exists: touching it would fail.
     assert.equal('fbq' in window, false);

@@ -25,6 +25,7 @@ export const INTERNAL_PAGE_VIEW_PATTERNS = [
   /^\/(?:globe|man|stylist)\/report(?:\/|$)/,
   /^\/stylist\/edit(?:\/|$)/,
   /^\/iconik-club\/preview(?:\/|$)/,
+  /^\/upload(?:\/|$)/,
 ];
 
 function canonicalSearch(search: string) {
