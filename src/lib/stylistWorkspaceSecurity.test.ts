@@ -7,7 +7,7 @@ import { INTERNAL_PAGE_VIEW_PATTERNS } from './metaPageView.ts';
 import { stylistWorkspaceDestination } from './stylistWorkspaceNavigation.ts';
 
 test('guards staff pages without blocking customer intake and checkout', () => {
-  for (const path of ['/stylist/jazz/dashboard', '/stylist/other/consultations/123', '/stylist/jazz/reports/abc']) {
+  for (const path of ['/stylist/jazz/dashboard', '/stylist/other/consultations/123', '/stylist/jazz/reports/abc', '/stylist/jazz/new-client']) {
     assert.equal(isStylistWorkspacePage(path), true);
     assert.equal(isStylistPrivatePath(path), true);
   }
@@ -39,7 +39,7 @@ test('the actual bootstrap exits before loading any advertising SDK on private p
   const layout = readFileSync(new URL('../app/layout.tsx', import.meta.url), 'utf8');
   const template = layout.split('<Script id="meta-signals-gateway"')[1].split('{`')[1].split('`}')[0];
   const script = vm.runInNewContext('`' + template + '`', { INTERNAL_PAGE_VIEW_PATTERNS, META_PIXEL_ID: 'test' });
-  for (const pathname of ['/stylist/login', '/stylist/jazz/dashboard', '/stylist/jazz/reports/abc', '/stylist/admin/workspace', '/stylist/report/token']) {
+  for (const pathname of ['/stylist/login', '/stylist/jazz/dashboard', '/stylist/jazz/reports/abc', '/stylist/jazz/new-client', '/stylist/admin/workspace', '/stylist/report/token']) {
     const window = { location: { pathname } };
     vm.runInNewContext(script, { window }); // No document exists: touching it would fail.
     assert.equal('fbq' in window, false);
