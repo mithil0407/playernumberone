@@ -27,6 +27,7 @@ import {
   colourFromPieceText,
   snapColourToPalette,
 } from './stylistColourMatching.ts';
+import { bannedOutfitFor } from './stylistBannedOutfits.ts';
 import {
   ETHNIC_CAPSULE_PRIORITY,
   bannedPieceTerms,
@@ -1247,11 +1248,19 @@ function repetitionPenalty(candidate: ScoredCandidateOutfit, selected: ScoredCan
   return penalty;
 }
 
+const NON_CLOTHING_SLOT_RE = /foot|shoe|bag|jewel|accessor|belt|eyewear|sunglass|scarf|hair|watch/i;
+
+/** True when the clothing in these items is an outfit on the owner's ban list. */
+export function isBannedScienceOutfit(items: Pick<FormulaItem, 'slot' | 'piece' | 'colour_name'>[]) {
+  const clothing = items.filter(item => !NON_CLOTHING_SLOT_RE.test(item.slot ?? ''));
+  return Boolean(bannedOutfitFor(clothing.map(item => `${item.colour_name ?? ''} ${item.piece ?? ''}`)));
+}
+
 export function selectOutfitPortfolio(
   scoredCandidates: ScoredCandidateOutfit[],
   constraints: { count: number; perCapsule?: number; ethnicTarget?: number; preferredGarments?: string[] },
 ): ScoredCandidateOutfit[] {
-  const survivors = scoredCandidates.filter(candidate => !candidate.score.killed);
+  const survivors = scoredCandidates.filter(candidate => !candidate.score.killed && !isBannedScienceOutfit(candidate.formula_items));
   const selected: ScoredCandidateOutfit[] = [];
   const usedSignatures = new Set<string>();
   const perCapsule = constraints.perCapsule ?? constraints.count / CAPSULES.length;
