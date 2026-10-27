@@ -7,7 +7,7 @@ export const maxDuration = 60;
 import { supabaseAdmin } from '@/lib/supabase';
 import { revalidateStylistBlueprintCache } from '@/lib/stylistBlueprintCache';
 import { callStylistOutfitJSON, getStylistBlueprintOutfitStartPage, isVersionedStylistBlueprintReportData, validateStylistBlueprintReport, type StylistBlueprintReportData, type StylistIntakeSubmission } from '@/lib/stylistBlueprintGenerator';
-import { isScienceBlueprintReport, scienceOutfitsToBlueprintPages, type OutfitScienceEngineMetadata } from '@/lib/stylistOutfitScience';
+import { isBannedScienceOutfit, isScienceBlueprintReport, scienceOutfitsToBlueprintPages, type OutfitScienceEngineMetadata } from '@/lib/stylistOutfitScience';
 import { isPinterestVerbatimReport, verbatimAlternativesForPage, verbatimFormulaItems, verbatimReplacementPage } from '@/lib/stylistPinterestOutfits';
 
 async function load(reportId: string) {
@@ -28,7 +28,7 @@ function scienceAlternatives(report: StylistBlueprintReportData & { outfit_engin
   const used = engine.scored_candidates.filter(item => engine.selected_candidate_ids.includes(item.id));
   const signatures = new Set(used.map(item => item.library_signature).filter(Boolean));
   const seen = new Set<string>();
-  return engine.scored_candidates.filter(item => !item.score.killed && item.capsule === current.capsule
+  return engine.scored_candidates.filter(item => !item.score.killed && !isBannedScienceOutfit(item.formula_items) && item.capsule === current.capsule
     && Boolean(item.is_ethnic) === Boolean(current.is_ethnic)
     && !engine.selected_candidate_ids.includes(item.id) && (!item.library_signature || !signatures.has(item.library_signature)))
     .sort((a, b) => (b.score.iconik + b.score.relevance + b.score.realism) - (a.score.iconik + a.score.relevance + a.score.realism))

@@ -51,6 +51,7 @@ import {
   parseFootwearPreference,
   violatesBannedPieces,
 } from './stylistIntakePreferences.ts';
+import { bannedOutfitFor } from './stylistBannedOutfits.ts';
 import type {
   BlueprintBlock,
   BlueprintColourUse,
@@ -795,6 +796,10 @@ export function evaluateVerbatimLook(look: VerbatimLook, rules: VerbatimClientRu
       rejects.push(lightFace ? 'white next to her face' : `avoided colour (${avoided?.label})`);
     }
   }
+
+  // Checked after the colour nudges, so a nudged look cannot turn into a banned one.
+  const bannedOutfit = bannedOutfitFor([pieces.top, pieces.dress, pieces.layer, pieces.bottom]);
+  if (bannedOutfit) rejects.push(`banned outfit (${bannedOutfit.label})`);
 
   // Shoes: flats for a flats-only client; one plain shoe when the pin shows none.
   if (!pieces.shoes || MISSING_RE.test(pieces.shoes)) {
@@ -1760,7 +1765,7 @@ export function clientRuleWarningsForPage(
   return [...new Set(warnings)];
 }
 
-/** Breaks a stylist cannot save over: coverage, shoes she ruled out, skirts at work. */
+/** Breaks a stylist cannot save over: coverage, shoes she ruled out, skirts at work, banned outfits. */
 export function isHardClientRuleWarning(warning: string) {
-  return /bare arms|short sleeves|low neckline|backless|short hem|sheer|tight fit|cropped|heels for a flats-only|skirt or dress at work|skirt or dress for everyday/.test(warning);
+  return /bare arms|short sleeves|low neckline|backless|short hem|sheer|tight fit|cropped|heels for a flats-only|skirt or dress at work|skirt or dress for everyday|banned outfit/.test(warning);
 }
