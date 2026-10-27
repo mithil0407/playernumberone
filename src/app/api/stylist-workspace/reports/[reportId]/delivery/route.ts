@@ -14,7 +14,7 @@ import { revisedOutfitIssues, revisedOutfitSlotIndex } from '@/lib/stylistRevise
 import { getStylistBlueprintImageCounts, type StylistBlueprintImagePaths } from '@/lib/stylistBlueprintImageGenerator';
 import { canAccessBlueprintReport, getStylistWorkspaceIdentity, isAdminCookieAuthenticated, logStylistReportActivity } from '@/lib/stylistWorkspaceAuth';
 import { revalidateStylistBlueprintCache } from '@/lib/stylistBlueprintCache';
-import { buildWhatsappUrl, normalizeIndianWhatsappNumber } from '@/lib/indiaPhone';
+import { buildWhatsappShareUrl, buildWhatsappUrl } from '@/lib/indiaPhone';
 import { hasUnpublishedChanges } from '@/lib/stylistReportPublication';
 
 function siteUrl() {
@@ -43,9 +43,8 @@ export async function POST(
     ? report.stylist_intake_responses[0]
     : report.stylist_intake_responses;
   if (!intake?.consultation_id) return NextResponse.json({ error: 'Consultation link is missing' }, { status: 400 });
-  if (action === 'prepare' && !normalizeIndianWhatsappNumber(intake.customer_phone || '')) {
-    return NextResponse.json({ error: 'Add a valid Indian mobile number before WhatsApp delivery' }, { status: 400 });
-  }
+  // The phone number never blocks publishing. Clients abroad often book with a
+  // number that is not on WhatsApp, so the stylist sends the link herself.
 
   if (action === 'confirm') {
     if (!report.published_at) return NextResponse.json({ error: 'Publish the report first' }, { status: 400 });
@@ -199,7 +198,12 @@ export async function POST(
   const message = deliveredVersion > 1
     ? `${greeting}, I have updated your ICONIK Style Blueprint with the changes you asked for. It is on the same link, so do open it again: ${reportUrl}`
     : `${greeting}, your personalised ICONIK Style Blueprint is ready. You can view it here: ${reportUrl}`;
-  const whatsappUrl = buildWhatsappUrl(intake.customer_phone || '', message);
-  if (!whatsappUrl) return NextResponse.json({ error: 'A valid Indian mobile number is required' }, { status: 400 });
-  return NextResponse.json({ reportUrl, whatsappUrl, clientName: intake.full_name, published: true, publishedVersion: deliveredVersion });
+  // No usable Indian number: open WhatsApp with the message ready and let the
+  // stylist pick the client's chat.
+  const directUrl = buildWhatsappUrl(intake.customer_phone || '', message);
+  const whatsappUrl = directUrl ?? buildWhatsappShareUrl(message);
+  return NextResponse.json({
+    reportUrl, whatsappUrl, message, hasClientNumber: Boolean(directUrl),
+    clientName: intake.full_name, published: true, publishedVersion: deliveredVersion,
+  });
 }

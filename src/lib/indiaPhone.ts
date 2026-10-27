@@ -10,3 +10,12 @@ export function buildWhatsappUrl(phone: string, message: string): string | null 
   const normalized = normalizeIndianWhatsappNumber(phone);
   return normalized ? `https://wa.me/${normalized}?text=${encodeURIComponent(message)}` : null;
 }
+
+/**
+ * Opens WhatsApp with the message typed in and lets the sender pick the chat.
+ * Used when the number on file is not one we can address directly, e.g. a
+ * client abroad who uses a foreign WhatsApp number.
+ */
+export function buildWhatsappShareUrl(message: string): string {
+  return `https://wa.me/?text=${encodeURIComponent(message)}`;
+}

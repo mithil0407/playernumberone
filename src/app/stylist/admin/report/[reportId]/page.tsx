@@ -208,7 +208,8 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
   const [copied, setCopied] = useState(false);
   // The brief for an open revision, if the client has asked for changes.
   const [revision, setRevision] = useState<StylistReportRevision | null>(null);
-  const [deliveryPrepared, setDeliveryPrepared] = useState<{ reportUrl: string; whatsappUrl: string; clientName?: string | null; publishedVersion?: number } | null>(null);
+  const [deliveryPrepared, setDeliveryPrepared] = useState<{ reportUrl: string; whatsappUrl: string; message?: string; hasClientNumber?: boolean; clientName?: string | null; publishedVersion?: number } | null>(null);
+  const [messageCopied, setMessageCopied] = useState(false);
   const [confirmingDelivery, setConfirmingDelivery] = useState(false);
   const [error, setError] = useState('');
   const [imageCounts, setImageCounts] = useState<Record<string, { done: number; total: number }> | null>(null);
@@ -1496,6 +1497,23 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
     window.open(deliveryPrepared.whatsappUrl, '_blank', 'noopener,noreferrer');
   };
 
+  // For clients whose number on file is not on WhatsApp: the stylist pastes the
+  // message into the right chat herself.
+  const copyDeliveryMessage = async () => {
+    if (!deliveryPrepared) return;
+    try {
+      await navigator.clipboard.writeText(deliveryPrepared.message || deliveryPrepared.reportUrl);
+    } catch {
+      setError('Could not copy the message. Please copy the link instead.');
+      return;
+    }
+    void fetch(`/api/stylist-workspace/reports/${reportId}/delivery`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'copied' }),
+    });
+    setMessageCopied(true);
+    setTimeout(() => setMessageCopied(false), 1800);
+  };
+
   const confirmWhatsAppDelivery = async () => {
     setConfirmingDelivery(true);
     setError('');
@@ -2241,17 +2259,25 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
                 ? `${deliveryPrepared.clientName || 'Your client'} can see the changes on the same link she already has. The prepared message tells her to open it again.`
                 : `The private report link is ready${deliveryPrepared.clientName ? ` for ${deliveryPrepared.clientName}` : ''}. Open WhatsApp, send the prepared message, then return here to confirm delivery.`}
             </p>
+            {deliveryPrepared.hasClientNumber === false && (
+              <p className="luxury-body text-sm leading-6 mt-3 rounded-2xl p-4" style={{ background: '#fbf3e4', color: '#7a5418', border: '1px solid #ecd9b4' }}>
+                The number on file is not an Indian WhatsApp number. Open WhatsApp and choose her chat, or copy the message and send it to her WhatsApp number yourself.
+              </p>
+            )}
             <div className="rounded-2xl p-4 mt-5 break-all luxury-body text-xs" style={{ background: S.card, color: S.muted, border: `1px solid ${S.border}` }}>
               {deliveryPrepared.reportUrl}
             </div>
             <div className="grid sm:grid-cols-2 gap-3 mt-6">
               <button onClick={() => void openWhatsApp()} className="rounded-full px-5 py-3.5 luxury-body text-sm flex items-center justify-center gap-2" style={{ background: '#2f6b4f', color: '#fff' }}>
-                <Send size={15} /> Open WhatsApp
+                <Send size={15} /> {deliveryPrepared.hasClientNumber === false ? 'Open WhatsApp, pick chat' : 'Open WhatsApp'}
               </button>
               <button onClick={() => void confirmWhatsAppDelivery()} disabled={confirmingDelivery} className="rounded-full px-5 py-3.5 luxury-body text-sm flex items-center justify-center gap-2 disabled:opacity-50" style={{ background: S.ink, color: S.bg }}>
                 {confirmingDelivery ? <Loader2 size={15} className="animate-spin" /> : <CheckCheck size={15} />} Mark Delivered
               </button>
             </div>
+            <button onClick={() => void copyDeliveryMessage()} className="w-full mt-3 rounded-full px-5 py-3 luxury-body text-sm flex items-center justify-center gap-2" style={{ color: S.ink, border: `1px solid ${S.border}` }}>
+              {messageCopied ? <Check size={15} /> : <Copy size={15} />} {messageCopied ? 'Message copied' : 'Copy message with link'}
+            </button>
             <button onClick={() => setDeliveryPrepared(null)} className="w-full mt-3 rounded-full px-5 py-3 luxury-body text-sm" style={{ color: S.muted }}>Close and confirm later</button>
           </div>
         </div>
