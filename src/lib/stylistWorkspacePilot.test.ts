@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { buildWhatsappUrl, normalizeIndianWhatsappNumber } from './indiaPhone.ts';
+import { buildWhatsappShareUrl, buildWhatsappUrl, normalizeIndianWhatsappNumber } from './indiaPhone.ts';
 import { consultationReadiness } from './stylistConsultationReadiness.ts';
 
 const requiredPhotos = {
@@ -46,6 +46,16 @@ test('Indian WhatsApp numbers normalize without changing valid country codes', (
 test('WhatsApp message is safely URL encoded', () => {
   const url = buildWhatsappUrl('+91 98765 43210', 'Hi Jazz & client: report ready');
   assert.equal(url, 'https://wa.me/919876543210?text=Hi%20Jazz%20%26%20client%3A%20report%20ready');
+});
+
+test('a client without an Indian WhatsApp number still gets her report published', () => {
+  // A foreign number cannot be addressed directly, so WhatsApp opens with the
+  // message ready and the stylist picks the chat.
+  assert.equal(buildWhatsappUrl('+44 7700 900123', 'hi'), null);
+  assert.equal(buildWhatsappShareUrl('Hi & link'), 'https://wa.me/?text=Hi%20%26%20link');
+  const route = readFileSync('src/app/api/stylist-workspace/reports/[reportId]/delivery/route.ts', 'utf8');
+  assert.doesNotMatch(route, /valid Indian mobile number/);
+  assert.match(route, /const whatsappUrl = directUrl \?\? buildWhatsappShareUrl\(message\);/);
 });
 
 import { dedupeWorkspaceQueueItems, indiaDayEnd, matchesWorkspaceView, positiveInteger, queryWorkspaceItems, workspaceCounts, workspaceQueueItem } from './stylistWorkspaceQueueModel.ts';
