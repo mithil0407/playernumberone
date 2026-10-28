@@ -149,7 +149,7 @@ export default function ImageSlotStudioTools({
             <ImagePlus size={tier === 'small' ? 16 : 18} />
             {tier !== 'small' && <span>Add photo</span>}
           </button>
-          {tier === 'wide' && <p>or drop an image here</p>}
+          {tier === 'wide' && <p>or drop it here, or click and paste</p>}
         </div>
       )}
 

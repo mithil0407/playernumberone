@@ -692,11 +692,30 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
       form.set('slotKey', slotKey);
       form.set('file', file);
       const response = await fetch(`/api/stylist-blueprint/${reportId}/assets`, { method: 'POST', body: form });
-      const data = await readJsonBody<{ error?: string }>(response);
+      const data = await readJsonBody<{
+        error?: string;
+        imageUrls?: ResolvedStylistBlueprintImageUrls | null;
+        report?: Pick<Report, 'revision' | 'updated_at' | 'status' | 'section_approvals'>;
+      }>(response);
       if (!response.ok) throw new Error(responseErrorMessage(data, 'Image upload failed'));
-      await Promise.all([refreshGeneratedImages(), loadManualPrompts()]);
-      const statusResponse = await fetch(`/api/stylist-blueprint/status/${reportId}`, { cache: 'no-store' });
-      if (statusResponse.ok) setImageCounts((await statusResponse.json()).imageCounts ?? null);
+      if (data?.imageUrls && data.report?.updated_at) {
+        // Swap in the one new picture. Reloading the whole report here made
+        // every upload wait on three more requests.
+        const saved = data.report;
+        lastReportUpdateRef.current = saved.updated_at;
+        setReport(prev => {
+          if (!prev) return prev;
+          const next = { ...prev, image_urls: data.imageUrls ?? prev.image_urls, revision: saved.revision, updated_at: saved.updated_at, status: saved.status ?? prev.status, section_approvals: saved.section_approvals ?? prev.section_approvals };
+          reportRef.current = next;
+          return next;
+        });
+      } else {
+        await refreshGeneratedImages();
+      }
+      // The image count badge can catch up in the background.
+      void fetch(`/api/stylist-blueprint/status/${reportId}`, { cache: 'no-store' })
+        .then(async statusResponse => { if (statusResponse.ok) setImageCounts((await statusResponse.json()).imageCounts ?? null); })
+        .catch(() => {});
       return true;
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : 'Image upload failed');

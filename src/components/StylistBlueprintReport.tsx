@@ -42,9 +42,10 @@ import {
 } from '@/lib/stylistBlueprintSchema';
 import type { ResolvedStylistBlueprintImageUrls, StylistBlueprintImageSlotKey } from '@/lib/stylistBlueprintImageGenerator';
 import { reportHairstyles, withHairstyleEdit } from '@/lib/stylistHairstyleGuide';
-import { createContext, type ElementType, type FocusEvent, type FormEvent, type ReactNode, type Ref, useContext, useEffect, useRef, useState } from 'react';
+import { createContext, type ClipboardEvent, type ElementType, type FocusEvent, type FormEvent, type ReactNode, type Ref, useContext, useEffect, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import type { ImageCropSource } from '@/components/ImageCropDialog';
+import { imageFileFromClipboard, prepareImageForUpload } from '@/components/imageUploadPrep';
 import { reportPrintLayoutCss } from '@/lib/reportPrint';
 import { findRevisedOutfit, isBlankRevisedOutfit, latestRevisionOf, revisedOutfitSlotIndex, revisedOutfitSlotKey } from '@/lib/stylistRevisedOutfits';
 import { shoppingQueryForPiece, shoppingSearchUrl } from '@/lib/stylistShoppingQuery';
@@ -275,6 +276,7 @@ function ImageSlotFrame({
   const inputRef = useRef<HTMLInputElement | null>(null);
   const frameRef = useRef<HTMLDivElement | null>(null);
   const [dragging, setDragging] = useState(false);
+  const [pasteReady, setPasteReady] = useState(false);
   const [cropSource, setCropSource] = useState<ImageCropSource | null>(null);
   const [cropAspect, setCropAspect] = useState<number | null>(null);
   const [currentImageUrl, setCurrentImageUrl] = useState('');
@@ -291,15 +293,28 @@ function ImageSlotFrame({
     : disabled ? 'Available once the report has finished generating.' : '';
   const regenerateDisabledReason = isRegenerating ? 'Creating a new image…' : disabled ? 'Available once the report has finished generating.' : '';
 
+  const frameAspect = () => {
+    const rect = frameRef.current?.getBoundingClientRect();
+    return rect && rect.width > 8 && rect.height > 8 ? rect.width / rect.height : null;
+  };
   const openCropper = (source: ImageCropSource) => {
     if (!onImageUpload || uploadDisabledReason) return;
-    const rect = frameRef.current?.getBoundingClientRect();
-    setCropAspect(rect && rect.width > 8 && rect.height > 8 ? rect.width / rect.height : null);
+    setCropAspect(frameAspect());
     setCropSource(source);
   };
-  const acceptFile = (file: File | null | undefined) => {
-    if (!file || !/^image\/(jpeg|png|webp)$/.test(file.type)) return;
-    openCropper({ kind: 'file', file });
+  // Like Gamma: a new picture goes straight in, and Crop is there afterwards if it needs it.
+  const acceptFile = async (file: File | null | undefined) => {
+    if (!file || !/^image\/(jpeg|png|webp)$/.test(file.type) || !onImageUpload || uploadDisabledReason) return;
+    await onImageUpload(slotKey, await prepareImageForUpload(file));
+  };
+  // Click the picture, then Cmd+V. The frame takes focus on click, so the paste lands here.
+  // The clipboard is only readable during the event, so the file is taken out straight away.
+  const pasteImage = (event: ClipboardEvent<HTMLDivElement>) => {
+    if (!canUpload) return;
+    const file = imageFileFromClipboard(event.clipboardData);
+    if (!file) return;
+    event.preventDefault();
+    void acceptFile(file);
   };
   const uploadCropped = async (file: File) => {
     if (!onImageUpload) return false;
@@ -312,16 +327,22 @@ function ImageSlotFrame({
       ref={frameRef}
       data-image-slot={slotKey}
       className={`image-slot-frame ${className} ${isStudio ? 'is-studio-slot' : ''} ${dragging ? 'slot-dragging' : ''}`}
+      tabIndex={canUpload ? -1 : undefined}
+      onPaste={canUpload ? pasteImage : undefined}
+      onFocus={canUpload ? event => { if (event.target === event.currentTarget) setPasteReady(true); } : undefined}
+      onBlur={canUpload ? event => { if (event.target === event.currentTarget) setPasteReady(false); } : undefined}
+      aria-label={canUpload ? `${label.charAt(0).toUpperCase()}${label.slice(1)}. Click, then paste an image to replace it.` : undefined}
       onDragOver={canUpload ? event => { event.preventDefault(); setDragging(true); } : undefined}
       onDragLeave={canUpload ? () => setDragging(false) : undefined}
       onDrop={canUpload ? event => {
         event.preventDefault();
         setDragging(false);
-        acceptFile(event.dataTransfer?.files?.[0]);
+        void acceptFile(event.dataTransfer?.files?.[0]);
       } : undefined}
     >
       {children}
       {dragging && <div className="slot-drop-hint">Drop to {currentImageUrl ? 'replace' : 'add'} photo</div>}
+      {pasteReady && !dragging && !isUploading && <div className="slot-paste-hint" aria-hidden="true">Paste ({pasteShortcut()}) to {currentImageUrl ? 'replace' : 'add'}</div>}
       {canUpload && (
         <input
           ref={inputRef}
@@ -330,7 +351,7 @@ function ImageSlotFrame({
           className="hidden"
           tabIndex={-1}
           aria-hidden="true"
-          onChange={event => { acceptFile(event.target.files?.[0]); event.currentTarget.value = ''; }}
+          onChange={event => { void acceptFile(event.target.files?.[0]); event.currentTarget.value = ''; }}
         />
       )}
       {isStudio && (
@@ -364,6 +385,11 @@ function ImageSlotFrame({
       )}
     </div>
   );
+}
+
+/** The paste shortcut as the stylist's keyboard labels it. */
+function pasteShortcut() {
+  return typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent) ? '⌘V' : 'Ctrl+V';
 }
 
 function ReportImage({
@@ -2235,7 +2261,7 @@ export default function StylistBlueprintReport({
 
 // Hidden in print. They sit inside pages, so the page fitter hides them while measuring too.
 const STYLIST_PRINT_HIDDEN = [
-  '.slot-studio-toolbar', '.slot-studio-empty', '.slot-studio-busy', '.slot-studio-saved', '.slot-drop-hint', '.cover-scroll-cue',
+  '.slot-studio-toolbar', '.slot-studio-empty', '.slot-studio-busy', '.slot-studio-saved', '.slot-drop-hint', '.slot-paste-hint', '.cover-scroll-cue',
   // The paper-grain overlay is a screen texture; in a PDF it embeds an image
   // per page (tens of MB) and prints as a dot screen.
   '.grain',
@@ -2284,6 +2310,28 @@ function BlueprintStyles() {
       .image-slot-frame.slot-dragging {
         outline: 2px dashed rgba(201, 169, 110, 0.9);
         outline-offset: -4px;
+      }
+      /* Selected for paste: clicked, waiting for Cmd+V. */
+      .image-slot-frame.is-studio-slot:focus {
+        outline: 2px solid #C9A96E;
+        outline-offset: -2px;
+      }
+      .slot-paste-hint {
+        position: absolute;
+        top: 10px;
+        left: 50%;
+        z-index: 6;
+        transform: translateX(-50%);
+        padding: 6px 11px;
+        border-radius: 999px;
+        background: #C9A96E;
+        color: #1C1815;
+        font-family: var(--font-manrope), Manrope, ui-sans-serif, system-ui, sans-serif;
+        font-size: 12px;
+        font-weight: 600;
+        white-space: nowrap;
+        pointer-events: none;
+        box-shadow: 0 6px 18px rgba(28, 24, 21, 0.2);
       }
       .slot-drop-hint {
         position: absolute;

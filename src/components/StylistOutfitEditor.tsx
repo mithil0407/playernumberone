@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ArrowRight, Check, Copy, Crop, ImagePlus, Loader2, Plus, Trash2, WandSparkles } from 'lucide-react';
 import ImageCropDialog, { type ImageCropSource } from '@/components/ImageCropDialog';
+import { imageFileFromClipboard, prepareImageForUpload } from '@/components/imageUploadPrep';
 import type { BlueprintPage } from '@/lib/stylistBlueprintGenerator';
 import { outfitPieces, setOutfitPieces, outfitCopy, setOutfitCopy, OUTFIT_COPY_FIELDS, type OutfitPiece } from '@/lib/stylistOutfitEditor';
 
@@ -73,11 +74,19 @@ export default function StylistOutfitEditor({ page, onChange, onSave, onUpload, 
     setCropAspect(getCropAspect?.() ?? null);
     setCropSource(source);
   };
-  const choose = (file?: File) => {
+  const choose = async (file?: File) => {
     if (input.current) input.current.value = '';
-    if (!file) return;
+    if (!file || disabled || saving) return;
     if (!/^image\/(jpeg|png|webp)$/.test(file.type)) { setError('Choose a JPG, PNG or WebP image.'); return; }
-    openCropper({ kind: 'file', file });
+    // Like Gamma: the picture goes straight in; "Crop image" is there afterwards.
+    await upload(await prepareImageForUpload(file));
+  };
+  // Click the drop area, then Cmd+V. The clipboard is only readable during the event.
+  const pasteImage = (event: React.ClipboardEvent<HTMLDivElement>) => {
+    const file = imageFileFromClipboard(event.clipboardData);
+    if (!file) return;
+    event.preventDefault();
+    void choose(file);
   };
   const upload = async (file: File) => {
     if (disabled || saving) return false;
@@ -176,14 +185,14 @@ export default function StylistOutfitEditor({ page, onChange, onSave, onUpload, 
             ? <textarea readOnly aria-label="Image prompt" rows={9} value={prompt} className={`${fieldClass} font-mono text-[11px] leading-5`} onFocus={event => event.currentTarget.select()} />
             : <button type="button" onClick={() => void loadPrompt()} className="mt-3 text-xs underline">Show the image prompt</button>}
       </div>
-      <div onDragOver={e => { e.preventDefault(); setDragging(true); }} onDragLeave={() => setDragging(false)} onDrop={e => { e.preventDefault(); setDragging(false); choose(e.dataTransfer.files[0]); }} className={`rounded-2xl border-2 border-dashed p-5 text-center ${dragging ? 'border-[#6a1f2b] bg-[#efede7]' : 'border-[#111315]/20'}`}>
+      <div tabIndex={0} aria-label="Outfit image. Click here, then paste an image." onPaste={pasteImage} onDragOver={e => { e.preventDefault(); setDragging(true); }} onDragLeave={() => setDragging(false)} onDrop={e => { e.preventDefault(); setDragging(false); void choose(e.dataTransfer.files[0]); }} className={`rounded-2xl border-2 border-dashed p-5 text-center outline-none focus:border-[#C9A96E] focus:bg-[#faf6ec] ${dragging ? 'border-[#6a1f2b] bg-[#efede7]' : 'border-[#111315]/20'}`}>
         {imageUrl ? <img src={imageUrl} alt="Saved outfit image" className="max-h-72 mx-auto rounded-xl mb-4 object-contain" /> : <ImagePlus size={30} className="mx-auto mb-4 text-[#6a1f2b]" />}
-        <input ref={input} type="file" accept="image/jpeg,image/png,image/webp" aria-label="Upload outfit image" className="sr-only" onChange={e => choose(e.target.files?.[0])} />
+        <input ref={input} type="file" accept="image/jpeg,image/png,image/webp" aria-label="Upload outfit image" className="sr-only" onChange={e => void choose(e.target.files?.[0])} />
         <div className="flex flex-wrap justify-center gap-2">
           <button disabled={disabled || saving} onClick={() => input.current?.click()} className="rounded-full px-5 py-3 text-sm bg-[#111315] text-[#f5f3ee] disabled:opacity-50">{working ? 'Working…' : imageUrl ? 'Replace image' : 'Choose image'}</button>
           {imageUrl && <button disabled={disabled || saving} onClick={() => openCropper({ kind: 'url', url: imageUrl })} className="inline-flex items-center gap-2 rounded-full px-4 py-3 text-sm border border-[#111315]/15 bg-[#faf9f6] disabled:opacity-50"><Crop size={15} /> Crop image</button>}
         </div>
-        <p className="text-xs text-[#58595b] mt-3">Or drop it here · JPG, PNG or WebP · you can crop before it saves</p>
+        <p className="text-xs text-[#58595b] mt-3">Click this box and paste (⌘V / Ctrl+V), or drop it here · JPG, PNG or WebP · crop afterwards if needed</p>
       </div>
       <button disabled={disabled || saving || !imageUrl || hasUnsavedEdits} onClick={() => void onApprove()} className="w-full flex justify-center gap-2 rounded-full px-4 py-3 text-sm bg-[#2f6b4f] text-white disabled:opacity-40"><Check size={15} /> Approve & next page</button>
       {!imageUrl && <p className="text-xs text-[#58595b]">Upload the matching image before approving this outfit.</p>}

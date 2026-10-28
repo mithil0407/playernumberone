@@ -3,7 +3,7 @@ import type { NextRequest } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 import { ADMIN_COOKIE } from '@/lib/adminSessionCore';
 import { verifyAdminCookieEdge } from '@/lib/adminAuthEdge';
-import { isClientUploadPath, isCrossOriginWorkspaceMutation, isStylistPrivatePath, isStylistWorkspacePage, WORKSPACE_SECURITY_HEADERS } from '@/lib/stylistWorkspaceSecurity';
+import { isClientUploadPath, isCrossOriginWorkspaceMutation, isStudioImageRequest, isStylistPrivatePath, isStylistWorkspacePage, WORKSPACE_SECURITY_HEADERS } from '@/lib/stylistWorkspaceSecurity';
 
 // Pages that belong to the India-only root funnel
 const INDIA_ONLY_PATHS = ['/', '/checkout', '/checkout-monthly', '/monthly', '/offer-2699', '/offer-2699/checkout'];
@@ -48,8 +48,12 @@ export async function middleware(request: NextRequest) {
   }
 
   if (isStylistPrivatePath(pathname)) {
+    const keepRouteCache = isStudioImageRequest(pathname, request.method);
     const privateResponse = (response: NextResponse) => {
-      for (const [key, value] of Object.entries(WORKSPACE_SECURITY_HEADERS)) response.headers.set(key, value);
+      for (const [key, value] of Object.entries(WORKSPACE_SECURITY_HEADERS)) {
+        if (keepRouteCache && key === 'Cache-Control') continue;
+        response.headers.set(key, value);
+      }
       return response;
     };
     if (pathname.startsWith('/api/') && isCrossOriginWorkspaceMutation(request.method, request.headers, request.url)) {
