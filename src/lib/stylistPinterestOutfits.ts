@@ -1168,6 +1168,8 @@ export interface VerbatimOutfitCopy {
   occasion: string;
   pull_quote: string;
   why: string;
+  /** One "If you prefer…" line: a single swap that keeps the look working. */
+  swap?: string;
 }
 
 function sentenceCase(text: string) {
@@ -1289,6 +1291,9 @@ export function fallbackVerbatimCopy(evaluated: EvaluatedLook, capsule: Verbatim
     occasion: capsule,
     pull_quote: FALLBACK_QUOTES[Math.floor(seededUnit(evaluated.look.id) * FALLBACK_QUOTES.length)],
     why,
+    swap: evaluated.pieces.dress
+      ? 'If you prefer more coverage, add a light open layer in a neutral from your palette.'
+      : 'If you prefer something softer, keep the same colours and swap the shoes for flats.',
   };
 }
 
@@ -1310,6 +1315,7 @@ export function verbatimOutfitPage(
       reason: copy.pull_quote,
     },
     { label: 'How to wear it', heading: 'Wear it like this', body: howToWear || 'Wear each piece as listed.' },
+    ...(copy.swap ? [{ label: 'If you prefer', heading: 'If you prefer', body: copy.swap }] : []),
   ];
   return {
     page_number: pageNumber,
@@ -1473,12 +1479,13 @@ For each outfit write:
 - "title": 2-6 words naming the outfit by its two main pieces, sentence case, e.g. "Rust shirt, espresso trousers". No client name, no occasion.
 - "occasion": 2-5 words for where she wears it in HER life (e.g. "Hospital rounds", "Sunday family lunch"), matching the capsule.
 - "pull_quote": one sentence, at most 18 words, to her as "you", on what this outfit does for her.
-- "why": two short sentences on why it suits her body and colouring. Plain, warm, specific. Different from pull_quote.
-Never mention a garment, colour or accessory the outfit does not list. Never mention Pinterest, a library or a swap. No hex codes.
+- "why": ONE short sentence, at most 20 words, on why it suits her body or colouring. Plain, simple English, no styling jargon. Different from pull_quote.
+- "swap": ONE sentence, at most 20 words, starting "If you prefer", giving one easy swap that keeps the look working for her (e.g. "If you prefer flats, wear tan pointed flats instead of the heels."). This is the only field that may name a garment the outfit does not list.
+Outside "swap", never mention a garment, colour or accessory the outfit does not list. Never mention Pinterest or a library. No hex codes.
 
 ${looks.map(({ evaluated, capsule }, index) => `${index + 1}. [${capsule}] ${lookLine(evaluated)}`).join('\n')}
 
-Return only JSON: {"outfits":[{"title":"","occasion":"","pull_quote":"","why":""}, ...]} in the same order.`;
+Return only JSON: {"outfits":[{"title":"","occasion":"","pull_quote":"","why":"","swap":""}, ...]} in the same order.`;
   let entries: unknown[] = [];
   try {
     const raw = await callJson(prompt);
@@ -1496,6 +1503,7 @@ Return only JSON: {"outfits":[{"title":"","occasion":"","pull_quote":"","why":""
       occasion: sentenceCase(text('occasion')) || fallback.occasion,
       pull_quote: asSentence(text('pull_quote')) || fallback.pull_quote,
       why: text('why') ? asSentence(text('why')) : fallback.why,
+      swap: /^if you prefer/i.test(text('swap')) ? asSentence(text('swap')) : fallback.swap,
     };
     return copyStaysTrue(copy, evaluated) ? copy : { ...copy, why: fallback.why, pull_quote: fallback.pull_quote, title: copyStaysTrue({ ...fallback, title: copy.title }, evaluated) ? copy.title : fallback.title };
   });

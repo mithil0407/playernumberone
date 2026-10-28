@@ -333,6 +333,81 @@ export function getStylistBlueprintSectionLabel(pageNumber: number, dataOrVersio
  * is applied. The report renderer and the viewer chrome both call this, so the
  * page counter in the corner and the contents sheet always agree.
  */
+export type StyleLibraryPageKind =
+  | 'library_body' | 'library_goals' | 'library_face' | 'library_undertone' | 'library_palette'
+  | 'library_tops' | 'library_bottoms' | 'library_dresses' | 'library_layers' | 'library_footwear'
+  | 'library_closing';
+
+/**
+ * How a report that uses the style library is laid out: which page slots show
+ * a library page, and which old pages it leaves out. Old pages are hidden, not
+ * removed, so page numbers, approvals and published copies stay valid.
+ * Reports without picked categories are untouched.
+ */
+export function getStylistBlueprintLibraryLayout(data?: Pick<StylistBlueprintReportData, 'version' | 'studio'> | null) {
+  if (!data?.studio?.style_library || !isStylistBlueprintStudio(data)) return null;
+  // The five clothing pages take the first five guide slots, in reading order;
+  // the other eight guide slots (jeans, skirts, Indian wear, lingerie,
+  // shapewear, jewellery, bags, and the cut shopping checklist) are folded in.
+  const guideSlots = STYLIST_BLUEPRINT_STUDIO_GUIDES.map(item => item.page);
+  const clothing: StyleLibraryPageKind[] = ['library_tops', 'library_bottoms', 'library_dresses', 'library_layers', 'library_footwear'];
+  const kinds = new Map<number, StyleLibraryPageKind>([
+    // Her own analysis pictures stay: body, undertone and face each lead with
+    // the overlay on her photo, then the fixed result for that category.
+    [getStylistBlueprintBodyGeometryPage(data), 'library_body'],
+    [getStylistBlueprintChromaticPage(data), 'library_undertone'],
+    [getStylistBlueprintFaceArchitecturePage(data), 'library_face'],
+    [getStylistBlueprintProportionPage(data), 'library_goals'],
+    [getStylistBlueprintPalettePage(data), 'library_palette'],
+    ...clothing.map((kind, index) => [guideSlots[index], kind] as [number, StyleLibraryPageKind]),
+    // The closing note, without the ICONIK Edit upsell.
+    [getStylistBlueprintContinuationPage(data), 'library_closing'],
+  ]);
+  const hidden = new Set<number>([
+    // Cut: "How to use this", "What to stop wearing", "Your shape rules".
+    getStylistBlueprintReadingGuidePage(data),
+    getStylistBlueprintAvoidancePage(data),
+    getStylistBlueprintRulesStartPage(data),
+    ...guideSlots.slice(clothing.length),
+  ].filter((page): page is number => Number.isInteger(page) && !kinds.has(page)));
+  return { kinds, hidden, picks: data.studio.style_library };
+}
+
+const LIBRARY_PAGE_TITLES: Record<StyleLibraryPageKind, string> = {
+  library_body: 'Your body shape',
+  library_goals: 'Styling goals',
+  library_face: 'Your face shape',
+  library_undertone: 'Your undertone',
+  library_palette: 'Your colours',
+  library_tops: 'Tops for you',
+  library_bottoms: 'Bottoms for you',
+  library_dresses: 'Dresses & Indian wear',
+  library_layers: 'Jackets & layers',
+  library_footwear: 'Footwear for you',
+  library_closing: 'A note for you',
+};
+
+/** The title a style-library report shows for a page, or null when the page keeps its own title. */
+export function getStylistBlueprintLibraryPageTitle(data: Pick<StylistBlueprintReportData, 'version' | 'studio'> | null | undefined, pageNumber: number) {
+  const layout = getStylistBlueprintLibraryLayout(data);
+  if (!layout) return null;
+  const kind = layout.kinds.get(pageNumber);
+  if (kind) return LIBRARY_PAGE_TITLES[kind];
+  const start = getStylistBlueprintOutfitStartPage(data);
+  if (pageNumber >= start && pageNumber <= getStylistBlueprintOutfitEndPage(data)) return `Outfit ${pageNumber - start + 1}`;
+  return null;
+}
+
+/**
+ * Every page the reader does not see: the ones a stylist hid, plus the old
+ * pages a style-library report leaves out. Image generation, image counts,
+ * approvals and the client link all read this, so a cut page never needs an
+ * image or an approval.
+ */
+export function getStylistBlueprintHiddenPageNumbers(data?: Pick<StylistBlueprintReportData, 'version' | 'studio'> | null) {
+  return new Set<number>([...(data?.studio?.hidden_page_numbers ?? []), ...(getStylistBlueprintLibraryLayout(data)?.hidden ?? [])]);
+}
+
 export function getVisibleStylistBlueprintPages<T extends { page_number: number }>(
   data: Pick<StylistBlueprintReportData, 'version' | 'studio'> & { pages: T[]; revised_outfits?: Array<{ page: T; round: number; replaces: number }> },
   options: { hideContinuationPage?: boolean; includeHidden?: boolean } = {},
@@ -368,7 +443,7 @@ function getVisibleLayoutPages<T extends { page_number: number }>(
   options: { hideContinuationPage?: boolean; includeHidden?: boolean },
 ): T[] {
   const continuationPage = getStylistBlueprintContinuationPage(data);
-  const hiddenPages = new Set(data.studio?.hidden_page_numbers ?? []);
+  const hiddenPages = getStylistBlueprintHiddenPageNumbers(data);
   const order = getStylistBlueprintPageOrder(data);
   const orderIndex = new Map(order.map((pageNumber, index) => [pageNumber, index]));
   return [...data.pages]

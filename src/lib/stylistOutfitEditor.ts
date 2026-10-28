@@ -24,6 +24,7 @@ export const OUTFIT_COPY_FIELDS = [
   { key: 'why', label: 'Why it works for this client', match: /why/i },
   { key: 'styling', label: 'How to wear it', match: /role breakdown|styling move|one move/i },
   { key: 'avoid', label: 'What to avoid', match: /do not buy|avoid/i },
+  { key: 'swap', label: 'If you prefer (one swap)', match: /if you prefer/i },
 ] as const;
 export function outfitCopy(page: BlueprintPage, key: typeof OUTFIT_COPY_FIELDS[number]['key']) {
   const field = OUTFIT_COPY_FIELDS.find(item => item.key === key)!;
@@ -33,6 +34,6 @@ export function outfitCopy(page: BlueprintPage, key: typeof OUTFIT_COPY_FIELDS[n
 export function setOutfitCopy(page: BlueprintPage, key: typeof OUTFIT_COPY_FIELDS[number]['key'], value: string): BlueprintPage {
   const field = OUTFIT_COPY_FIELDS.find(item => item.key === key)!;
   const index = page.blocks.findIndex(block => field.match.test(`${block.label ?? ''} ${block.heading ?? ''}`));
-  if (index < 0) return { ...page, blocks: [...page.blocks, { label: key === 'why' ? 'Why it works' : key === 'styling' ? 'Styling move' : 'Do not buy', body: value }] };
+  if (index < 0) return { ...page, blocks: [...page.blocks, { label: key === 'why' ? 'Why it works' : key === 'styling' ? 'Styling move' : key === 'swap' ? 'If you prefer' : 'Do not buy', body: value }] };
   return { ...page, blocks: page.blocks.map((block, i) => i === index ? { ...block, body: value, ...(block.reason !== undefined ? { reason: value } : {}) } : block) };
 }

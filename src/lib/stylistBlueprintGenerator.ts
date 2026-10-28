@@ -57,6 +57,17 @@ import {
   isLatestStylistBlueprintVersion,
 } from './stylistBlueprintSchema.ts';
 import {
+  BODY_SHAPE_LIBRARY,
+  STYLE_LIBRARY_CLASSIFICATION_RULES,
+  UNDERTONE_LIBRARY,
+  styleLibraryPicksFor,
+  toBodyShapeKey,
+  toUndertoneKey,
+  type BodyShapeKey,
+  type FaceShapeKey,
+  type UndertoneKey,
+} from './stylistStyleLibrary.ts';
+import {
   SAFE_NECKLINES,
   UNSAFE_NECKLINES,
   applyNecklineSafetyToPiece as applyNecklineSafetyRules,
@@ -357,6 +368,8 @@ export interface StylistBlueprintClassification {
     lifestyle_summary: string;
   };
   body: {
+    /** One of the five fixed body shapes (stylistStyleLibrary). Older reports do not have it. */
+    shape?: string;
     geometry: string;
     focus_areas: string[];
     proportion_directive: string;
@@ -364,6 +377,8 @@ export interface StylistBlueprintClassification {
     silhouette_rules: string[];
   };
   colour: {
+    /** Warm, Cool or Neutral (stylistStyleLibrary). Older reports do not have it. */
+    undertone?: string;
     undertone_direction: string;
     depth: string;
     contrast: string;
@@ -505,6 +520,18 @@ export interface StylistReportStudioMetadata {
   confirmed_at?: string;
   hidden_page_numbers: number[];
   page_order: number[];
+  /**
+   * The picked categories. When set, the report uses the written-once style
+   * library (stylistStyleLibrary.ts) for its body, face, colour and clothing
+   * pages, so changing a category here changes every one of those pages.
+   */
+  style_library?: StylistStyleLibraryPicks;
+}
+
+export interface StylistStyleLibraryPicks {
+  body_shape: BodyShapeKey;
+  face_shape: FaceShapeKey;
+  undertone: UndertoneKey;
 }
 
 export interface StylistBlueprintAnalysis {
@@ -1553,12 +1580,14 @@ Preference discipline:
 
 ${STYLIST_COLOUR_CLASSIFICATION_RULES}
 
+${STYLE_LIBRARY_CLASSIFICATION_RULES}
+
 Required JSON shape:
 {
   "client": {"name":"","email":"","country":"","age_range":"","language":"","lifestyle_summary":""},
-  "body": {"geometry":"","focus_areas":[""],"proportion_directive":"","coverage_rules":[""],"silhouette_rules":[""]},
+  "body": {"shape":"","geometry":"","focus_areas":[""],"proportion_directive":"","coverage_rules":[""],"silhouette_rules":[""]},
   "colour": {
-    "undertone_direction":"","depth":"","contrast":"","palette_name":"",
+    "undertone":"","undertone_direction":"","depth":"","contrast":"","palette_name":"",
     "base_palette":[{"name":"","hex":"","usage":"","avoid_for":""}],
     "accent_palette":[{"name":"","hex":"","usage":"","avoid_for":""}],
     "palette":[{"name":"","hex":"","usage":""}],
@@ -1574,7 +1603,7 @@ Required JSON shape:
 }
 
 Face shape and hairstyle guidance (read from the headshot):
-- face_shape: exactly one of Oval, Round, Square, Heart, Oblong, Diamond, Triangle. Judge it with the signs below: compare the face's length to its width first, then the widths of forehead, cheekbones and jaw, then the jaw angle and chin. Full cheeks alone do not make a face Round; check the jaw angle and the length before choosing it. Do not default to Oval or Round.
+- face_shape: exactly one of Oval, Round, Square, Heart, Oblong (a diamond-shaped face is Heart; a triangle-shaped face is Square). Judge it with the signs below: compare the face's length to its width first, then the widths of forehead, cheekbones and jaw, then the jaw angle and chin. Full cheeks alone do not make a face Round; check the jaw angle and the length before choosing it. Do not default to Oval or Round.
 - face_shape_evidence: one short sentence naming what you saw, e.g. "length clearly exceeds width; forehead, cheekbones and jaw similar; soft jaw angle".
 - hair_direction: one sentence giving the goal for her face shape in plain words.
 - hair_styles: exactly 4 names copied word for word from her face shape's lists below: 2 from Cuts and 2 from Styles. Choose the ones that work with her hair texture and current length (from the headshot and hair context) and her lifestyle. Never choose anything listed under Avoid.
@@ -1612,6 +1641,7 @@ ${buildStylistBlueprintIntakeDigest(submission)}`;
       lifestyle_summary: asString(asRecord(raw.client).lifestyle_summary, 'A practical wardrobe built around your real contexts.'),
     },
     body: {
+      shape: BODY_SHAPE_LIBRARY[toBodyShapeKey(asRecord(raw.body).shape) ?? toBodyShapeKey(asRecord(raw.body).geometry) ?? 'rectangle'].label,
       geometry: asString(asRecord(raw.body).geometry, 'Balanced vertical profile'),
       focus_areas: asStringArray(asRecord(raw.body).focus_areas).length ? asStringArray(asRecord(raw.body).focus_areas) : submission.focus_areas ?? [],
       proportion_directive: asString(asRecord(raw.body).proportion_directive, 'Create longer vertical lines and avoid unnecessary horizontal breaks.'),
@@ -1619,6 +1649,7 @@ ${buildStylistBlueprintIntakeDigest(submission)}`;
       silhouette_rules: asStringArray(asRecord(raw.body).silhouette_rules),
     },
     colour: {
+      undertone: UNDERTONE_LIBRARY[toUndertoneKey(colour.undertone) ?? toUndertoneKey(colour.undertone_direction) ?? 'neutral'].label,
       undertone_direction: asString(colour.undertone_direction, 'neutral'),
       depth: asString(colour.depth, 'medium'),
       contrast: asString(colour.contrast, 'medium'),
@@ -1757,6 +1788,8 @@ export function createBlueprintShell(
       analysis_confirmed: false,
       hidden_page_numbers: [],
       page_order: Array.from({ length: STYLIST_BLUEPRINT_PAGE_COUNT }, (_, index) => index + 1),
+      // Every new report uses the written-once style library.
+      style_library: styleLibraryPicksFor(classification),
     },
   };
 }
@@ -6807,6 +6840,8 @@ ${buildStylistBlueprintIntakeDigest(submission)}`;
   const nextClassification = applyColourGuardrails({
     ...reportData.classification,
     colour: {
+      // The undertone is the stylist's fixed pick; a palette refresh never changes it.
+      undertone: reportData.classification.colour.undertone,
       undertone_direction: asString(colour.undertone_direction, reportData.classification.colour.undertone_direction),
       depth: asString(colour.depth, reportData.classification.colour.depth),
       contrast: asString(colour.contrast, reportData.classification.colour.contrast),

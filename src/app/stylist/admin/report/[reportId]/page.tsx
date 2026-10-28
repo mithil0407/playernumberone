@@ -52,6 +52,8 @@ import {
   getStylistBlueprintRulesStartPage,
   getVisibleStylistBlueprintPages,
   isVersionedStylistBlueprintReportData,
+  getStylistBlueprintLibraryLayout,
+  getStylistBlueprintLibraryPageTitle,
 } from '@/lib/stylistBlueprintSchema';
 import type { ResolvedStylistBlueprintImageUrls, StylistBlueprintImageGroup, StylistBlueprintImageSlotKey } from '@/lib/stylistBlueprintImageGenerator';
 import { checkStudioReportQuality, moveStudioPage } from '@/lib/stylistReportStudio';
@@ -388,10 +390,21 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
     if (!reviewData) return [];
     // The same order the client link reads in, including hidden pages and
     // unstarted revised looks the stylist still has to work on.
-    return getVisibleStylistBlueprintPages(reviewData, { hideContinuationPage, includeHidden: true });
+    // Pages a style-library report leaves out are gone, not merely hidden, so
+    // they never sit in the list waiting for an approval. Library pages show
+    // their library titles.
+    const libraryHidden = getStylistBlueprintLibraryLayout(reviewData)?.hidden;
+    return getVisibleStylistBlueprintPages(reviewData, { hideContinuationPage, includeHidden: true })
+      .filter(page => !libraryHidden?.has(page.page_number))
+      .map(page => {
+        const title = getStylistBlueprintLibraryPageTitle(reviewData, page.page_number);
+        return title ? { ...page, title } : page;
+      });
   }, [hideContinuationPage, reviewData]);
   const pages = visiblePages;
   const activePage = pages.find(page => page.page_number === activePageNumber) ?? pages[0] ?? null;
+  // The list carries display titles; editors get the page exactly as stored.
+  const activeSourcePage = reviewData?.pages.find(page => page.page_number === activePage?.page_number) ?? activePage;
   const approvalPages = pages.filter(page => !reviewData?.studio?.hidden_page_numbers?.includes(page.page_number));
   const totalPageCount = approvalPages.length || (versioned ? getStylistBlueprintPageCount(versioned) - (hideContinuationPage ? 1 : 0) : 0);
   const approvedCount = versioned ? approvalPages.filter(page => report?.section_approvals?.[`p${page.page_number}`]).length : 0;
@@ -2157,7 +2170,7 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
 
             {studioPanel === 'outfit' && activePage && versioned && <StylistClientBrief reportId={reportId} />}
             {studioPanel === 'outfit' && activePage && versioned && (
-              <StylistOutfitEditor key={activePageNumber} page={activePage} onChange={handlePageChange}
+              <StylistOutfitEditor key={activePageNumber} page={activeSourcePage!} onChange={handlePageChange}
                 saveError={error} onSave={() => saveChangedPagesRef.current()} busy={Boolean(currentBusyReason) && !saving} saving={saving} hasUnsavedEdits={hasUnsavedEdits}
                 imageUrl={activeRevisedOutfit
                   ? report.image_urls?.revision?.outfitFlatlays?.[revisedOutfitSlotIndex(activePageNumber)] ?? null

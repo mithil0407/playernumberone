@@ -39,13 +39,28 @@ import {
   getStylistBlueprintSectionLabel,
   getVisibleStylistBlueprintPages,
   isVersionedStylistBlueprintReportData as isVersionedStylistBlueprintReportDataShared,
+  getStylistBlueprintLibraryLayout,
 } from '@/lib/stylistBlueprintSchema';
+import {
+  BODY_SHAPE_LIBRARY,
+  FACE_SHAPE_LIBRARY,
+  GUIDE_CATEGORIES,
+  UNDERTONE_LIBRARY,
+  libraryImagePath,
+  toBodyShapeKey,
+  toFaceShapeKey,
+  toUndertoneKey,
+  type GuideCategoryKey,
+  type LibraryCard,
+  type PaletteColour,
+} from '@/lib/stylistStyleLibrary';
 import type { ResolvedStylistBlueprintImageUrls, StylistBlueprintImageSlotKey } from '@/lib/stylistBlueprintImageGenerator';
 import { reportHairstyles, withHairstyleEdit } from '@/lib/stylistHairstyleGuide';
 import { createContext, type ElementType, type FocusEvent, type FormEvent, type ReactNode, type Ref, useContext, useEffect, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import type { ImageCropSource } from '@/components/ImageCropDialog';
 import { reportPrintLayoutCss } from '@/lib/reportPrint';
+import { outfitCopy, setOutfitCopy } from '@/lib/stylistOutfitEditor';
 import { findRevisedOutfit, isBlankRevisedOutfit, latestRevisionOf, revisedOutfitSlotIndex, revisedOutfitSlotKey } from '@/lib/stylistRevisedOutfits';
 import { shoppingQueryForPiece, shoppingSearchUrl } from '@/lib/stylistShoppingQuery';
 
@@ -731,6 +746,13 @@ function secondaryImageSlotForPage(page: BlueprintPage, data?: StylistBlueprintR
   if (page.page_number === getStylistBlueprintBodyGeometryPage(data)) return 'diagnosis.silhouetteSide';
   if (page.page_number === getStylistBlueprintHairFaceAccessoriesPage(data)) return 'prescription.eyewearFrames';
   return null;
+}
+
+/** The first sentence of a passage, for pages that keep their copy to one line. */
+function firstSentence(text: string) {
+  const clean = text.replace(/\s+/g, ' ').trim();
+  const match = clean.match(/^.*?[.!?](?=\s|$)/);
+  return (match ? match[0] : clean).trim();
 }
 
 function firstBody(blocks: BlueprintBlock[], fallback = '') {
@@ -1843,30 +1865,49 @@ function OutfitPage({ page, data, imageUrls }: { page: BlueprintPage; data: Styl
   const latest = revised ? null : latestRevisionOf(data, outfitNumber);
   const revisedLater = latest && !isBlankRevisedOutfit(latest) ? latest : null;
   const lookLabel = `No. ${String(outfitNumber).padStart(2, '0')}`;
+  // Library reports name every look by number; the model's look names are gone.
+  const numberedTitle = Boolean(libraryPicks(data));
+  // Their copy is one sentence on why it works, and one "If you prefer…" swap.
+  const libraryWhy = firstSentence((reasoning?.body || reasoning?.reason || '').split(/how to wear it:/i)[0]) || firstSentence(logicText);
+  const librarySwap = outfitCopy(page, 'swap');
   return (
-    <PageFrame page={page} className={`outfit-page${revised ? ' revised-outfit-page' : ''}`}>
+    <PageFrame page={numberedTitle ? { ...page, title: `Outfit ${outfitNumber}` } : page} className={`outfit-page${revised ? ' revised-outfit-page' : ''}`}>
       <div className="outfit-hero">
         <div className="outfit-copy">
-          <div className="display-it outfit-no">{revised ? `Revised ${lookLabel}` : lookLabel}</div>
+          {!numberedTitle && <div className="display-it outfit-no">{revised ? `Revised ${lookLabel}` : lookLabel}</div>}
           {revisedLater && <div className="mono outfit-revised-note">Revised · your new version is in Your revised looks</div>}
           <h2>
-            <EditableText
+            {numberedTitle ? <span className="display">{revised ? `Revised outfit ${outfitNumber}` : `Outfit ${outfitNumber}`}</span> : <EditableText
               page={page}
               value={page.title}
               fallback={revised && !editable ? `Your new look ${outfitNumber}` : ''}
               placeholder={revised ? 'Name this look' : undefined}
               update={value => ({ ...page, title: value })}
               className="display"
-            />
+            />}
           </h2>
-          <p className="display-it outfit-quote">&quot;<EditableText page={page} value={quoteText || data.classification.body.proportion_directive} update={value => ({ ...page, pull_quote: value })} />&quot;</p>
+          {!numberedTitle && <p className="display-it outfit-quote">&quot;<EditableText page={page} value={quoteText || data.classification.body.proportion_directive} update={value => ({ ...page, pull_quote: value })} />&quot;</p>}
           <div className="rule" />
-          <div className="outfit-meta">
-            <div className="mono faded">Palette</div>
-            <div>{palette.map((colour, index) => <SwatchDot key={`${colour.hex}-${colour.name}-${index}`} hex={colour.hex} />)}</div>
-            <div className="mono faded">Why it works</div>
-            <EditableText as="p" page={page} value={logicText} update={value => reasoning ? updateBlock(page, page.blocks.indexOf(reasoning), reasoning.body !== undefined ? { body: value } : { reason: value }) : page} />
-          </div>
+          {numberedTitle ? (
+            // Library reports: one line on why, one swap. No quote, no "how to wear it" paragraph.
+            <div className="outfit-meta">
+              <div className="mono faded">Palette</div>
+              <div>{palette.map((colour, index) => <SwatchDot key={`${colour.hex}-${colour.name}-${index}`} hex={colour.hex} />)}</div>
+              <div className="mono faded">Why it works</div>
+              <EditableText as="p" page={page} value={libraryWhy} update={value => reasoning ? updateBlock(page, page.blocks.indexOf(reasoning), { body: value }) : page} />
+              {(librarySwap || editable) && <>
+                <div className="mono faded">If you prefer</div>
+                <EditableText as="p" page={page} value={librarySwap} placeholder="If you prefer…" update={value => setOutfitCopy(page, 'swap', value)} />
+              </>}
+            </div>
+          ) : (
+            <div className="outfit-meta">
+              <div className="mono faded">Palette</div>
+              <div>{palette.map((colour, index) => <SwatchDot key={`${colour.hex}-${colour.name}-${index}`} hex={colour.hex} />)}</div>
+              <div className="mono faded">Why it works</div>
+              <EditableText as="p" page={page} value={logicText} update={value => reasoning ? updateBlock(page, page.blocks.indexOf(reasoning), reasoning.body !== undefined ? { body: value } : { reason: value }) : page} />
+            </div>
+          )}
         </div>
         <div className="outfit-art">
           <div className="flatlay-frame">
@@ -2028,7 +2069,251 @@ function ContinuationPage({ page, data, imageUrls }: { page: BlueprintPage; data
   );
 }
 
+/** The picked categories, checked against the fixed lists. Null when the report does not use the library. */
+function libraryPicks(data: StylistBlueprintReportData) {
+  const picks = data.studio?.style_library;
+  if (!picks) return null;
+  const body = toBodyShapeKey(picks.body_shape);
+  const face = toFaceShapeKey(picks.face_shape);
+  const undertone = toUndertoneKey(picks.undertone);
+  return body && face && undertone ? { body, face, undertone } : null;
+}
+
+/**
+ * Studio only: change a picked category. Every library page reads the pick,
+ * so switching Apple to Pear redraws the body, goals and clothing pages at once.
+ */
+function LibraryPicker({ data, field }: { data: StylistBlueprintReportData; field: 'body_shape' | 'face_shape' | 'undertone' }) {
+  const { editable, onReportDataChange } = useContext(EditableReportContext);
+  const picks = libraryPicks(data);
+  if (!editable || !onReportDataChange || !picks) return null;
+  const options = field === 'body_shape'
+    ? Object.entries(BODY_SHAPE_LIBRARY).map(([key, entry]) => [key, entry.label])
+    : field === 'face_shape'
+      ? Object.entries(FACE_SHAPE_LIBRARY).map(([key, entry]) => [key, entry.label])
+      : Object.entries(UNDERTONE_LIBRARY).map(([key, entry]) => [key, entry.label]);
+  const current = field === 'body_shape' ? picks.body : field === 'face_shape' ? picks.face : picks.undertone;
+  const change = (value: string) => {
+    const next = { body_shape: picks.body, face_shape: picks.face, undertone: picks.undertone, [field]: value } as NonNullable<NonNullable<StylistBlueprintReportData['studio']>['style_library']>;
+    const c = data.classification;
+    onReportDataChange({
+      ...data,
+      studio: { ...data.studio!, style_library: next },
+      // Keep the analysis in step with the pick, so hair and outfit tools read the same answer.
+      classification: {
+        ...c,
+        body: { ...c.body, shape: BODY_SHAPE_LIBRARY[next.body_shape].label },
+        colour: { ...c.colour, undertone: UNDERTONE_LIBRARY[next.undertone].label },
+        face_hair_accessories: { ...c.face_hair_accessories, face_shape: FACE_SHAPE_LIBRARY[next.face_shape].label },
+      },
+    });
+  };
+  return (
+    <label className="lib-picker">
+      <span>Change</span>
+      <select value={current} onChange={event => change(event.target.value)} aria-label={`Change ${field.replace('_', ' ')}`}>
+        {options.map(([key, label]) => <option key={key} value={key}>{label}</option>)}
+      </select>
+    </label>
+  );
+}
+
+function LibraryCardFigure({ src, card, className = '' }: { src: string; card: LibraryCard; className?: string }) {
+  return (
+    <figure className={`lib-card ${className}`}>
+      <div className="lib-card-image"><img src={src} alt={card.name} loading="lazy" decoding="async" /></div>
+      <figcaption>
+        <h3 className="display">{card.name}</h3>
+        <p>{card.line}</p>
+      </figcaption>
+    </figure>
+  );
+}
+
+function LibraryList({ label, items, tone }: { label: string; items: string[]; tone: 'wear' | 'skip' }) {
+  return (
+    <div className={`lib-list lib-list-${tone}`}>
+      <div className="mono lib-list-label">{label}</div>
+      <ul>{items.map(item => <li key={item}>{item}</li>)}</ul>
+    </div>
+  );
+}
+
+function LibraryBodyPage({ page, data, imageUrls }: { page: BlueprintPage; data: StylistBlueprintReportData; imageUrls?: ResolvedStylistBlueprintImageUrls | null }) {
+  const picks = libraryPicks(data)!;
+  const entry = BODY_SHAPE_LIBRARY[picks.body];
+  const front = imageUrls?.diagnosis?.silhouetteFront ?? null;
+  const side = imageUrls?.diagnosis?.silhouetteSide ?? null;
+  return (
+    <PageFrame page={{ ...page, title: 'Your body shape' }} className="library-page library-body">
+      <div className="lib-split">
+        <div className="lib-analysis-pair">
+          <ImageSlotFrame slotKey="diagnosis.silhouetteFront" label="body analysis, front" className="lib-analysis">
+            {front ? <ReportImage src={front} priority /> : <SilhouetteFallback />}
+          </ImageSlotFrame>
+          <ImageSlotFrame slotKey="diagnosis.silhouetteSide" label="body analysis, side" className="lib-analysis">
+            {side ? <ReportImage src={side} /> : <SilhouetteFallback />}
+          </ImageSlotFrame>
+        </div>
+        <div className="lib-head">
+          <div className="mono lib-kicker">Your body shape</div>
+          <h2 className="display lib-result">{entry.label}</h2>
+          <LibraryPicker data={data} field="body_shape" />
+          <p className="lib-summary">{entry.summary}</p>
+          <LibraryList label="Skip" items={entry.skip} tone="skip" />
+        </div>
+      </div>
+    </PageFrame>
+  );
+}
+
+function LibraryGoalsPage({ page, data }: { page: BlueprintPage; data: StylistBlueprintReportData }) {
+  const picks = libraryPicks(data)!;
+  const entry = BODY_SHAPE_LIBRARY[picks.body];
+  return (
+    <PageFrame page={{ ...page, title: 'Styling goals' }} className="library-page library-goals">
+      <div className="lib-guide-head">
+        <h2 className="display">Styling goals</h2>
+        <p className="mono lib-kicker">For your {entry.label.toLowerCase()} shape</p>
+      </div>
+      <div className="lib-goals">
+        {entry.goals.map(goal => <LibraryCardFigure key={goal.id} src={libraryImagePath(picks.body, goal.id)} card={goal} />)}
+      </div>
+    </PageFrame>
+  );
+}
+
+function LibraryGuidePage({ page, data, category }: { page: BlueprintPage; data: StylistBlueprintReportData; category: GuideCategoryKey }) {
+  const picks = libraryPicks(data)!;
+  const entry = BODY_SHAPE_LIBRARY[picks.body];
+  const title = GUIDE_CATEGORIES.find(item => item.key === category)!.title;
+  return (
+    <PageFrame page={{ ...page, title }} className="library-page library-guide">
+      <div className="lib-guide-head">
+        <h2 className="display">{title}</h2>
+        <p className="mono lib-kicker">For your {entry.label.toLowerCase()} shape</p>
+      </div>
+      <div className="lib-grid">
+        {entry.guides[category].map(item => <LibraryCardFigure key={item.id} src={libraryImagePath(picks.body, item.id)} card={item} />)}
+      </div>
+    </PageFrame>
+  );
+}
+
+function LibraryFacePage({ page, data, imageUrls }: { page: BlueprintPage; data: StylistBlueprintReportData; imageUrls?: ResolvedStylistBlueprintImageUrls | null }) {
+  const picks = libraryPicks(data)!;
+  const entry = FACE_SHAPE_LIBRARY[picks.face];
+  const image = imageUrls?.diagnosis?.faceShapeDiagram ?? null;
+  return (
+    <PageFrame page={{ ...page, title: 'Your face shape' }} className="library-page library-face">
+      <div className="lib-split">
+        <ImageSlotFrame slotKey="diagnosis.faceShapeDiagram" label="face shape analysis" className="lib-analysis lib-analysis-square">
+          {image ? <ReportImage src={image} /> : <FaceGridFallback />}
+        </ImageSlotFrame>
+        <div className="lib-head">
+          <div className="mono lib-kicker">Your face shape</div>
+          <h2 className="display lib-result">{entry.label}</h2>
+          <LibraryPicker data={data} field="face_shape" />
+          <p className="lib-summary">{entry.summary}</p>
+          <div className="lib-lists">
+            <LibraryList label="Wear" items={entry.wear} tone="wear" />
+            <LibraryList label="Skip" items={entry.skip} tone="skip" />
+          </div>
+        </div>
+      </div>
+    </PageFrame>
+  );
+}
+
+function LibrarySwatches({ label, colours }: { label: string; colours: PaletteColour[] }) {
+  return (
+    <div className="lib-swatch-group">
+      <div className="mono lib-list-label">{label}</div>
+      <div className="lib-swatches">
+        {colours.map(colour => (
+          <div key={colour.name} className="lib-swatch">
+            <span style={{ background: colour.hex }} />
+            <small>{colour.name}</small>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function LibraryUndertonePage({ page, data, imageUrls }: { page: BlueprintPage; data: StylistBlueprintReportData; imageUrls?: ResolvedStylistBlueprintImageUrls | null }) {
+  const picks = libraryPicks(data)!;
+  const entry = UNDERTONE_LIBRARY[picks.undertone];
+  const map = imageUrls?.diagnosis?.undertoneMap ?? null;
+  return (
+    <PageFrame page={{ ...page, title: 'Your undertone' }} className="library-page library-undertone">
+      <div className="lib-split">
+        <ImageSlotFrame slotKey="diagnosis.undertoneMap" label="undertone analysis" className="lib-analysis lib-analysis-square">
+          {map ? <ReportImage src={map} priority /> : <FaceGridFallback />}
+        </ImageSlotFrame>
+        <div className="lib-head">
+          <div className="mono lib-kicker">Your undertone</div>
+          <h2 className="display lib-result">{entry.label}</h2>
+          <LibraryPicker data={data} field="undertone" />
+          <p className="lib-summary">{entry.summary}</p>
+          <p className="lib-note"><span className="mono lib-list-label">Jewellery</span> {entry.jewellery}</p>
+        </div>
+      </div>
+    </PageFrame>
+  );
+}
+
+function LibraryPalettePage({ page, data }: { page: BlueprintPage; data: StylistBlueprintReportData }) {
+  const picks = libraryPicks(data)!;
+  const entry = UNDERTONE_LIBRARY[picks.undertone];
+  return (
+    <PageFrame page={{ ...page, title: 'Your colours' }} className="library-page library-palette">
+      <div className="lib-guide-head">
+        <h2 className="display">Your colours</h2>
+        <p className="mono lib-kicker">For your {entry.label.toLowerCase()} undertone</p>
+      </div>
+      <div className="lib-palette">
+        <LibrarySwatches label="Everyday neutrals" colours={entry.neutrals} />
+        <LibrarySwatches label="Main colours" colours={entry.main} />
+        <LibrarySwatches label="Accents" colours={entry.accents} />
+        <LibrarySwatches label="Skip" colours={entry.skip} />
+      </div>
+    </PageFrame>
+  );
+}
+
+function LibraryClosingPage({ page, data }: { page: BlueprintPage; data: StylistBlueprintReportData }) {
+  const name = data.client?.display_name?.split(' ')[0];
+  return (
+    <PageFrame page={{ ...page, title: 'A note for you' }} className="library-page library-closing continuation-page">
+      <div className="lib-closing">
+        <h2 className="display">Every icon has a beginning.<br /><span className="display-it">This is yours.</span></h2>
+        <p className="lib-summary">{name ? `${name}, this` : 'This'} blueprint was made from your photos and your answers. Use it as a guide, not a rulebook, and wear what makes you feel confident.</p>
+      </div>
+    </PageFrame>
+  );
+}
+
+const LIBRARY_GUIDE_KIND: Record<string, GuideCategoryKey> = {
+  library_tops: 'tops', library_bottoms: 'bottoms', library_dresses: 'dresses', library_layers: 'layers', library_footwear: 'footwear',
+};
+
+/** A library page for this slot, or null when the slot keeps its usual page. */
+function libraryPageFor(page: BlueprintPage, data: StylistBlueprintReportData, imageUrls?: ResolvedStylistBlueprintImageUrls | null) {
+  const kind = getStylistBlueprintLibraryLayout(data)?.kinds.get(page.page_number);
+  if (!kind || !libraryPicks(data)) return null;
+  if (kind === 'library_body') return <LibraryBodyPage page={page} data={data} imageUrls={imageUrls} />;
+  if (kind === 'library_goals') return <LibraryGoalsPage page={page} data={data} />;
+  if (kind === 'library_face') return <LibraryFacePage page={page} data={data} imageUrls={imageUrls} />;
+  if (kind === 'library_undertone') return <LibraryUndertonePage page={page} data={data} imageUrls={imageUrls} />;
+  if (kind === 'library_palette') return <LibraryPalettePage page={page} data={data} />;
+  if (kind === 'library_closing') return <LibraryClosingPage page={page} data={data} />;
+  return <LibraryGuidePage page={page} data={data} category={LIBRARY_GUIDE_KIND[kind]} />;
+}
+
 function GenericPage({ page, data, imageUrls }: { page: BlueprintPage; data: StylistBlueprintReportData; imageUrls?: ResolvedStylistBlueprintImageUrls | null }) {
+  const libraryPage = libraryPageFor(page, data, imageUrls);
+  if (libraryPage) return libraryPage;
   const pageType = canonicalPageType(page, data);
   if (pageType === 'outfit') return <OutfitPage page={page} data={data} imageUrls={imageUrls} />;
   if (pageType === 'transformation') return <TransformationPage page={page} data={data} imageUrls={imageUrls} />;
@@ -2235,7 +2520,7 @@ export default function StylistBlueprintReport({
 
 // Hidden in print. They sit inside pages, so the page fitter hides them while measuring too.
 const STYLIST_PRINT_HIDDEN = [
-  '.slot-studio-toolbar', '.slot-studio-empty', '.slot-studio-busy', '.slot-studio-saved', '.slot-drop-hint', '.cover-scroll-cue',
+  '.slot-studio-toolbar', '.slot-studio-empty', '.slot-studio-busy', '.slot-studio-saved', '.slot-drop-hint', '.cover-scroll-cue', '.lib-picker',
   // The paper-grain overlay is a screen texture; in a PDF it embeds an image
   // per page (tens of MB) and prints as a dot screen.
   '.grain',
@@ -4193,6 +4478,64 @@ function BlueprintStyles() {
         .iconik-report-reveal .iconik-page, .iconik-report-reveal .iconik-page > * { opacity: 1 !important; transform: none !important; }
         .iconik-report:not(.iconik-report-editable) .cover-page, .iconik-report:not(.iconik-report-editable) .cover-page * { animation: none !important; }
         .blueprint-deferred-shell { content-visibility: visible !important; contain-intrinsic-size: none !important; }
+      }
+
+      /* ── Style library pages: one result, one line, pictures. ─────────── */
+      .library-page .lib-split {
+        margin-top: 40px;
+        display: grid;
+        grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+        gap: 48px;
+        align-items: center;
+      }
+      .library-face .lib-split, .library-colour .lib-split { grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr); }
+      .lib-kicker { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; opacity: 0.7; margin: 0 0 10px; }
+      .lib-result { font-size: clamp(48px, 7cqi, 88px); line-height: 0.95; letter-spacing: -0.045em; margin: 0; }
+      .lib-summary { font-size: 17px; line-height: 1.55; margin: 18px 0 0; max-width: 34ch; opacity: 0.92; }
+      .lib-note { margin: 22px 0 0; font-size: 14px; opacity: 0.9; }
+      .lib-note .lib-list-label { margin-right: 10px; }
+      .lib-lists { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 28px; }
+      .lib-list { margin-top: 26px; }
+      .lib-lists .lib-list { margin-top: 0; }
+      .lib-list-label { font-size: 10.5px; letter-spacing: 0.16em; text-transform: uppercase; opacity: 0.65; }
+      .lib-list ul { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 8px; }
+      .lib-list li { font-size: 14.5px; line-height: 1.4; padding-left: 18px; position: relative; }
+      .lib-list li::before { content: ''; position: absolute; left: 0; top: 0.55em; width: 7px; height: 7px; border-radius: 50%; background: currentColor; opacity: 0.55; }
+      .lib-list-skip li::before { border-radius: 0; height: 1.5px; top: 0.7em; width: 9px; }
+      .lib-goals { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+      .lib-card { margin: 0; display: flex; flex-direction: column; gap: 12px; }
+      .lib-card-image { aspect-ratio: 2 / 3; border-radius: 14px; overflow: hidden; background: #F6F5F2; }
+      .lib-card-image img { width: 100%; height: 100%; object-fit: cover; display: block; }
+      .lib-card h3 { font-size: 17px; line-height: 1.2; letter-spacing: -0.02em; margin: 0; }
+      .lib-card p { font-size: 13.5px; line-height: 1.45; margin: 5px 0 0; opacity: 0.82; }
+      .lib-guide-head { margin-top: 30px; display: flex; align-items: baseline; justify-content: space-between; gap: 20px; }
+      .lib-guide-head h2 { font-size: clamp(34px, 4.4cqi, 54px); letter-spacing: -0.04em; margin: 0; }
+      .lib-grid { margin-top: 28px; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px; }
+      /* Her own analysis pictures: shown whole, never cropped into the overlay lines. */
+      .lib-analysis-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+      .lib-analysis { aspect-ratio: 2 / 3; border-radius: 16px; overflow: hidden; background: rgba(255,255,255,0.08); }
+      .lib-analysis.lib-analysis-square { aspect-ratio: 1 / 1; }
+      .lib-analysis img { width: 100%; height: 100%; object-fit: contain; display: block; }
+      .library-goals .lib-goals { margin-top: 28px; max-width: 760px; }
+      .library-palette .lib-palette { margin-top: 28px; }
+      .lib-picker { display: inline-flex; align-items: center; gap: 8px; margin-top: 14px; padding: 5px 6px 5px 12px; border-radius: 999px; background: rgba(28, 24, 21, 0.55); color: ${IVORY}; font-family: var(--font-manrope), Manrope, ui-sans-serif, system-ui, sans-serif; font-size: 12px; }
+      .lib-picker select { border: 0; border-radius: 999px; padding: 5px 10px; background: ${IVORY}; color: ${INK}; font: inherit; font-weight: 600; cursor: pointer; }
+      .lib-closing { margin: 120px auto 0; max-width: 640px; text-align: center; }
+      .lib-closing h2 { font-size: clamp(36px, 5cqi, 60px); line-height: 1.05; letter-spacing: -0.04em; margin: 0; }
+      .lib-closing .lib-summary { margin: 26px auto 0; max-width: 44ch; }
+      .lib-palette { display: grid; gap: 22px; }
+      .lib-swatches { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-top: 10px; }
+      .lib-swatch { display: flex; flex-direction: column; gap: 7px; }
+      .lib-swatch span { display: block; aspect-ratio: 1.6 / 1; border-radius: 10px; box-shadow: inset 0 0 0 1px rgba(255,255,255,0.18), 0 6px 18px rgba(28,24,21,0.12); }
+      .lib-swatch small { font-size: 12.5px; opacity: 0.9; }
+      @container iconik-report (max-width: 900px) {
+        .library-page .lib-split, .library-face .lib-split, .library-colour .lib-split { grid-template-columns: minmax(0, 1fr); gap: 32px; }
+        .lib-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .lib-guide-head { flex-direction: column; gap: 6px; }
+      }
+      @container iconik-report (max-width: 520px) {
+        .lib-lists { grid-template-columns: 1fr; }
+        .lib-swatches { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       }
     `}</style>
   );

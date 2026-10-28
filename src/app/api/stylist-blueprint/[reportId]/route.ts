@@ -3,6 +3,7 @@ import { withCurrentConsultationAnswers } from '@/lib/stylistConsultationWorkspa
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { canAccessBlueprintReport } from '@/lib/stylistWorkspaceAuth';
+import { getStylistBlueprintHiddenPageNumbers } from '@/lib/stylistBlueprintSchema';
 import { loadStylistBlueprintReportByIdFresh, getStylistBlueprintReportById } from '@/lib/stylistBlueprintLoader';
 import { revalidateStylistBlueprintCache } from '@/lib/stylistBlueprintCache';
 import { sendStylistBlueprintReportEmail } from '@/lib/email';
@@ -325,7 +326,7 @@ export async function POST(
         validateStylistBlueprintReport(reportData);
         const issue = reportData.studio && checkStudioReportQuality(reportData).find(issue => issue.level === 'error');
         if (issue) throw new Error(issue.message);
-        const hidden = new Set(reportData.studio?.hidden_page_numbers ?? []);
+        const hidden = getStylistBlueprintHiddenPageNumbers(reportData);
         if (isManualStylistBlueprintSubmission(sourceIntake)) hidden.add(getStylistBlueprintContinuationPage(reportData));
         if (!reportData.pages.filter(page => !hidden.has(page.page_number)).every(page => existingReport.section_approvals?.[`p${page.page_number}`] === true)) {
           throw new Error('Approve every visible page before sending');

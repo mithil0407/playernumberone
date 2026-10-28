@@ -1,4 +1,5 @@
 import { getStylistBlueprintPageCount, isRevisedOutfitPageNumber, isVersionedStylistBlueprintReportData } from './stylistBlueprintSchema.ts';
+import { BODY_SHAPE_KEYS, FACE_SHAPE_KEYS, UNDERTONE_KEYS } from './stylistStyleLibrary.ts';
 import type { StylistBlueprintReportData } from './stylistBlueprintGenerator.ts';
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -42,6 +43,14 @@ export function assertStylistReportDraft(value: unknown): asserts value is Styli
     }
     if (!Array.isArray(order) || order.length !== count || new Set(order).size !== count
       || order.some(n => !Number.isInteger(n) || n < 1 || n > count)) throw new Error('Page order must include every page once');
+    const picks = (value.studio as { style_library?: unknown }).style_library;
+    if (picks !== undefined) {
+      const ok = isRecord(picks)
+        && (BODY_SHAPE_KEYS as readonly unknown[]).includes(picks.body_shape)
+        && (FACE_SHAPE_KEYS as readonly unknown[]).includes(picks.face_shape)
+        && (UNDERTONE_KEYS as readonly unknown[]).includes(picks.undertone);
+      if (!ok) throw new Error('Body shape, face shape and undertone must each be one of the fixed options');
+    }
   }
 }
 
