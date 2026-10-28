@@ -94,6 +94,7 @@ import {
   verbatimOutfitPage,
   type PinterestOutfitEngineMetadata,
 } from './stylistPinterestOutfits.ts';
+import { primeOutfitLibraryCuration } from './stylistOutfitLibraryCuration';
 
 export {
   STYLIST_BLUEPRINT_36_PAGE_COUNT,
@@ -6311,6 +6312,7 @@ export async function generateStylistBlueprintPages(
       return generateStylistOutfitScienceApplication(submission, reportData, libraryContext.outfits);
     }
     if (isPinterestVerbatimReport(reportData) || isPinterestVerbatimEngineEnabled()) {
+      await primeOutfitLibraryCuration();
       return generatePinterestVerbatimApplication(submission, reportData, callStylistOutfitJSON);
     }
     if (isStylistOutfitScienceHarnessEnabled()) {

@@ -24,6 +24,7 @@ import {
 import { resolveConsultationIntakePhotos, withCurrentConsultationAnswers } from '@/lib/stylistConsultationWorkspace';
 import { isPinterestVerbatimEngineEnabled, isPinterestVerbatimReport, verbatimReplacementPage } from '@/lib/stylistPinterestOutfits';
 import { callStylistOutfitJSON } from '@/lib/stylistBlueprintGenerator';
+import { primeOutfitLibraryCuration } from '@/lib/stylistOutfitLibraryCuration';
 
 export const maxDuration = 300;
 
@@ -93,6 +94,7 @@ export async function POST(
     let nextReportData: StylistBlueprintReportData | null = null;
     let nextReplacementPage = null as Awaited<ReturnType<typeof generateStylistBlueprintReplacementOutfit>> | null;
     let lastValidationError: unknown = null;
+    await primeOutfitLibraryCuration();
     for (let attempt = 0; attempt < 2; attempt++) {
       const scienceResult = isScienceBlueprintReport(reportData)
         ? await generateStylistOutfitScienceApplication(resolvedSubmission, reportData)

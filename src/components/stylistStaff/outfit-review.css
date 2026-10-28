@@ -1,0 +1,82 @@
+/* Outfit library swipe review. Scoped under .or- so it never fights the Man admin kit. */
+.or-root { max-width: 560px; margin: -12px auto 0; display: flex; flex-direction: column; gap: 12px; }
+.or-head { display: flex; flex-direction: column; gap: 10px; }
+.or-title { font-size: 26px; line-height: 1.15; font-weight: 600; letter-spacing: -0.02em; margin: 4px 0 6px; }
+.or-sub { font-size: 14px; line-height: 1.5; margin: 0; }
+.or-progress p { font-size: 13px; margin: 6px 0 0; color: var(--ma-ink-2); }
+.or-like-ink { color: var(--ma-green); font-weight: 500; }
+.or-bar { height: 6px; border-radius: 99px; background: var(--ma-line); overflow: hidden; }
+.or-bar span { display: block; height: 100%; background: var(--ma-ink); border-radius: inherit; transition: width 0.3s ease; }
+.or-note { font-size: 13px; padding: 10px 12px; border-radius: 10px; background: var(--ma-amber-soft); color: var(--ma-amber); margin: 0; }
+
+.or-stage { display: flex; flex-direction: column; align-items: center; gap: 12px; padding-top: 2px; }
+.or-stack { position: relative; width: min(100%, 400px, calc((100svh - 400px) * 0.6667)); min-width: 220px; aspect-ratio: 2 / 3; }
+.or-card {
+  position: absolute; inset: 0; border-radius: 18px; overflow: hidden; background: #fff;
+  box-shadow: var(--ma-shadow-lg); touch-action: pan-y; user-select: none; cursor: grab;
+  transition: transform 0.22s ease;
+}
+.or-card.is-dragging { transition: none; cursor: grabbing; }
+.or-card--under { transform: scale(0.95) translateY(10px); box-shadow: var(--ma-shadow-sm); pointer-events: none; }
+.or-card img { width: 100%; height: 100%; object-fit: cover; display: block; pointer-events: none; }
+.or-stamp {
+  position: absolute; top: 22px; padding: 6px 14px; border: 3px solid; border-radius: 10px;
+  font-size: 22px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; background: rgba(255,255,255,0.85);
+  pointer-events: none;
+}
+.or-stamp--like { left: 18px; color: var(--ma-green); transform: rotate(-12deg); }
+.or-stamp--pass { right: 18px; color: var(--ma-red); transform: rotate(12deg); }
+.or-tag {
+  position: absolute; left: 12px; bottom: 12px; font-size: 11px; font-weight: 600; letter-spacing: 0.06em;
+  text-transform: uppercase; padding: 5px 9px; border-radius: 99px; background: rgba(17,19,21,0.72); color: #fff;
+}
+
+.or-actions { display: flex; align-items: center; justify-content: center; gap: 18px; }
+.or-round {
+  display: inline-flex; align-items: center; justify-content: center; border-radius: 50%;
+  width: 66px; height: 66px; background: var(--ma-surface); border: 1px solid var(--ma-line);
+  box-shadow: var(--ma-shadow-sm); transition: transform 0.12s ease, background 0.12s ease;
+}
+.or-round:active:not(:disabled) { transform: scale(0.92); }
+.or-round:disabled { opacity: 0.35; }
+.or-round--small { width: 48px; height: 48px; color: var(--ma-ink-2); }
+.or-round--pass { color: var(--ma-red); }
+.or-round--like { color: var(--ma-green); }
+.or-round--pass:hover:not(:disabled) { background: var(--ma-red-soft); }
+.or-round--like:hover:not(:disabled) { background: var(--ma-green-soft); }
+
+.or-caption { font-size: 14px; line-height: 1.45; text-align: center; margin: 0; max-width: 400px; color: var(--ma-ink-2); }
+.or-details {
+  display: grid; grid-template-columns: auto 1fr; gap: 6px 12px; font-size: 13px; line-height: 1.45;
+  width: min(100%, 400px); margin: 0; padding: 12px 14px; border-radius: 12px; background: var(--ma-surface); border: 1px solid var(--ma-line-2);
+}
+.or-details dt { color: var(--ma-ink-3); font-weight: 600; }
+.or-details dd { margin: 0; }
+.or-hint { font-size: 12px; margin: 0; }
+@media (hover: none) { .or-hint { display: none; } }
+
+.or-done { text-align: center; padding: 48px 16px; display: flex; flex-direction: column; gap: 10px; align-items: center; }
+.or-done-title { font-size: 20px; font-weight: 600; margin: 0; }
+.or-done-actions { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-top: 8px; }
+.or-empty { display: flex; flex-direction: column; gap: 12px; align-items: center; padding: 64px 16px; color: var(--ma-ink-2); }
+
+.or-grid-note { font-size: 13px; margin: 0 0 12px; }
+.or-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+@media (min-width: 520px) { .or-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+.or-grid button { position: relative; display: block; width: 100%; padding: 0; border: 0; border-radius: 10px; overflow: hidden; background: #fff; }
+.or-grid img { width: 100%; aspect-ratio: 2 / 3; object-fit: cover; display: block; }
+.or-grid-flip {
+  position: absolute; right: 6px; bottom: 6px; display: inline-flex; align-items: center; gap: 4px;
+  font-size: 11px; font-weight: 600; padding: 4px 8px; border-radius: 99px; background: rgba(255,255,255,0.92);
+}
+.or-grid-flip--pass { color: var(--ma-red); }
+.or-grid-flip--like { color: var(--ma-green); }
+
+/* Phones: card and buttons on one screen under the studio header. */
+@media (max-width: 520px) {
+  .or-title { font-size: 21px; margin: 2px 0 4px; }
+  .or-sub { font-size: 13px; }
+  .or-round { width: 58px; height: 58px; }
+  .or-round--small { width: 44px; height: 44px; }
+  .or-root { gap: 10px; }
+}

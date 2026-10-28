@@ -1,6 +1,6 @@
 /** Shared by the edge gate and its regression tests; no credentials or Node APIs. */
 export function isStylistWorkspacePage(pathname: string) {
-  return /^\/stylist\/[^/]+\/(?:dashboard|consultations|reports|new-client)(?:\/|$)/.test(pathname);
+  return /^\/stylist\/[^/]+\/(?:dashboard|consultations|reports|new-client|outfit-review)(?:\/|$)/.test(pathname);
 }
 
 export function isStylistPrivatePath(pathname: string) {

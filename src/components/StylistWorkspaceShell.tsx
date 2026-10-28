@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { ArrowLeft, LogOut } from 'lucide-react';
+import { ArrowLeft, Heart, LogOut } from 'lucide-react';
 import { useState } from 'react';
 import { Avatar, Pill } from './manAdmin/ui';
 import './manAdmin/man-admin.css';
@@ -50,7 +50,16 @@ export default function StylistWorkspaceShell({
             <span className="ml-2 ma-faint" style={{ letterSpacing: '0.12em', fontWeight: 500, fontSize: 11 }}>STUDIO</span>
           </Link>
           {adminPreview && <Pill tone="accent">Admin preview</Pill>}
-          <span className="ml-auto flex min-w-0 items-center gap-2.5">
+          <Link
+            href={`${base}/outfit-review`}
+            prefetch={false}
+            aria-current={pathname.startsWith(`${base}/outfit-review`) ? 'page' : undefined}
+            className="ma-btn ma-btn--ghost ma-btn--sm ml-auto shrink-0"
+          >
+            <Heart size={14} aria-hidden="true" />
+            <span className="hidden sm:inline">Outfit library</span>
+          </Link>
+          <span className="flex min-w-0 items-center gap-2.5">
             <Avatar name={stylist.name} size={30} />
             <span className="hidden truncate text-[14px] sm:inline" style={{ fontWeight: 500 }}>{stylist.name}</span>
           </span>
