@@ -52,6 +52,7 @@ import {
   violatesBannedPieces,
 } from './stylistIntakePreferences.ts';
 import { bannedOutfitFor } from './stylistBannedOutfits.ts';
+import { applyOutfitLibraryCuration, type OutfitLibraryCuration } from './stylistOutfitLibraryReview.ts';
 import type {
   BlueprintBlock,
   BlueprintColourUse,
@@ -203,7 +204,8 @@ export function parseVerbatimLooks(raw: string): VerbatimLook[] {
 
 let cachedLooks: VerbatimLook[] | null = null;
 
-export function getVerbatimLooks(): VerbatimLook[] {
+/** Every look in the library, whatever the curator thought of it. */
+export function getAllVerbatimLooks(): VerbatimLook[] {
   if (cachedLooks) return cachedLooks;
   const raw = readFileSync(join(process.cwd(), 'outfitlibrary.md'), 'utf-8');
   const looks = parseVerbatimLooks(raw);
@@ -211,6 +213,21 @@ export function getVerbatimLooks(): VerbatimLook[] {
   if (looks.length < 100) throw new Error(`The outfit library loaded only ${looks.length} Pinterest looks; check outfitlibrary.md is deployed.`);
   cachedLooks = looks;
   return looks;
+}
+
+let libraryCuration: OutfitLibraryCuration | null = null;
+let curatedLooks: VerbatimLook[] | null = null;
+
+/** The curator's swipes, loaded by primeOutfitLibraryCuration before an engine run. */
+export function setOutfitLibraryCuration(curation: OutfitLibraryCuration | null) {
+  libraryCuration = curation;
+  curatedLooks = null;
+}
+
+/** The looks the engine may recommend: the library minus what the curator passed on. */
+export function getVerbatimLooks(): VerbatimLook[] {
+  curatedLooks ??= applyOutfitLibraryCuration(getAllVerbatimLooks(), libraryCuration);
+  return curatedLooks;
 }
 
 // --- What this client needs ----------------------------------------------------
@@ -1666,7 +1683,7 @@ export function verbatimAlternativesForPage(
   const current = currentPage?.library_refs?.[0]?.id ?? engine?.selected?.find(item => item.page_number === pageNumber)?.look_id;
   // Keep the page on its side of her Western/Indian mix, whatever produced it.
   const currentEthnic = current
-    ? getVerbatimLooks().find(look => look.id === current)?.ethnic
+    ? getAllVerbatimLooks().find(look => look.id === current)?.ethnic
     : currentPage ? ETHNIC_RE.test(JSON.stringify(currentPage.blocks)) : undefined;
   const others = reportData.pages
     .filter(page => page.page_type === 'outfit' && page.page_number !== pageNumber)

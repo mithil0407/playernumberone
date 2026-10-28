@@ -26,6 +26,7 @@ import {
 import { resolveConsultationIntakePhotos, withCurrentConsultationAnswers } from '@/lib/stylistConsultationWorkspace';
 import { generatePinterestVerbatimApplication, isPinterestVerbatimEngineEnabled } from '@/lib/stylistPinterestOutfits';
 import { callStylistOutfitJSON } from '@/lib/stylistBlueprintGenerator';
+import { primeOutfitLibraryCuration } from '@/lib/stylistOutfitLibraryCuration';
 
 export const maxDuration = 300;
 
@@ -119,6 +120,7 @@ export async function POST(
     const culturalMode = getStylistOutfitCulturalMode(resolvedSubmission);
     let nextReportData: StylistBlueprintReportData | null = null;
     let lastValidationError: unknown = null;
+    await primeOutfitLibraryCuration();
     for (let attempt = 0; attempt < 2; attempt++) {
       // New sets come from real Pinterest looks; a science report keeps its engine.
       const verbatimEnabled = !isScienceBlueprintReport(reportData) && isPinterestVerbatimEngineEnabled();

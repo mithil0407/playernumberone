@@ -9,6 +9,7 @@ import { revalidateStylistBlueprintCache } from '@/lib/stylistBlueprintCache';
 import { callStylistOutfitJSON, getStylistBlueprintOutfitStartPage, isVersionedStylistBlueprintReportData, validateStylistBlueprintReport, type StylistBlueprintReportData, type StylistIntakeSubmission } from '@/lib/stylistBlueprintGenerator';
 import { isBannedScienceOutfit, isScienceBlueprintReport, scienceOutfitsToBlueprintPages, type OutfitScienceEngineMetadata } from '@/lib/stylistOutfitScience';
 import { isPinterestVerbatimReport, verbatimAlternativesForPage, verbatimFormulaItems, verbatimReplacementPage } from '@/lib/stylistPinterestOutfits';
+import { primeOutfitLibraryCuration } from '@/lib/stylistOutfitLibraryCuration';
 
 async function load(reportId: string) {
   const { data, error } = await supabaseAdmin.from('stylist_blueprint_reports')
@@ -45,6 +46,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   if (isPinterestVerbatimReport(report.report_data)) {
     const submission = await loadSubmission(report.submission_id);
     if (!submission) return NextResponse.json({ error: 'Submission not found' }, { status: 404 });
+    await primeOutfitLibraryCuration();
     const options = verbatimAlternativesForPage(submission, report.report_data, pageNumber).map(({ evaluated, capsule }) => ({
       id: evaluated.look.id,
       pieces: verbatimFormulaItems(evaluated).map(item => item.piece),
@@ -72,6 +74,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const submission = await loadSubmission(report.submission_id);
     if (!submission) return NextResponse.json({ error: 'Submission not found' }, { status: 404 });
     let replacement;
+    await primeOutfitLibraryCuration();
     try {
       replacement = await verbatimReplacementPage(submission, report.report_data, body.pageNumber, callStylistOutfitJSON, String(body.candidateId ?? ''));
     } catch {

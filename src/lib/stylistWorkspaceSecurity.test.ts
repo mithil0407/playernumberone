@@ -7,7 +7,7 @@ import { INTERNAL_PAGE_VIEW_PATTERNS } from './metaPageView.ts';
 import { stylistWorkspaceDestination } from './stylistWorkspaceNavigation.ts';
 
 test('guards staff pages without blocking customer intake and checkout', () => {
-  for (const path of ['/stylist/jazz/dashboard', '/stylist/other/consultations/123', '/stylist/jazz/reports/abc', '/stylist/jazz/new-client']) {
+  for (const path of ['/stylist/jazz/dashboard', '/stylist/other/consultations/123', '/stylist/jazz/reports/abc', '/stylist/jazz/new-client', '/stylist/jazz/outfit-review']) {
     assert.equal(isStylistWorkspacePage(path), true);
     assert.equal(isStylistPrivatePath(path), true);
   }
