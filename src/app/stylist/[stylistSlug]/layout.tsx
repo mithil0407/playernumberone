@@ -13,13 +13,14 @@ export default async function WorkspaceLayout({
   children: React.ReactNode;
   params: Promise<{ stylistSlug: string }>;
 }) {
-  const { stylistSlug: previewSlug } = await params;
-  if (await isAdminCookieAuthenticated()) {
-    const stylist = await getWorkspaceStylistBySlug(previewSlug);
+  const [{ stylistSlug }, identity] = await Promise.all([params, getStylistWorkspaceIdentity()]);
+  // A stylist signed in on a browser that also holds the admin cookie is
+  // herself on her own pages, not an admin preview of them.
+  if (identity?.slug !== stylistSlug && await isAdminCookieAuthenticated()) {
+    const stylist = await getWorkspaceStylistBySlug(stylistSlug);
     if (!stylist) redirect('/stylist/admin/workspace');
     return <StylistWorkspaceShell stylist={{ name: stylist.name, slug: stylist.slug }} adminPreview>{children}</StylistWorkspaceShell>;
   }
-  const [{ stylistSlug }, identity] = await Promise.all([params, getStylistWorkspaceIdentity()]);
   if (!identity) {
     const destination = (await headers()).get('x-iconik-workspace-path') || `/stylist/${stylistSlug}/dashboard`;
     redirect(`/stylist/login?redirectTo=${encodeURIComponent(destination)}`);

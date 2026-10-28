@@ -7,12 +7,17 @@ const noStore = { 'Cache-Control': 'private, no-store' };
 /** The signed-in stylist, or the stylist an admin is previewing. */
 async function reviewer(request: NextRequest) {
   const previewSlug = request.nextUrl.searchParams.get('stylistSlug');
+  // Her own login wins, even on a browser that also holds the admin cookie,
+  // so her swipes are never silently treated as a preview.
+  const identity = await getStylistWorkspaceIdentity();
+  if (identity && (!previewSlug || previewSlug === identity.slug)) {
+    return { stylistId: identity.stylistId, slug: identity.slug, adminPreview: false };
+  }
   if (previewSlug && await isAdminCookieAuthenticated()) {
     const stylist = await getWorkspaceStylistBySlug(previewSlug);
     return stylist ? { stylistId: stylist.id, slug: stylist.slug, adminPreview: true } : null;
   }
-  const identity = await getStylistWorkspaceIdentity();
-  return identity ? { stylistId: identity.stylistId, slug: identity.slug, adminPreview: false } : null;
+  return null;
 }
 
 export async function GET(request: NextRequest) {

@@ -84,9 +84,13 @@ export default function OutfitReviewDeck({ stylistSlug, adminPreview }: { stylis
   const decide = useCallback((verdict: Verdict) => {
     const card = pending[0];
     if (!card) return;
+    if (adminPreview) {
+      showToast('Admin preview: swipes are not saved. Sign in as the stylist in a private window.');
+      return;
+    }
     setHistory(items => [...items, { id: card.id, previous: card.verdict }].slice(-200));
     void save(card.id, verdict, card.verdict);
-  }, [pending, save]);
+  }, [adminPreview, pending, save, showToast]);
 
   const rewind = useCallback(() => {
     const last = history.at(-1);
@@ -144,7 +148,9 @@ export default function OutfitReviewDeck({ stylistSlug, adminPreview }: { stylis
         </div>
       </header>
 
-      {adminPreview && <p className="or-note">Admin preview: you can look, but swipes are not saved.</p>}
+      {adminPreview && <p className="or-note or-note--strong" role="alert">
+        Admin preview: swipes are <strong>not saved</strong> on this browser. To swipe as {stylistSlug}, sign in on her own phone or in a private window.
+      </p>}
       {!adminPreview && !deck.isCurator && <p className="or-note">Your swipes are saved for reference. Client recommendations follow the head stylist&rsquo;s picks.</p>}
 
       <Segmented<View>
