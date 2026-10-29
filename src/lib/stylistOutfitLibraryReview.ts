@@ -7,9 +7,9 @@
  * like or pass at /stylist/<slug>/outfit-review, and the women's outfit engine
  * then recommends only what she liked:
  *
- * - a look she passed on is never recommended again, from the moment she swipes;
- * - once she has been through every picture, looks she has not liked (new or
- *   picture-less ones included) drop out too, so only her likes are used.
+ * Only an explicit Keep makes a look eligible. Passed, unreviewed, new and
+ * picture-less looks stay out, even while she is still reviewing the library.
+ * Missing review data never opens the full library to recommendations.
  *
  * This file is pure so the engine and its tests can use it without a database.
  */
@@ -27,39 +27,14 @@ export function outfitLibraryCuratorSlug() {
 
 export type OutfitVerdict = 'like' | 'dislike';
 
-/** The curator's verdicts, plus which looks have a picture she can judge. */
+/** The curator's saved verdicts. */
 export interface OutfitLibraryCuration {
   verdicts: Map<string, OutfitVerdict>;
-  imagedLookIds: Set<string>;
-}
-
-/**
- * The likes-only switch is held back until she has liked at least this many
- * looks, so a half-finished or very harsh pass can never leave clients short
- * of outfits. Below it, only her passes are removed.
- */
-export const MIN_LIKES_FOR_LIKES_ONLY = 120;
-
-export type CurationMode = 'off' | 'drop_passes' | 'likes_only';
-
-export function curationMode(looks: Pick<VerbatimLook, 'id'>[], curation: OutfitLibraryCuration | null): CurationMode {
-  if (!curation || curation.verdicts.size === 0) return 'off';
-  let likes = 0;
-  let pending = 0;
-  for (const look of looks) {
-    const verdict = curation.verdicts.get(look.id);
-    if (verdict === 'like') likes += 1;
-    else if (!verdict && curation.imagedLookIds.has(look.id)) pending += 1;
-  }
-  return pending === 0 && likes >= MIN_LIKES_FOR_LIKES_ONLY ? 'likes_only' : 'drop_passes';
 }
 
 /** The library as the engine should see it, after the curator's swipes. */
 export function applyOutfitLibraryCuration<T extends Pick<VerbatimLook, 'id'>>(looks: T[], curation: OutfitLibraryCuration | null): T[] {
-  const mode = curationMode(looks, curation);
-  if (mode === 'off' || !curation) return looks;
-  if (mode === 'likes_only') return looks.filter(look => curation.verdicts.get(look.id) === 'like');
-  return looks.filter(look => curation.verdicts.get(look.id) !== 'dislike');
+  return looks.filter(look => curation?.verdicts.get(look.id) === 'like');
 }
 
 /** Already banned looks are never recommended, so they are not worth her time. */

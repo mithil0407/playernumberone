@@ -6,9 +6,8 @@ import { withCurrentConsultationAnswers } from '@/lib/stylistConsultationWorkspa
 export const maxDuration = 60;
 import { supabaseAdmin } from '@/lib/supabase';
 import { revalidateStylistBlueprintCache } from '@/lib/stylistBlueprintCache';
-import { callStylistOutfitJSON, getStylistBlueprintOutfitStartPage, isVersionedStylistBlueprintReportData, validateStylistBlueprintReport, type StylistBlueprintReportData, type StylistIntakeSubmission } from '@/lib/stylistBlueprintGenerator';
-import { isBannedScienceOutfit, isScienceBlueprintReport, scienceOutfitsToBlueprintPages, type OutfitScienceEngineMetadata } from '@/lib/stylistOutfitScience';
-import { isPinterestVerbatimReport, verbatimAlternativesForPage, verbatimFormulaItems, verbatimReplacementPage } from '@/lib/stylistPinterestOutfits';
+import { callStylistOutfitJSON, getStylistBlueprintOutfitStartPage, getStylistBlueprintOutfitEndPage, isVersionedStylistBlueprintReportData, validateStylistBlueprintReport, type StylistBlueprintReportData, type StylistIntakeSubmission } from '@/lib/stylistBlueprintGenerator';
+import { verbatimAlternativesForPage, verbatimFormulaItems, verbatimReplacementPage } from '@/lib/stylistPinterestOutfits';
 import { primeOutfitLibraryCuration } from '@/lib/stylistOutfitLibraryCuration';
 
 async function load(reportId: string) {
@@ -21,19 +20,9 @@ async function loadSubmission(submissionId: string) {
   const { data } = await supabaseAdmin.from('stylist_intake_responses').select('*').eq('id', submissionId).maybeSingle();
   return data ? withCurrentConsultationAnswers(data as StylistIntakeSubmission & { consultation_id?: string | null }) : null;
 }
-function scienceAlternatives(report: StylistBlueprintReportData & { outfit_engine: OutfitScienceEngineMetadata }, pageNumber: number) {
-  const index = pageNumber - getStylistBlueprintOutfitStartPage(report);
-  const engine = report.outfit_engine;
-  const current = engine?.scored_candidates.find(item => item.id === engine.selected_candidate_ids[index]);
-  if (!engine || !current) return [];
-  const used = engine.scored_candidates.filter(item => engine.selected_candidate_ids.includes(item.id));
-  const signatures = new Set(used.map(item => item.library_signature).filter(Boolean));
-  const seen = new Set<string>();
-  return engine.scored_candidates.filter(item => !item.score.killed && !isBannedScienceOutfit(item.formula_items) && item.capsule === current.capsule
-    && Boolean(item.is_ethnic) === Boolean(current.is_ethnic)
-    && !engine.selected_candidate_ids.includes(item.id) && (!item.library_signature || !signatures.has(item.library_signature)))
-    .sort((a, b) => (b.score.iconik + b.score.relevance + b.score.realism) - (a.score.iconik + a.score.relevance + a.score.realism))
-    .filter(item => { const key = item.library_signature || item.id; if (seen.has(key)) return false; seen.add(key); return true; }).slice(0, 8);
+function isOutfitPage(report: StylistBlueprintReportData, pageNumber: number) {
+  return Number.isInteger(pageNumber) && pageNumber >= getStylistBlueprintOutfitStartPage(report)
+    && pageNumber <= getStylistBlueprintOutfitEndPage(report);
 }
 export async function GET(request: NextRequest, { params }: { params: Promise<{ reportId: string }> }) {
   const { reportId } = await params;
@@ -42,10 +31,10 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   if (!report) return NextResponse.json({ error: 'Report not found' }, { status: 404 });
   const pageNumber = Number(request.nextUrl.searchParams.get('page'));
   const headers = { 'Cache-Control': 'private, no-store' };
-  // Pinterest reports offer the next best real looks that pass her rules.
-  if (isPinterestVerbatimReport(report.report_data)) {
-    const submission = await loadSubmission(report.submission_id);
-    if (!submission) return NextResponse.json({ error: 'Submission not found' }, { status: 404 });
+  if (!isOutfitPage(report.report_data, pageNumber)) return NextResponse.json({ error: 'Choose an outfit page.' }, { status: 400 });
+  const submission = await loadSubmission(report.submission_id);
+  if (!submission) return NextResponse.json({ error: 'Submission not found' }, { status: 404 });
+  try {
     await primeOutfitLibraryCuration();
     const options = verbatimAlternativesForPage(submission, report.report_data, pageNumber).map(({ evaluated, capsule }) => ({
       id: evaluated.look.id,
@@ -54,10 +43,9 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       changes: evaluated.swaps,
     }));
     return NextResponse.json({ options }, { headers });
+  } catch (error) {
+    return NextResponse.json({ error: error instanceof Error ? error.message : 'Could not load kept outfits.' }, { status: 503, headers });
   }
-  if (!isScienceBlueprintReport(report.report_data)) return NextResponse.json({ options: [] }, { headers });
-  return NextResponse.json({ options: scienceAlternatives(report.report_data, pageNumber).map(item => ({ id: item.id,
-    pieces: item.formula_items.map(piece => piece.piece), capsule: item.capsule })) }, { headers });
 }
 export async function POST(request: NextRequest, { params }: { params: Promise<{ reportId: string }> }) {
   const { reportId } = await params;
@@ -66,35 +54,23 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   const report = await load(reportId);
   if (!report) return NextResponse.json({ error: 'Report not found' }, { status: 404 });
   if (report.status === 'generating' || report.progress_stage) return NextResponse.json({ error: 'Wait for the report to finish generating.' }, { status: 409 });
-  if (!Number.isInteger(body?.pageNumber)) return NextResponse.json({ error: 'Choose an outfit page.' }, { status: 400 });
+  if (!isOutfitPage(report.report_data, body?.pageNumber)) return NextResponse.json({ error: 'Choose an outfit page.' }, { status: 400 });
   if (body.expectedUpdatedAt !== report.updated_at) return NextResponse.json({ error: 'The report changed. Reload before choosing another look.' }, { status: 409 });
   const index = body.pageNumber - getStylistBlueprintOutfitStartPage(report.report_data);
   let reportData: StylistBlueprintReportData;
-  if (isPinterestVerbatimReport(report.report_data)) {
-    const submission = await loadSubmission(report.submission_id);
-    if (!submission) return NextResponse.json({ error: 'Submission not found' }, { status: 404 });
-    let replacement;
+  const submission = await loadSubmission(report.submission_id);
+  if (!submission) return NextResponse.json({ error: 'Submission not found' }, { status: 404 });
+  try {
     await primeOutfitLibraryCuration();
-    try {
-      replacement = await verbatimReplacementPage(submission, report.report_data, body.pageNumber, callStylistOutfitJSON, String(body.candidateId ?? ''));
-    } catch {
-      return NextResponse.json({ error: 'This alternative is no longer available. Refresh the choices.' }, { status: 409 });
-    }
+  } catch (error) {
+    return NextResponse.json({ error: error instanceof Error ? error.message : 'Could not load kept outfits.' }, { status: 503 });
+  }
+  try {
+    const replacement = await verbatimReplacementPage(submission, report.report_data, body.pageNumber, callStylistOutfitJSON, String(body.candidateId ?? ''));
     reportData = { ...report.report_data, outfit_engine: replacement.outfit_engine,
       pages: report.report_data.pages.map(item => item.page_number === body.pageNumber ? replacement.page : item) };
-  } else {
-    if (!isScienceBlueprintReport(report.report_data)) return NextResponse.json({ error: 'This report has no alternative looks.' }, { status: 400 });
-    const scienceReport = report.report_data;
-    const candidate = scienceAlternatives(scienceReport, body.pageNumber).find(item => item.id === body.candidateId);
-    if (!candidate) return NextResponse.json({ error: 'This alternative is no longer available. Refresh the choices.' }, { status: 409 });
-    const engine = scienceReport.outfit_engine;
-    const ids = engine.selected_candidate_ids.map((id, i) => i === index ? candidate.id : id);
-    const selected = ids.map(id => engine.scored_candidates.find(item => item.id === id)!);
-    if (selected.some(item => !item)) return NextResponse.json({ error: 'Edit the outfit manually; its original selection is unavailable.' }, { status: 400 });
-    const page = scienceOutfitsToBlueprintPages(selected, scienceReport).find(item => item.page_number === body.pageNumber);
-    if (!page) return NextResponse.json({ error: 'Could not prepare this outfit.' }, { status: 400 });
-    reportData = { ...scienceReport, pages: scienceReport.pages.map(item => item.page_number === page.page_number ? page : item),
-      outfit_engine: { ...engine, selected_candidate_ids: ids } };
+  } catch {
+    return NextResponse.json({ error: 'This alternative is no longer available. Refresh the choices.' }, { status: 409 });
   }
   try { validateStylistBlueprintReport(reportData, { validateStaticPageDensity: false }); }
   catch { return NextResponse.json({ error: 'This alternative does not pass the report checks. Choose another look.' }, { status: 400 }); }
