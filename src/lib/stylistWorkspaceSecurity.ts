@@ -9,6 +9,14 @@ export function isStylistPrivatePath(pathname: string) {
     || /^\/api\/(?:stylist-workspace|stylist-blueprint)(?:\/|$)/.test(pathname);
 }
 
+/**
+ * The studio's report image links. Still private and staff-only, but the route
+ * sets its own short private cache so a reload reuses pictures already loaded.
+ */
+export function isStudioImageRequest(pathname: string, method: string) {
+  return method.toUpperCase() === 'GET' && /^\/api\/stylist-blueprint\/[^/]+\/image$/.test(pathname);
+}
+
 /** Client photo upload page and its API: public by token, never cached, indexed or tracked. */
 export function isClientUploadPath(pathname: string) {
   return /^\/upload\/[^/]+\/?$/.test(pathname) || /^\/api\/consultation-upload\//.test(pathname);

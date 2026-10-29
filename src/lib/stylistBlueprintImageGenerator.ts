@@ -309,9 +309,25 @@ async function persistPaths(reportId: string, paths: MutablePaths, shareToken?: 
   await revalidateStylistBlueprintCache(reportId, shareToken);
 }
 
+/** Report images never need more than this on their longest side; they show at about 700px. */
+const STORED_IMAGE_MAX_EDGE = 1600;
+
+/**
+ * Every write gets its own path. Images are cached by path (the browser, the
+ * signed-URL cache and the reader-sized copy), so reusing a name for a new
+ * picture would keep showing the old one.
+ */
+export function uniqueStylistBlueprintImagePath(reportId: string, fileName: string, now = Date.now()) {
+  return `${reportId}/${/-\d{13}$/.test(fileName) ? fileName : `${fileName}-${now}`}.jpg`;
+}
+
 async function uploadBuffer(reportId: string, fileName: string, buffer: Buffer) {
-  const path = `${reportId}/${fileName}.jpg`;
-  const jpeg = await sharp(buffer, { limitInputPixels: 40_000_000 }).rotate().jpeg({ quality: 92 }).toBuffer();
+  const path = uniqueStylistBlueprintImagePath(reportId, fileName);
+  const jpeg = await sharp(buffer, { limitInputPixels: 40_000_000 })
+    .rotate()
+    .resize({ width: STORED_IMAGE_MAX_EDGE, height: STORED_IMAGE_MAX_EDGE, fit: 'inside', withoutEnlargement: true })
+    .jpeg({ quality: 88, mozjpeg: true })
+    .toBuffer();
   const upload = () => supabaseAdmin.storage
     .from(BUCKET)
     .upload(path, jpeg, { contentType: 'image/jpeg', upsert: true });
@@ -1198,11 +1214,17 @@ export async function uploadStylistBlueprintManualImage(input: {
     // so a new image is a draft change and must not take her link down.
     image_urls: paths, section_approvals: approvals,
     status: 'in_review', revision: Number(current.revision ?? 0) + 1, updated_at: new Date().toISOString(),
-  }).eq('id', input.reportId).eq('updated_at', current.updated_at).select('id').maybeSingle();
+  }).eq('id', input.reportId).eq('updated_at', current.updated_at).select('id, revision, updated_at, status, section_approvals').maybeSingle();
   if (error) throw new Error(`Could not save uploaded image: ${error.message}`);
   if (!saved) throw new Error('The report changed during upload. Retry the upload.');
   await revalidateStylistBlueprintCache(input.reportId, input.shareToken);
-  return { imagePaths: paths, imageUrls: await resolveStylistBlueprintImageUrls(paths), path };
+  // The new revision comes back so the studio can keep editing without reloading the whole report.
+  return {
+    imagePaths: paths,
+    imageUrls: await resolveStylistBlueprintImageUrls(paths),
+    path,
+    report: { revision: saved.revision, updated_at: saved.updated_at, status: saved.status, section_approvals: saved.section_approvals },
+  };
 }
 
 async function setSlot(input: {
@@ -1487,22 +1509,21 @@ async function getSignedUrl(path: string) {
   return data.signedUrl;
 }
 
+/**
+ * The studio's link for a stored image. It stays the same for as long as the
+ * image does, so the browser keeps it cached across every reload of the
+ * report. A fresh signed URL on each reload made the browser download every
+ * picture again after each upload or save.
+ */
+export function stylistBlueprintStudioImageUrl(path: string) {
+  const reportId = path.split('/')[0];
+  return `/api/stylist-blueprint/${encodeURIComponent(reportId)}/image?p=${encodeURIComponent(path)}`;
+}
+
+/** Staff-only image links for the studio. Readers get share links instead (see stylistBlueprintLoader). */
 export async function resolveStylistBlueprintImageUrls(paths: StylistBlueprintImagePaths | null | undefined) {
   if (!paths) return null;
-  const uniquePaths = [...new Set(collectPaths(paths))];
-  const signedUrlMap = new Map<string, string>();
-
-  if (uniquePaths.length) {
-    const { data } = await supabaseAdmin.storage.from(BUCKET).createSignedUrls(uniquePaths, SIGNED_URL_TTL);
-    for (const item of data ?? []) {
-      if (item.path && item.signedUrl) signedUrlMap.set(item.path, item.signedUrl);
-    }
-    for (const path of uniquePaths) {
-      if (!signedUrlMap.has(path)) signedUrlMap.set(path, await getSignedUrl(path));
-    }
-  }
-
-  return mapStylistBlueprintImagePaths(paths, path => signedUrlMap.get(path) ?? null);
+  return mapStylistBlueprintImagePaths(paths, stylistBlueprintStudioImageUrl);
 }
 
 /** Every stored image path a report references. */
