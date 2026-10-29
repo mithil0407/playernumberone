@@ -6,6 +6,7 @@ import sharp from 'sharp';
 import { colourFromPieceText } from './stylistColourMatching.ts';
 import { supabaseAdmin } from './supabase.ts';
 import { revalidateStylistBlueprintCache } from './stylistBlueprintCache.ts';
+import { getStylistBlueprintHiddenPageNumbers, getStylistBlueprintLibraryLayout } from './stylistBlueprintSchema.ts';
 import {
   getStylistBlueprintCapsulePageRanges,
   getStylistBlueprintBodyGeometryPage,
@@ -1146,12 +1147,14 @@ export function planStylistBlueprintImageGeneration(
   group: StylistBlueprintImageGroup = 'all',
   force = false,
 ) {
-  const hidden = new Set(reportData.studio?.hidden_page_numbers ?? []);
+  const hidden = getStylistBlueprintHiddenPageNumbers(reportData);
+  // Style-library reports close with a note, not the ICONIK Edit teaser.
+  const libraryLayout = Boolean(getStylistBlueprintLibraryLayout(reportData));
   const photos = sourcePhotos(submission);
   return STYLIST_BLUEPRINT_VISIBLE_IMAGE_SLOTS.filter(slot => {
     const page = getStylistBlueprintImageSlotPageNumber(slot, reportData);
     if (!page || hidden.has(page) || !reportData.pages.some(item => item.page_number === page)) return false;
-    if (slot === 'closing.editTeaser' && isManualStylistBlueprintSubmission(submission)) return false;
+    if (slot === 'closing.editTeaser' && (libraryLayout || isManualStylistBlueprintSubmission(submission))) return false;
     const index = Number(slot.split('.').at(-1));
     const slotGroup = slot.startsWith('application.outfitFlatlays.')
       ? `capsule_${Math.floor(index / (getStylistBlueprintOutfitCount(reportData) / 4)) + 1}` : slot.split('.')[0];
@@ -1612,7 +1615,8 @@ export function getStylistBlueprintImageCounts(
   const normalised = normalise(paths);
   const outfitCount = options.outfitCount ?? 20;
   const capsuleSize = Math.ceil(outfitCount / 4);
-  const hidden = new Set(options.reportData?.studio?.hidden_page_numbers ?? []);
+  const hidden = getStylistBlueprintHiddenPageNumbers(options.reportData);
+  const libraryLayout = Boolean(getStylistBlueprintLibraryLayout(options.reportData));
   const proofSlots = options.reportData ? silhouetteProofSlotIndexes(options.reportData) : null;
   const counts: Record<string, { done: number; total: number }> = Object.fromEntries(
     ['diagnosis', 'prescription', 'application', 'capsule_1', 'capsule_2', 'capsule_3', 'capsule_4', 'closing']
@@ -1637,7 +1641,7 @@ export function getStylistBlueprintImageCounts(
       if (!options.hasClientPhoto || index >= outfitCount) continue;
       group = `capsule_${Math.floor(index / capsuleSize) + 1}`;
     }
-    if (slot === 'closing.editTeaser' && (!options.hasClientPhoto || options.includeClosingEditTeaser === false)) continue;
+    if (slot === 'closing.editTeaser' && (libraryLayout || !options.hasClientPhoto || options.includeClosingEditTeaser === false)) continue;
     let current: unknown = normalised;
     for (const key of slot.split('.')) current = current && typeof current === 'object' ? (current as Record<string, unknown>)[key] : null;
     counts[group].total += 1;

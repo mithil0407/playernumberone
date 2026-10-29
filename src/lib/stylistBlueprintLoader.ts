@@ -15,7 +15,7 @@ import {
   type ResolvedStylistBlueprintImageUrls,
 } from './stylistBlueprintImageGenerator';
 import type { LegacyStylistBlueprintReportData, StylistBlueprintReportData } from './stylistBlueprintGenerator';
-import { isVersionedStylistBlueprintReportData } from './stylistBlueprintSchema';
+import { getStylistBlueprintHiddenPageNumbers, isVersionedStylistBlueprintReportData } from './stylistBlueprintSchema';
 import { hasUnpublishedChanges, publishedVersion } from './stylistReportPublication';
 
 const ADMIN_REPORT_SELECT_WITH_SOURCE = '*, stylist_intake_responses(id, customer_email, customer_phone, full_name, intake_source, consultation_id)';
@@ -85,7 +85,7 @@ async function publicReport(row: RawStylistBlueprintReport, view: ReportView = '
   if (isVersionedStylistBlueprintReportData(data)) {
     const { outfit_engine: _internalEngine, ...clientData } = data;
     void _internalEngine;
-    const hidden = new Set(data.studio?.hidden_page_numbers ?? []);
+    const hidden = getStylistBlueprintHiddenPageNumbers(data);
     // Library provenance and swap notes are for stylists, not the client's page source.
     data = { ...clientData, pages: data.pages.filter(page => !hidden.has(page.page_number)).map(page => ({ ...page, library_refs: undefined })) };
   }
