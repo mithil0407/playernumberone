@@ -17,13 +17,16 @@ import { join } from 'node:path';
 import { createHash } from 'node:crypto';
 import sharp from 'sharp';
 import OpenAI from 'openai';
-import { BODY_SHAPE_KEYS, BODY_SHAPE_LIBRARY, libraryCardsFor, type BodyShapeKey, type LibraryCard } from '../src/lib/stylistStyleLibrary.ts';
+import { GoogleGenAI } from '@google/genai';
+import { BODY_SHAPE_KEYS, BODY_SHAPE_LIBRARY, FABRIC_LIBRARY, libraryCardsFor, type BodyShapeKey, type LibraryCard } from '../src/lib/stylistStyleLibrary.ts';
 
 const args = process.argv.slice(2);
 const option = (name: string) => { const index = args.indexOf(`--${name}`); return index >= 0 ? args[index + 1] : undefined; };
 const SHAPES = (option('shapes')?.split(',') ?? [...BODY_SHAPE_KEYS]) as BodyShapeKey[];
 const IDS = option('ids')?.split(',');
 const FORCE = args.includes('--force');
+/** --fabrics draws the shared fabric close-ups instead of the body-shape cards. */
+const FABRICS = args.includes('--fabrics');
 const CONCURRENCY = Math.max(1, Number(option('concurrency')) || 4);
 const ORIGINALS = '/Users/navalakhaarts/playernumberone/outputs/report-library';
 const PUBLIC_DIR = join(process.cwd(), 'public', 'report-library');
@@ -71,12 +74,28 @@ Background: seamless white cyclorama studio, bright white wall curving into a ve
 
 const hash = (text: string) => createHash('sha1').update(text).digest('hex').slice(0, 10);
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+/** --engine gemini uses the app's Gemini image model, for when the OpenAI account is out of credit. */
+const ENGINE = option('engine') === 'gemini' ? 'gemini' : 'openai';
+const gemini = new GoogleGenAI({ apiKey: process.env.GOOGLE_AI_API_KEY! });
+
+async function drawGemini(prompt: string, square: boolean) {
+  const response = await gemini.models.generateContent({
+    model: 'gemini-3.1-flash-image-preview',
+    contents: [{ parts: [{ text: prompt }] }],
+    config: { responseModalities: ['IMAGE'], imageConfig: { aspectRatio: square ? '1:1' : '2:3' } } as never,
+  });
+  const parts = (response.candidates?.[0]?.content?.parts ?? []) as Array<{ inlineData?: { data?: string } }>;
+  const data = parts.find(part => part.inlineData?.data)?.inlineData?.data;
+  if (!data) throw new Error('no image returned');
+  return Buffer.from(data, 'base64');
+}
 const log = (...parts: unknown[]) => console.log(new Date().toISOString().slice(11, 19), ...parts);
 
-async function draw(prompt: string) {
+async function draw(prompt: string, square = false) {
   for (let attempt = 1; ; attempt += 1) {
     try {
-      const result = await openai.images.generate({ model: process.env.OPENAI_IMAGE_MODEL || 'gpt-image-2', prompt, size: '1024x1536', quality: 'medium' } as Parameters<typeof openai.images.generate>[0]);
+      if (ENGINE === 'gemini') return await drawGemini(prompt, square);
+      const result = await openai.images.generate({ model: process.env.OPENAI_IMAGE_MODEL || 'gpt-image-2', prompt, size: square ? '1024x1024' : '1024x1536', quality: 'medium' } as Parameters<typeof openai.images.generate>[0]);
       const b64 = (result as { data?: Array<{ b64_json?: string }> }).data?.[0]?.b64_json;
       if (!b64) throw new Error('no image returned');
       return Buffer.from(b64, 'base64');
@@ -88,8 +107,24 @@ async function draw(prompt: string) {
   }
 }
 
-type Job = { shape: BodyShapeKey; category: string; item: LibraryCard; prompt: string; original: string; output: string };
-const jobs: Job[] = SHAPES.flatMap(shape => libraryCardsFor(shape)
+/** A fabric on its own: a macro close-up that fills the frame, no person, the same light and size for every one. */
+export function fabricPrompt(look: string) {
+  return `Photorealistic macro close-up photograph of ${look}, gently draped in soft folds that fill the whole frame edge to edge.
+
+No person, no body, no hands, no mannequin, no hanger, no props, and no background visible: only the fabric.
+Soft, even studio light from the upper left, shallow depth of field, crisp true-to-life texture and colour. Square 1:1 frame. No text, logos, labels or watermarks.`;
+}
+
+type Job = { shape: BodyShapeKey | 'fabrics'; category: string; item: LibraryCard; prompt: string; original: string; output: string; square?: boolean };
+const fabricJobs = (): Job[] => Object.entries(FABRIC_LIBRARY)
+  .filter(([id]) => !IDS || IDS.includes(id))
+  .map(([id, entry]) => {
+    const prompt = fabricPrompt(entry.look);
+    mkdirSync(join(ORIGINALS, 'fabrics'), { recursive: true });
+    mkdirSync(join(PUBLIC_DIR, 'fabrics'), { recursive: true });
+    return { shape: 'fabrics' as const, category: 'fabric', item: { id, name: entry.name, line: '', look: entry.look }, prompt, square: true, original: join(ORIGINALS, 'fabrics', `${id}-${hash(prompt)}.png`), output: join(PUBLIC_DIR, 'fabrics', `${id}.webp`) };
+  });
+const jobs: Job[] = FABRICS ? fabricJobs() : SHAPES.flatMap(shape => libraryCardsFor(shape)
   .filter(({ card }) => !IDS || IDS.includes(card.id))
   .map(({ category, card }) => {
     const prompt = libraryPrompt(shape, category, card);
@@ -113,6 +148,10 @@ async function feetLine(image: Buffer) {
 const FEET_TARGET: Partial<Record<Crop, number>> = { full: 0.96, bottom: 0.96, feet: 0.9 };
 
 async function finish(job: Job) {
+  if (job.square) {
+    writeFileSync(job.output, await sharp(readFileSync(job.original)).resize(800, 800, { fit: 'cover', position: 'centre' }).webp({ quality: 80 }).toBuffer());
+    return;
+  }
   // Exactly the same size for every card (2:3), and the figure the same size in each:
   // when the feet end high, zoom in from the top so they land on the shared floor line.
   const sized = await sharp(readFileSync(job.original)).resize(WIDTH, HEIGHT, { fit: 'cover', position: 'centre' }).toBuffer();
@@ -136,7 +175,7 @@ await Promise.all(Array.from({ length: CONCURRENCY }, async () => {
   for (let job = queue.shift(); job; job = queue.shift()) {
     try {
       if (FORCE || !existsSync(job.original)) {
-        writeFileSync(job.original, await draw(job.prompt));
+        writeFileSync(job.original, await draw(job.prompt, job.square));
         done += 1;
         log(`drew ${job.shape}/${job.item.id} (${done}/${todo.length})`);
       }

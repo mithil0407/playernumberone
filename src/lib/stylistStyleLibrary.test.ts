@@ -5,7 +5,9 @@ import { join } from 'node:path';
 import {
   BODY_SHAPE_KEYS,
   BODY_SHAPE_LIBRARY,
+  FABRIC_LIBRARY,
   FACE_SHAPE_LIBRARY,
+  fabricImagePath,
   GUIDE_CATEGORIES,
   UNDERTONE_LIBRARY,
   libraryCardsFor,
@@ -88,4 +90,24 @@ test('a saved report must pick from the fixed lists', () => {
   });
   assert.doesNotThrow(() => assertStylistReportDraft(draft(picks)));
   assert.throws(() => assertStylistReportDraft(draft({ ...picks, body_shape: 'banana' })), /fixed options/);
+});
+
+test('every shape has four fabrics with a close-up picture, and its goals carry marks inside the picture', () => {
+  for (const shape of BODY_SHAPE_KEYS) {
+    const entry = BODY_SHAPE_LIBRARY[shape];
+    assert.equal(entry.fabrics.length, 4, shape);
+    assert.ok(entry.fabricSkip.length >= 1 && entry.fabricSkip.length <= 3, shape);
+    for (const item of entry.fabrics) {
+      assert.ok(item.id in FABRIC_LIBRARY, `${shape}: unknown fabric ${item.id}`);
+      assert.ok(existsSync(join(process.cwd(), 'public', fabricImagePath(item.id))), `missing fabric picture ${item.id}`);
+    }
+    for (const goal of entry.goals) {
+      assert.ok(goal.marks.length >= 1, `${shape}/${goal.id} has no marks`);
+      for (const mark of goal.marks) {
+        const values = mark.kind === 'vertical' ? [mark.x, mark.from, mark.to] : [mark.y, mark.from, mark.to];
+        assert.ok(values.every(value => value >= 0 && value <= 1), `${shape}/${goal.id} mark is outside the picture`);
+        assert.ok(mark.label.split(/\s+/).length <= 4, `${shape}/${goal.id} mark label is too long`);
+      }
+    }
+  }
 });

@@ -37,18 +37,61 @@ export type LibraryCard = {
   look: string;
 };
 
+/**
+ * A mark drawn over a styling-goal picture, like the lines on her own body
+ * analysis. Positions are shares of the picture's width (x) and height (y),
+ * set by eye for each picture so they land on the waist, hem or shoulders.
+ *   vertical: one long line, top to bottom
+ *   level:    a dashed line across one height (a waist or seam)
+ *   span:     a width marker with end caps (shoulders, hips, a hem)
+ */
+export type GoalMark =
+  | { kind: 'vertical'; x: number; from: number; to: number; label: string }
+  | { kind: 'level' | 'span'; y: number; from: number; to: number; label: string };
+
+export type GoalCard = LibraryCard & { marks: GoalMark[] };
+
 export type BodyShapeEntry = {
   label: string;
   /** One sentence the client reads under her shape. */
   summary: string;
   /** How the picture model is built, so every image for this shape shows the same body. */
   model: string;
-  goals: [LibraryCard, LibraryCard];
+  goals: [GoalCard, GoalCard];
   skip: string[];
   guides: Record<GuideCategoryKey, [LibraryCard, LibraryCard, LibraryCard, LibraryCard]>;
+  /** Four fabrics that work on this shape. `id` names the shared fabric picture. */
+  fabrics: [LibraryCard, LibraryCard, LibraryCard, LibraryCard];
+  fabricSkip: string[];
 };
 
 const card = (id: string, name: string, line: string, look: string): LibraryCard => ({ id, name, line, look });
+const goal = (id: string, name: string, line: string, look: string, marks: GoalMark[]): GoalCard => ({ id, name, line, look, marks });
+/** A fabric card: its picture is shared by every shape that lists it. */
+const fabric = (id: FabricKey, line: string): LibraryCard => ({ id, name: FABRIC_LIBRARY[id].name, line, look: FABRIC_LIBRARY[id].look });
+
+/** Each fabric drawn once, as a macro close-up with no person in it. */
+export const FABRIC_LIBRARY = {
+  matte_crepe: { name: 'Matte crepe', look: 'matte crepe in a dusty taupe, smooth with a fine grainy surface' },
+  georgette: { name: 'Georgette', look: 'sheer, lightweight georgette in a soft blush pink, slightly crinkled' },
+  viscose: { name: 'Viscose', look: 'soft, fluid viscose (rayon) in a muted sage green with a gentle sheen' },
+  cotton_mulmul: { name: 'Cotton mulmul', look: 'fine, airy cotton mulmul in warm ivory, soft and slightly sheer' },
+  cotton_poplin: { name: 'Cotton poplin', look: 'crisp cotton poplin in pale sky blue, smooth with crisp folds' },
+  ponte_knit: { name: 'Ponte knit', look: 'thick, smooth ponte knit in deep navy, folding in soft rounded folds' },
+  chanderi: { name: 'Chanderi', look: 'chanderi silk-cotton in pale gold with a soft natural sheen and a fine woven texture' },
+  fine_jersey: { name: 'Fine jersey', look: 'fine cotton-modal jersey knit in charcoal grey, soft and stretchy' },
+  silk_crepe: { name: 'Silk crepe', look: 'silk crepe de chine in deep wine, fluid with a soft lustre' },
+  stretch_denim: { name: 'Stretch denim', look: 'dark indigo stretch denim with a visible twill weave' },
+  linen: { name: 'Linen', look: 'natural oatmeal linen with visible slubs and soft creases' },
+  tweed: { name: 'Textured tweed', look: 'cream and black boucle tweed with a nubby woven texture' },
+  organza: { name: 'Organza', look: 'crisp silk organza in champagne, translucent and holding stiff sculpted folds' },
+  crinkle_cotton: { name: 'Crinkle cotton', look: 'crinkled cotton in terracotta with a crushed, textured surface' },
+} as const satisfies Record<string, { name: string; look: string }>;
+export type FabricKey = keyof typeof FABRIC_LIBRARY;
+
+export function fabricImagePath(id: string) {
+  return `/report-library/fabrics/${id}.webp`;
+}
 
 export const BODY_SHAPE_LIBRARY: Record<BodyShapeKey, BodyShapeEntry> = {
   apple: {
@@ -56,10 +99,21 @@ export const BODY_SHAPE_LIBRARY: Record<BodyShapeKey, BodyShapeEntry> = {
     summary: 'You carry more through your middle, with slimmer legs. Long lines and a lifted waist suit you best.',
     model: 'an Indian woman with an apple body shape (about UK size 16-18): fuller bust and a fuller, rounded midsection with little waist definition, flatter hips, and slimmer legs',
     goals: [
-      card('goal-1', 'One long line', 'Wear one colour top to toe, or add an open layer, so the eye moves up and down.', 'a head-to-toe tonal camel outfit: camel knit top, matching camel straight trousers and an open longline camel cardigan falling to mid-thigh, nude block heels'),
-      card('goal-2', 'Lift the waist', 'Mark the slimmest point just under the bust, then let fabric fall softly over the middle.', 'a navy empire-line midi dress with a gathered seam just under the bust and a soft flowing skirt, tan sandals'),
+      goal('goal-1', 'Wear one long line', 'One colour from top to toe, or an open jacket, makes you look taller and slimmer.', 'a head-to-toe tonal camel outfit: camel knit top, matching camel straight trousers and an open longline camel cardigan falling to mid-thigh, nude block heels', [
+        { kind: 'vertical', x: 0.47, from: 0.03, to: 0.92, label: 'One unbroken line' },
+      ]),
+      goal('goal-2', 'Mark under the bust', 'Pick tops and dresses that go in just under the bust and flow over the tummy.', 'a navy empire-line midi dress with a gathered seam just under the bust and a soft flowing skirt, tan sandals', [
+        { kind: 'level', y: 0.21, from: 0.22, to: 0.78, label: 'Seam under the bust' },
+      ]),
     ],
     skip: ['Tight tops that cling to the middle', 'Thick belts at the natural waist', 'Cropped tops and boxy short jackets'],
+    fabrics: [
+      fabric('matte_crepe', 'Drapes over the middle without clinging.'),
+      fabric('georgette', 'Light and flowing, so it moves away from the body.'),
+      fabric('viscose', 'Soft and fluid, so tops skim the tummy.'),
+      fabric('cotton_mulmul', 'Breathable and soft for kurtas and everyday tops.'),
+    ],
+    fabricSkip: ['Thin, clingy lycra or jersey', 'Stiff, heavy brocade around the middle'],
     guides: {
       tops: [
         card('tops-1', 'V-neck tops', 'The deep V draws the eye up and makes your top half look longer.', 'a soft ivory V-neck top with a deep V, untucked, hip length, worn with black straight trousers'),
@@ -98,10 +152,22 @@ export const BODY_SHAPE_LIBRARY: Record<BodyShapeKey, BodyShapeEntry> = {
     summary: 'Your hips are wider than your shoulders, with a clear waist. Detail on top and clean lines below balance you.',
     model: 'an Indian woman with a pear body shape (about UK size 12 top and 16 bottom): narrower shoulders and smaller bust, a clearly defined waist, and fuller hips and thighs',
     goals: [
-      card('goal-1', 'Add interest on top', 'Colour, print and detail above the waist bring your shoulders into balance.', 'a bright coral puff-sleeve blouse with a boat neckline tucked into dark navy straight trousers, nude heels'),
-      card('goal-2', 'Keep the lower half clean', 'Darker, plain bottoms that skim the hips keep everything calm.', 'a printed ivory and blue top tucked into a plain black A-line midi skirt, black block heels'),
+      goal('goal-1', 'Colour and detail on top', 'Wear your brighter colours, prints and sleeve details on your top half.', 'a bright coral puff-sleeve blouse with a boat neckline tucked into dark navy straight trousers, nude heels', [
+        { kind: 'span', y: 0.12, from: 0.21, to: 0.79, label: 'Wider on top' },
+        { kind: 'span', y: 0.34, from: 0.27, to: 0.71, label: 'Balances the hips' },
+      ]),
+      goal('goal-2', 'Plain and dark below', 'Keep trousers and skirts simple and darker, so they skim your hips.', 'a printed ivory and blue top tucked into a plain black A-line midi skirt, black block heels', [
+        { kind: 'vertical', x: 0.86, from: 0.23, to: 0.76, label: 'Plain, dark skirt' },
+      ]),
     ],
     skip: ['Skinny jeans with a short top', 'Hip pockets, prints or shine on bottoms', 'Narrow straps and tiny necklines'],
+    fabrics: [
+      fabric('cotton_poplin', 'Crisp shape on top balances your hips.'),
+      fabric('matte_crepe', 'Smooth trousers and skirts that skim the hips.'),
+      fabric('ponte_knit', 'Thick, smooth knit that keeps bottoms clean.'),
+      fabric('chanderi', 'A light sheen for kurtas and festive tops.'),
+    ],
+    fabricSkip: ['Shiny satin on trousers or skirts', 'Thick, bulky fabrics on the bottom half'],
     guides: {
       tops: [
         card('tops-1', 'Boat necks', 'A wide neckline makes your shoulders look broader.', 'an ivory boat-neck fitted top tucked into dark straight jeans'),
@@ -140,10 +206,22 @@ export const BODY_SHAPE_LIBRARY: Record<BodyShapeKey, BodyShapeEntry> = {
     summary: 'Your bust and hips are balanced, with a clearly defined waist. Follow your natural curves.',
     model: 'an Indian woman with an hourglass body shape (about UK size 14): bust and hips about the same width, with a clearly defined narrow waist',
     goals: [
-      card('goal-1', 'Show your waist', 'Belts, wraps and fitted cuts keep your waist the star.', 'a red wrap midi dress tied at the waist, nude heels'),
-      card('goal-2', 'Follow your curves', 'Fabrics that skim, not stiff or boxy ones, match your shape.', 'a fitted black knit top tucked into a camel high-rise pencil skirt, black heels'),
+      goal('goal-1', 'Show your waist', 'Choose belts, wrap styles and fitted cuts that go in at your waist.', 'a red wrap midi dress tied at the waist, nude heels', [
+        { kind: 'level', y: 0.21, from: 0.3, to: 0.75, label: 'Waist marked' },
+      ]),
+      goal('goal-2', 'Soft, fitted clothes', 'Fabrics that follow your shape look better than stiff or boxy ones.', 'a fitted black knit top tucked into a camel high-rise pencil skirt, black heels', [
+        { kind: 'level', y: 0.22, from: 0.3, to: 0.7, label: 'Waist' },
+        { kind: 'span', y: 0.38, from: 0.27, to: 0.72, label: 'Follows the hips' },
+      ]),
     ],
     skip: ['Boxy, shapeless tops and dresses', 'Stiff fabrics that add bulk', 'Low-rise pants that hide your waist'],
+    fabrics: [
+      fabric('fine_jersey', 'A soft knit that follows your curves.'),
+      fabric('silk_crepe', 'Drapes over curves in dresses and blouses.'),
+      fabric('stretch_denim', 'Hugs the hips and holds the waist.'),
+      fabric('georgette', 'Flows well in wrap dresses and sarees.'),
+    ],
+    fabricSkip: ['Stiff, boxy linen', 'Heavy tweed that hides your shape'],
     guides: {
       tops: [
         card('tops-1', 'Wrap tops', 'The cross-over follows your curves and shows your waist.', 'a navy wrap top tucked into black straight trousers'),
@@ -182,10 +260,21 @@ export const BODY_SHAPE_LIBRARY: Record<BodyShapeKey, BodyShapeEntry> = {
     summary: 'Your shoulders, waist and hips are about the same width. Building a waist and adding shape suits you.',
     model: 'an Indian woman with a rectangle body shape (about UK size 10-12): shoulders, waist and hips about the same width, with little waist definition and a straight frame',
     goals: [
-      card('goal-1', 'Create a waist', 'Belts, peplums and wraps give your frame a waistline.', 'a printed peplum top over black straight trousers with a slim belt, nude heels'),
-      card('goal-2', 'Add shape and layers', 'Ruffles, volume and layers add curves to a straight frame.', 'a ruffled ivory blouse tucked into a full pleated olive midi skirt, tan heels'),
+      goal('goal-1', 'Make a waistline', 'A belt, peplum or wrap pulls in at the middle and gives you a waist.', 'a printed peplum top over black straight trousers with a slim belt, nude heels', [
+        { kind: 'level', y: 0.21, from: 0.32, to: 0.68, label: 'New waistline' },
+      ]),
+      goal('goal-2', 'Add soft shape', 'Ruffles, pleats and flared skirts add curves to a straight frame.', 'a ruffled ivory blouse tucked into a full pleated olive midi skirt, tan heels', [
+        { kind: 'span', y: 0.66, from: 0.23, to: 0.73, label: 'Fullness adds curves' },
+      ]),
     ],
     skip: ['Straight, shapeless shift dresses', 'Very boxy, oversized layers', 'Long tops with no shape at the waist'],
+    fabrics: [
+      fabric('cotton_poplin', 'Crisp enough to hold belts, ruffles and peplums.'),
+      fabric('linen', 'Adds easy texture and shape.'),
+      fabric('tweed', 'Texture and structure add curves to a straight frame.'),
+      fabric('organza', 'Holds volume in skirts and festive wear.'),
+    ],
+    fabricSkip: ['Thin, limp jersey', 'Very clingy stretch fabric'],
     guides: {
       tops: [
         card('tops-1', 'Peplum tops', 'The flare adds a waist and hips.', 'a mustard peplum top over dark straight jeans'),
@@ -224,10 +313,23 @@ export const BODY_SHAPE_LIBRARY: Record<BodyShapeKey, BodyShapeEntry> = {
     summary: 'Your shoulders are wider than your hips. Soft tops and fuller bottoms balance you.',
     model: 'an Indian woman with an inverted triangle body shape (about UK size 12-14 top and 10 bottom): broad shoulders and fuller bust, narrower waist, and narrow hips with slim legs',
     goals: [
-      card('goal-1', 'Soften the shoulders', 'Plain, simple tops with V-necks keep the top half calm.', 'a plain black V-neck top with raglan sleeves tucked into a full printed midi skirt, tan sandals'),
-      card('goal-2', 'Add volume below', 'Wide legs, flares and full skirts balance broad shoulders.', 'a plain navy fitted top with mustard high-rise wide-leg trousers, nude heels'),
+      goal('goal-1', 'Keep the top simple', 'Plain tops and V-necks make your shoulders look narrower.', 'a plain black V-neck top with raglan sleeves tucked into a full printed midi skirt, tan sandals', [
+        { kind: 'span', y: 0.08, from: 0.25, to: 0.72, label: 'Plain on top' },
+        { kind: 'span', y: 0.72, from: 0.22, to: 0.76, label: 'Fuller below' },
+      ]),
+      goal('goal-2', 'Add fullness below', 'Wide trousers, flared skirts and A-lines balance broad shoulders.', 'a plain navy fitted top with mustard high-rise wide-leg trousers, nude heels', [
+        { kind: 'span', y: 0.07, from: 0.27, to: 0.71, label: 'Shoulders' },
+        { kind: 'span', y: 0.9, from: 0.25, to: 0.7, label: 'Wide legs balance' },
+      ]),
     ],
     skip: ['Puff sleeves and shoulder pads', 'Boat necks and wide necklines', 'Skinny pants with a bulky top'],
+    fabrics: [
+      fabric('georgette', 'Soft on top, so shoulders look narrower.'),
+      fabric('viscose', 'Drapes softly instead of adding width.'),
+      fabric('cotton_mulmul', 'Light kurtas and tops with no stiffness.'),
+      fabric('crinkle_cotton', 'Full, textured skirts and palazzos add volume below.'),
+    ],
+    fabricSkip: ['Stiff fabrics with built-up shoulders', 'Heavy brocade on the top half'],
     guides: {
       tops: [
         card('tops-1', 'V-necks', 'Narrows the shoulder line.', 'a plain navy V-neck top tucked into ivory wide-leg trousers'),

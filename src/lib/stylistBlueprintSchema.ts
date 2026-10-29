@@ -336,7 +336,7 @@ export function getStylistBlueprintSectionLabel(pageNumber: number, dataOrVersio
 export type StyleLibraryPageKind =
   | 'library_body' | 'library_goals' | 'library_face' | 'library_undertone' | 'library_palette'
   | 'library_tops' | 'library_bottoms' | 'library_dresses' | 'library_layers' | 'library_footwear'
-  | 'library_closing';
+  | 'library_fabrics' | 'library_closing';
 
 /**
  * How a report that uses the style library is laid out: which page slots show
@@ -360,6 +360,8 @@ export function getStylistBlueprintLibraryLayout(data?: Pick<StylistBlueprintRep
     [getStylistBlueprintProportionPage(data), 'library_goals'],
     [getStylistBlueprintPalettePage(data), 'library_palette'],
     ...clothing.map((kind, index) => [guideSlots[index], kind] as [number, StyleLibraryPageKind]),
+    // Four fabrics with close-up pictures, instead of the long fabric list.
+    [getStylistBlueprintFabricPage(data), 'library_fabrics'],
     // The closing note, without the ICONIK Edit upsell.
     [getStylistBlueprintContinuationPage(data), 'library_closing'],
   ]);
@@ -384,6 +386,7 @@ const LIBRARY_PAGE_TITLES: Record<StyleLibraryPageKind, string> = {
   library_dresses: 'Dresses & Indian wear',
   library_layers: 'Jackets & layers',
   library_footwear: 'Footwear for you',
+  library_fabrics: 'Fabrics that work',
   library_closing: 'A note for you',
 };
 
