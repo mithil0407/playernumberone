@@ -89,9 +89,7 @@ import {
 } from './stylistIntakePreferences.ts';
 import { WOMEN_OUTFIT_HARNESS_V2 } from './womenOutfitHarnessV2.ts';
 import {
-  generateStylistOutfitScienceApplication,
   isScienceBlueprintReport,
-  isStylistOutfitScienceHarnessEnabled,
   outfitPaletteUsed,
   outfitProseBlocks,
   type OutfitScienceEngineMetadata,
@@ -6327,6 +6325,12 @@ export async function generateStylistBlueprintPages(
   act: 'opening' | 'diagnosis' | 'prescription' | 'application' | 'closing',
   requestedPages?: number[],
 ): Promise<BlueprintPage[] | { pages: BlueprintPage[]; outfit_engine: OutfitScienceEngineMetadata | PinterestOutfitEngineMetadata }> {
+  // Every newly generated outfit set follows the current curator choices,
+  // including a resumed report that was originally made with an older engine.
+  if (act === 'application') {
+    await primeOutfitLibraryCuration();
+    return generatePinterestVerbatimApplication(submission, reportData, callStylistOutfitJSON);
+  }
   const libraryContext = await loadOutfitLibraryContext();
   const culturalMode = getStylistOutfitCulturalMode(submission);
   const pageCount = getStylistBlueprintPageCount(reportData);
@@ -6338,38 +6342,6 @@ export async function generateStylistBlueprintPages(
   const capsuleRanges = getStylistBlueprintCapsulePageRanges(reportData);
   const outfitsPerCapsule = outfitCount / 4;
   const outfitDiversityPlan = buildOutfitDiversityPlan(reportData, libraryContext, culturalMode, submission);
-  if (act === 'application') {
-    // A report keeps the engine it was made with; new reports get real
-    // Pinterest looks worn as styled unless a deploy opts out.
-    if (isScienceBlueprintReport(reportData)) {
-      return generateStylistOutfitScienceApplication(submission, reportData, libraryContext.outfits);
-    }
-    if (isPinterestVerbatimReport(reportData) || isPinterestVerbatimEngineEnabled()) {
-      await primeOutfitLibraryCuration();
-      return generatePinterestVerbatimApplication(submission, reportData, callStylistOutfitJSON);
-    }
-    if (isStylistOutfitScienceHarnessEnabled()) {
-      return generateStylistOutfitScienceApplication(submission, reportData, libraryContext.outfits);
-    }
-    if (isLatestStylistBlueprintVersion(reportData)) {
-      const previewPlans = buildTransformationPreviewPlans(reportData, outfitDiversityPlan);
-      const detailedPlans = buildDetailedHarnessPlansAfterTransformation(outfitDiversityPlan);
-      const previewPages = await generateHarnessOnlyOutfitPages(
-        reportData,
-        previewPlans,
-        submission,
-        null,
-        undefined,
-        'Generate only the transformation preview looks for page 2. The detailed outfit pages will be generated separately by capsule.',
-      );
-      const detailedPages = await generateHarnessDetailedOutfitPagesInBatches(reportData, detailedPlans, submission);
-      return [
-        ...previewPages.filter(page => page.page_type === 'transformation'),
-        ...detailedPages,
-      ];
-    }
-    return generateHarnessDetailedOutfitPagesInBatches(reportData, outfitDiversityPlan, submission);
-  }
   const classificationContext = stringify(reportData.classification);
   const intakeContext = buildStylistBlueprintIntakeDigest(submission);
   const transformationPage = getStylistBlueprintTransformationPage(reportData);

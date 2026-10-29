@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { BANNED_OUTFITS, bannedOutfitFor } from './stylistBannedOutfits.ts';
-import { buildVerbatimClientRules, evaluateVerbatimLook, getVerbatimLooks, isHardClientRuleWarning, type VerbatimLook } from './stylistPinterestOutfits.ts';
+import { buildVerbatimClientRules, evaluateVerbatimLook, getAllVerbatimLooks, isHardClientRuleWarning, type VerbatimLook } from './stylistPinterestOutfits.ts';
 import { isBannedScienceOutfit } from './stylistOutfitScience.ts';
 import type { StylistBlueprintReportData, StylistIntakeSubmission } from './stylistBlueprintGenerator.ts';
 
@@ -129,7 +129,7 @@ test('the Pinterest engine drops a banned look and a stylist cannot paste one', 
 });
 
 test('the library still has plenty of looks after the bans', () => {
-  const looks = getVerbatimLooks();
+  const looks = getAllVerbatimLooks();
   const banned = looks.filter(look => bannedOutfitFor([look.top, look.dress, look.layer, look.bottom]));
   assert.ok(banned.length <= 10, `bans remove ${banned.length} library looks: ${banned.map(item => item.id).join(', ')}`);
 });

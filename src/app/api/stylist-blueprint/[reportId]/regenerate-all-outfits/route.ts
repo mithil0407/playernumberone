@@ -3,7 +3,6 @@ import { supabaseAdmin } from '@/lib/supabase';
 import { canAccessBlueprintReport } from '@/lib/stylistWorkspaceAuth';
 import { revalidateStylistBlueprintCache } from '@/lib/stylistBlueprintCache';
 import {
-  generateStylistBlueprintReplacementOutfits,
   getStylistBlueprintOutfitCount,
   getStylistBlueprintOutfitEndPage,
   getStylistBlueprintOutfitStartPage,
@@ -18,13 +17,8 @@ import {
 import {
   type StylistBlueprintImagePaths,
 } from '@/lib/stylistBlueprintImageGenerator';
-import {
-  generateStylistOutfitScienceApplication,
-  isScienceBlueprintReport,
-  isStylistOutfitScienceHarnessEnabled,
-} from '@/lib/stylistOutfitScience';
 import { resolveConsultationIntakePhotos, withCurrentConsultationAnswers } from '@/lib/stylistConsultationWorkspace';
-import { generatePinterestVerbatimApplication, isPinterestVerbatimEngineEnabled } from '@/lib/stylistPinterestOutfits';
+import { generatePinterestVerbatimApplication } from '@/lib/stylistPinterestOutfits';
 import { callStylistOutfitJSON } from '@/lib/stylistBlueprintGenerator';
 import { primeOutfitLibraryCuration } from '@/lib/stylistOutfitLibraryCuration';
 
@@ -122,29 +116,19 @@ export async function POST(
     let lastValidationError: unknown = null;
     await primeOutfitLibraryCuration();
     for (let attempt = 0; attempt < 2; attempt++) {
-      // New sets come from real Pinterest looks; a science report keeps its engine.
-      const verbatimEnabled = !isScienceBlueprintReport(reportData) && isPinterestVerbatimEngineEnabled();
-      const scienceEnabled = !verbatimEnabled && (isScienceBlueprintReport(reportData) || isStylistOutfitScienceHarnessEnabled());
-      const scienceResult = verbatimEnabled
-        ? await generatePinterestVerbatimApplication(resolvedSubmission, { ...reportData, outfit_engine: undefined }, callStylistOutfitJSON, {
-          // New looks, not the same twenty again, and the stylist's reason guides the pick.
-          excludeLookIds: reportData.pages.flatMap(page => (page.page_type === 'outfit' || page.page_type === 'transformation') ? page.library_refs?.map(ref => ref.id) ?? [] : []),
-          stylistNote: reason,
-        })
-        : scienceEnabled
-          ? await generateStylistOutfitScienceApplication(resolvedSubmission, reportData)
-          : null;
-      const replacementPages = scienceResult?.pages ?? await generateStylistBlueprintReplacementOutfits(
-        resolvedSubmission,
-        reportData,
-        attempt === 0 ? reason : `${reason || 'Admin requested replacement outfits.'}\n\nPrevious validation failed: ${lastValidationError instanceof Error ? lastValidationError.message : String(lastValidationError)}. Regenerate the outfit set and fix that issue.`,
-      );
+      // Regeneration always uses kept looks, even for reports from older engines.
+      const result = await generatePinterestVerbatimApplication(resolvedSubmission, { ...reportData, outfit_engine: undefined }, callStylistOutfitJSON, {
+        // New looks, not the same twenty again, and the stylist's reason guides the pick.
+        excludeLookIds: reportData.pages.flatMap(page => (page.page_type === 'outfit' || page.page_type === 'transformation') ? page.library_refs?.map(ref => ref.id) ?? [] : []),
+        stylistNote: reason,
+      });
+      const replacementPages = result.pages;
       const replacementByNumber = new Map(replacementPages.map(page => [page.page_number, page]));
       const candidateReportData: StylistBlueprintReportData = {
         ...reportData,
         generated_at: new Date().toISOString(),
         pages: reportData.pages.map(page => replacementByNumber.get(page.page_number) ?? page),
-        outfit_engine: scienceResult?.outfit_engine ?? reportData.outfit_engine,
+        outfit_engine: result.outfit_engine,
       };
       try {
         validateStylistBlueprintReport(candidateReportData, {

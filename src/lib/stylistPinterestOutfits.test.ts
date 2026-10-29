@@ -7,12 +7,19 @@ import {
   evaluateVerbatimLook,
   flatVersionOfShoe,
   generatePinterestVerbatimApplication,
+  getAllVerbatimLooks,
   getVerbatimLooks,
   parseVerbatimLooks,
   rankVerbatimLooks,
+  setOutfitLibraryCuration,
   type VerbatimLook,
 } from './stylistPinterestOutfits.ts';
 import type { StylistBlueprintReportData, StylistIntakeSubmission } from './stylistBlueprintGenerator.ts';
+
+// The fit/ranking cases use an explicitly approved library fixture. Production
+// starts with no eligible looks until the curator's saved choices are loaded.
+test.beforeEach(() => setOutfitLibraryCuration({ verdicts: new Map(getAllVerbatimLooks().map(look => [look.id, 'like'])) }));
+test.afterEach(() => setOutfitLibraryCuration(null));
 
 const classification = {
   client: { name: 'Test', email: '', country: 'India', language: 'English', age_range: '34', lifestyle_summary: 'Doctor who needs simple workwear.' },
@@ -72,6 +79,56 @@ test('the library parses into real looks with their provenance', () => {
   assert.ok(looks.some(item => item.source === 'ethnic_office'));
   const parsed = parseVerbatimLooks('## Pinterest board\n### Professional\n**1.** Navy tee / camel blazer / blue jeans / nude pumps / tan tote. *Styling: tee tucked in.*\n<!-- pinterest-13 · also fits: Everyday -->');
   assert.deepEqual(parsed.map(item => [item.id, item.capsules]), [['pinterest-13', ['Professional', 'Everyday']]]);
+});
+
+test('the model, fallback, previews and replacements can only use the kept pool', async () => {
+  const { verbatimAlternativesForPage, verbatimReplacementPage } = await import('./stylistPinterestOutfits.ts');
+  const all = getAllVerbatimLooks();
+  const kept = new Set(all.filter((_, index) => index % 2 === 0).map(look => look.id));
+  const passed = all[1].id;
+  const unreviewed = all[3].id;
+  setOutfitLibraryCuration({ verdicts: new Map([...all.filter(look => kept.has(look.id)).map(look => [look.id, 'like'] as const), [passed, 'dislike']]) });
+  const calls: string[] = [];
+  const hostileModel = async (prompt: string) => {
+    calls.push(prompt);
+    // Invalid ids must be rejected even when the model tries to pick them.
+    return Object.fromEntries(['Professional', 'Everyday', 'Social', 'Occasion'].map(capsule => [capsule, [passed, unreviewed, passed]]));
+  };
+  for (const caller of [hostileModel, async () => { throw new Error('model offline'); }]) {
+    const result = await generatePinterestVerbatimApplication(submission, reportData, caller);
+    const selected = result.outfit_engine.selected;
+    assert.equal(selected.length, 20);
+    assert.equal(new Set(selected.map(item => item.look_id)).size, 20);
+    assert.ok(selected.every(item => kept.has(item.look_id)));
+    assert.equal(result.outfit_engine.preview_look_ids.length, 3);
+    assert.ok(result.outfit_engine.preview_look_ids.every(id => kept.has(id)));
+    const next = { ...reportData, pages: result.pages, outfit_engine: result.outfit_engine };
+    const page = selected[0].page_number;
+    const alternatives = verbatimAlternativesForPage(submission, next, page);
+    assert.ok(alternatives.length > 0);
+    assert.ok(alternatives.every(item => kept.has(item.evaluated.look.id)));
+    await assert.rejects(verbatimReplacementPage(submission, next, page, caller, passed), /no longer available/);
+    await assert.rejects(verbatimReplacementPage(submission, next, page, caller, unreviewed), /no longer available/);
+    const replacement = await verbatimReplacementPage(submission, next, page, caller);
+    assert.ok(replacement.outfit_engine.selected.every(item => kept.has(item.look_id)));
+    // The legacy-report replacement path must use the same kept-only pool.
+    const legacy = { ...next, outfit_engine: undefined };
+    const legacyReplacement = await verbatimReplacementPage(submission, legacy, page, caller);
+    assert.ok(legacyReplacement.outfit_engine.selected.every(item => kept.has(item.look_id)));
+  }
+  assert.ok(calls[0].includes('20 outfits total'));
+  assert.ok(!calls[0].includes(passed));
+  assert.ok(!calls[0].includes(unreviewed));
+});
+
+test('a missing or insufficient kept pool stops before calling the model', async () => {
+  let called = false;
+  const caller = async () => { called = true; return {}; };
+  for (const state of [null, { verdicts: new Map([[getAllVerbatimLooks()[0].id, 'like' as const]]) }]) {
+    setOutfitLibraryCuration(state);
+    await assert.rejects(generatePinterestVerbatimApplication(submission, reportData, caller), /Not enough kept outfits/);
+  }
+  assert.equal(called, false);
 });
 
 test('hard rules drop a look rather than patch it', () => {

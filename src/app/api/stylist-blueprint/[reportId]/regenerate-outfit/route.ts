@@ -3,7 +3,6 @@ import { supabaseAdmin } from '@/lib/supabase';
 import { canAccessBlueprintReport, isAdminCookieAuthenticated } from '@/lib/stylistWorkspaceAuth';
 import { revalidateStylistBlueprintCache } from '@/lib/stylistBlueprintCache';
 import {
-  generateStylistBlueprintReplacementOutfit,
   getStylistBlueprintOutfitEndPage,
   getStylistBlueprintOutfitStartPage,
   getStylistBlueprintOutfitCount,
@@ -17,12 +16,8 @@ import {
   regenerateStylistBlueprintImageSlot,
   type StylistBlueprintImageSlotKey,
 } from '@/lib/stylistBlueprintImageGenerator';
-import {
-  generateStylistOutfitScienceApplication,
-  isScienceBlueprintReport,
-} from '@/lib/stylistOutfitScience';
 import { resolveConsultationIntakePhotos, withCurrentConsultationAnswers } from '@/lib/stylistConsultationWorkspace';
-import { isPinterestVerbatimEngineEnabled, isPinterestVerbatimReport, verbatimReplacementPage } from '@/lib/stylistPinterestOutfits';
+import { verbatimReplacementPage } from '@/lib/stylistPinterestOutfits';
 import { callStylistOutfitJSON } from '@/lib/stylistBlueprintGenerator';
 import { primeOutfitLibraryCuration } from '@/lib/stylistOutfitLibraryCuration';
 
@@ -92,32 +87,18 @@ export async function POST(
 
     const culturalMode = getStylistOutfitCulturalMode(resolvedSubmission);
     let nextReportData: StylistBlueprintReportData | null = null;
-    let nextReplacementPage = null as Awaited<ReturnType<typeof generateStylistBlueprintReplacementOutfit>> | null;
+    let nextReplacementPage: StylistBlueprintReportData['pages'][number] | null = null;
     let lastValidationError: unknown = null;
     await primeOutfitLibraryCuration();
     for (let attempt = 0; attempt < 2; attempt++) {
-      const scienceResult = isScienceBlueprintReport(reportData)
-        ? await generateStylistOutfitScienceApplication(resolvedSubmission, reportData)
-        : null;
-      // Pinterest reports swap in the next best real look, never a written one.
-      const verbatimResult = !scienceResult && (isPinterestVerbatimReport(reportData) || isPinterestVerbatimEngineEnabled())
-        ? await verbatimReplacementPage(resolvedSubmission, reportData, pageNumber, callStylistOutfitJSON, undefined, reason)
-        : null;
-      const replacementPage = scienceResult
-        ? scienceResult.pages.find(page => page.page_number === pageNumber)
-        : verbatimResult ? verbatimResult.page : await generateStylistBlueprintReplacementOutfit(
-          resolvedSubmission,
-          reportData,
-          pageNumber,
-          attempt === 0 ? reason : `${reason || 'Admin requested outfit replacement.'}\n\nPrevious validation failed: ${lastValidationError instanceof Error ? lastValidationError.message : String(lastValidationError)}. Regenerate this outfit and fix that issue.`,
-        );
-      if (!replacementPage) throw new Error(`Science outfit replacement did not return page ${pageNumber}`);
+      const result = await verbatimReplacementPage(resolvedSubmission, reportData, pageNumber, callStylistOutfitJSON, undefined, reason);
+      const replacementPage = result.page;
 
       const candidateReportData: StylistBlueprintReportData = {
         ...reportData,
         generated_at: new Date().toISOString(),
         pages: reportData.pages.map(page => page.page_number === pageNumber ? replacementPage : page),
-        outfit_engine: scienceResult?.outfit_engine ?? verbatimResult?.outfit_engine ?? reportData.outfit_engine,
+        outfit_engine: result.outfit_engine,
       };
       try {
         validateStylistBlueprintReport(candidateReportData, {

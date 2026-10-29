@@ -26,7 +26,7 @@ interface Deck {
   withPictures: number;
   isCurator: boolean;
   adminPreview: boolean;
-  mode: 'off' | 'drop_passes' | 'likes_only';
+  mode: 'likes_only';
 }
 
 type View = 'swipe' | 'liked' | 'passed';

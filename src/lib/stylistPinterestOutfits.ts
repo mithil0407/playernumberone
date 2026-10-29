@@ -224,7 +224,7 @@ export function setOutfitLibraryCuration(curation: OutfitLibraryCuration | null)
   curatedLooks = null;
 }
 
-/** The looks the engine may recommend: the library minus what the curator passed on. */
+/** Only looks the curator explicitly kept may enter ranking or any fallback. */
 export function getVerbatimLooks(): VerbatimLook[] {
   curatedLooks ??= applyOutfitLibraryCuration(getAllVerbatimLooks(), libraryCuration);
   return curatedLooks;
@@ -1381,7 +1381,7 @@ export async function pickVerbatimLooksByEye(
   const prompt = `You are a senior personal stylist choosing outfits for one real client. Her photos are attached.
 ${clientBrief(reportData, rules)}
 ${stylistNote?.trim() ? `\nHer stylist asked for this change: "${stylistNote.trim().slice(0, 600)}". Honour it in your choice.\n` : ''}
-Below are real outfits from our Pinterest library, already checked against her hard rules. You cannot change them. For each capsule choose exactly ${perCapsule} by id.
+Below are outfits kept by our head stylist, already checked against this client's hard rules. Choose only from these ids; passed and unreviewed looks are unavailable. You cannot change them. For each capsule choose exactly ${perCapsule} by id (${perCapsule * CAPSULES.length} outfits total).
 
 Choose by how good each outfit will actually LOOK ON HER, as a stylist would judge it in a mirror:
 - colours that flatter her skin, hair and eyes and sit well together, never a forced combination;
@@ -1573,10 +1573,13 @@ export async function generatePinterestVerbatimApplication(
   const roomToExclude = CAPSULES.every(capsule => pools.byCapsule[capsule].filter(item => !exclude.has(item.look.id)).length >= perCapsule + 3);
   const shortlist = shortlistVerbatimLooks(pools, perCapsule, perCapsule + 7, roomToExclude ? exclude : new Set());
   fillShortCapsules(shortlist, pools, perCapsule, submission, reportData);
+  if (CAPSULES.some(capsule => shortlist[capsule].length < perCapsule)) {
+    throw new Error(`Not enough kept outfits pass this client's rules for a set of ${outfitCount}. Ask the head stylist to keep more suitable outfits before generating this set.`);
+  }
   const picked = await pickVerbatimLooksByEye(shortlist, perCapsule, pools.rules, reportData, callJson, photoUrlsOf(submission), options.stylistNote);
 
   const ordered = CAPSULES.flatMap(capsule => picked[capsule].map(evaluated => ({ evaluated, capsule })));
-  if (ordered.length !== outfitCount) throw new Error(`Only ${ordered.length} library looks pass this client's rules; ${outfitCount} are needed. Loosen one of her rules in the notes, or write the missing outfits by hand.`);
+  if (ordered.length !== outfitCount) throw new Error(`Only ${ordered.length} kept outfits pass this client's rules; ${outfitCount} are needed. Ask the head stylist to keep more suitable outfits before generating this set.`);
 
   // Three more looks for the preview page, from what was shortlisted but not used.
   const usedIds = new Set(ordered.map(item => item.evaluated.look.id));

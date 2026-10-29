@@ -4,7 +4,6 @@ import { supabaseAdmin } from './supabase';
 import { getAllVerbatimLooks, setOutfitLibraryCuration, type VerbatimLook } from './stylistPinterestOutfits';
 import {
   OUTFIT_LIBRARY_IMAGE_BUCKET,
-  curationMode,
   isReviewableLook,
   lookCaption,
   outfitLibraryCuratorSlug,
@@ -12,46 +11,34 @@ import {
   type OutfitVerdict,
 } from './stylistOutfitLibraryReview';
 
-const REFRESH_MS = 60_000;
 const SIGNED_URL_TTL = 6 * 60 * 60;
-let loadedAt = 0;
-let inFlight: Promise<void> | null = null;
 
-async function loadCuration(): Promise<OutfitLibraryCuration | null> {
+async function loadCuration(): Promise<OutfitLibraryCuration> {
   const { data: curator, error: curatorError } = await supabaseAdmin
     .from('stylists').select('id').eq('slug', outfitLibraryCuratorSlug()).maybeSingle();
   if (curatorError) throw curatorError;
-  if (!curator) return null;
-  const [votes, images] = await Promise.all([
-    supabaseAdmin.from('stylist_outfit_library_votes').select('look_id, verdict').eq('stylist_id', curator.id),
-    supabaseAdmin.from('stylist_outfit_library_images').select('look_id'),
-  ]);
+  if (!curator) throw new Error('The outfit curator could not be found. Check the stylist account before recommending outfits.');
+  const votes = await supabaseAdmin.from('stylist_outfit_library_votes').select('look_id, verdict').eq('stylist_id', curator.id);
   if (votes.error) throw votes.error;
-  if (images.error) throw images.error;
   return {
     verdicts: new Map((votes.data ?? []).map(row => [row.look_id as string, row.verdict as OutfitVerdict])),
-    imagedLookIds: new Set((images.data ?? []).map(row => row.look_id as string)),
   };
 }
 
 /**
  * Loads the curator's swipes for the women's outfit engine. Call before an
- * engine run; refreshes at most once a minute. A database problem keeps the
- * last known swipes (or the whole library) rather than failing a report.
+ * engine run so a new Pass or undo takes effect on the next recommendation.
+ * If the saved choices cannot be read, stop instead of recommending unchecked
+ * looks or using an older Keep that the curator may have since removed.
  */
-export async function primeOutfitLibraryCuration(options: { force?: boolean } = {}) {
-  if (!options.force && Date.now() - loadedAt < REFRESH_MS) return;
-  inFlight ??= loadCuration()
-    .then(curation => {
-      setOutfitLibraryCuration(curation);
-      loadedAt = Date.now();
-    })
-    .catch(error => {
-      console.error('[outfit-library] could not load the curator swipes; using the last known set', error);
-      loadedAt = Date.now();
-    })
-    .finally(() => { inFlight = null; });
-  await inFlight;
+export async function primeOutfitLibraryCuration() {
+  try {
+    setOutfitLibraryCuration(await loadCuration());
+  } catch (error) {
+    setOutfitLibraryCuration(null);
+    console.error('[outfit-library] could not load the curator choices', error);
+    throw new Error('Could not load the stylist\'s kept outfits. Retry before generating recommendations.');
+  }
 }
 
 export interface OutfitReviewCard {
@@ -73,7 +60,7 @@ export interface OutfitReviewDeck {
   liked: number;
   passed: number;
   isCurator: boolean;
-  mode: ReturnType<typeof curationMode>;
+  mode: 'likes_only';
 }
 
 function reviewableLooks() {
@@ -122,7 +109,7 @@ export async function loadOutfitReviewDeck(stylist: { stylistId: string; slug: s
     liked: cards.filter(card => card.verdict === 'like').length,
     passed: cards.filter(card => card.verdict === 'dislike').length,
     isCurator,
-    mode: curationMode(looks, { verdicts, imagedLookIds: new Set(rows.map(row => row.look_id)) }),
+    mode: 'likes_only',
   };
 }
 
@@ -138,5 +125,5 @@ export async function saveOutfitVerdict(stylistId: string, lookId: string, verdi
     })
     : await supabaseAdmin.from('stylist_outfit_library_votes').delete().eq('stylist_id', stylistId).eq('look_id', lookId);
   if (result.error) throw result.error;
-  loadedAt = 0;
+  setOutfitLibraryCuration(null);
 }

@@ -1,10 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
-  MIN_LIKES_FOR_LIKES_ONLY,
   applyOutfitLibraryCuration,
   buildOutfitLibraryImagePrompt,
-  curationMode,
   isReviewableLook,
   outfitLibraryImageHash,
   type OutfitLibraryCuration,
@@ -13,54 +11,51 @@ import {
 import { getAllVerbatimLooks, getVerbatimLooks, setOutfitLibraryCuration, type VerbatimLook } from './stylistPinterestOutfits.ts';
 
 const looks = (count: number) => Array.from({ length: count }, (_, index) => ({ id: `pinterest-${index + 1}` }));
-function curation(entries: Array<[string, OutfitVerdict]>, imaged: string[]): OutfitLibraryCuration {
-  return { verdicts: new Map(entries), imagedLookIds: new Set(imaged) };
+function curation(entries: Array<[string, OutfitVerdict]>): OutfitLibraryCuration {
+  return { verdicts: new Map(entries) };
 }
 
-test('no swipes leaves the whole library in play', () => {
+test('missing or empty swipes never opens the library to recommendations', () => {
   const library = looks(10);
-  assert.equal(curationMode(library, null), 'off');
-  assert.equal(applyOutfitLibraryCuration(library, curation([], [])).length, 10);
+  assert.deepEqual(applyOutfitLibraryCuration(library, null), []);
+  assert.deepEqual(applyOutfitLibraryCuration(library, curation([])), []);
 });
 
-test('a pass drops the look straight away while she is still swiping', () => {
+test('only explicit keeps are eligible while the review is still unfinished', () => {
   const library = looks(10);
-  const state = curation([['pinterest-1', 'dislike'], ['pinterest-2', 'like']], library.map(look => look.id));
-  assert.equal(curationMode(library, state), 'drop_passes');
-  const kept = applyOutfitLibraryCuration(library, state).map(look => look.id);
-  assert.equal(kept.includes('pinterest-1'), false);
-  assert.equal(kept.length, 9);
+  const state = curation([['pinterest-1', 'dislike'], ['pinterest-2', 'like']]);
+  assert.deepEqual(applyOutfitLibraryCuration(library, state), [library[1]]);
 });
 
-test('once every picture is judged, only her likes are recommended', () => {
-  const library = looks(MIN_LIKES_FOR_LIKES_ONLY + 40);
-  const entries = library.map((look, index): [string, OutfitVerdict] => [look.id, index < MIN_LIKES_FOR_LIKES_ONLY ? 'like' : 'dislike']);
-  // Two looks never got a picture: they cannot be judged, and are left out too.
+test('new and picture-less looks stay out until explicitly kept', () => {
+  const library = looks(160);
+  const entries = library.map((look, index): [string, OutfitVerdict] => [look.id, index < 120 ? 'like' : 'dislike']);
   const extra = [{ id: 'pinterest-9001' }, { id: 'pinterest-9002' }];
-  const state = curation(entries, library.map(look => look.id));
-  assert.equal(curationMode([...library, ...extra], state), 'likes_only');
-  const kept = applyOutfitLibraryCuration([...library, ...extra], state);
-  assert.equal(kept.length, MIN_LIKES_FOR_LIKES_ONLY);
+  const kept = applyOutfitLibraryCuration([...library, ...extra], curation(entries));
+  assert.deepEqual(kept, library.slice(0, 120));
 });
 
-test('too few likes never shrinks the library to likes only', () => {
+test('a small kept pool never permits unreviewed looks to fill the gap', () => {
   const library = looks(50);
-  const state = curation(library.map((look, index): [string, OutfitVerdict] => [look.id, index < 20 ? 'like' : 'dislike']), library.map(look => look.id));
-  assert.equal(curationMode(library, state), 'drop_passes');
-  assert.equal(applyOutfitLibraryCuration(library, state).length, 20);
+  const state = curation(library.slice(0, 20).map(look => [look.id, 'like']));
+  assert.deepEqual(applyOutfitLibraryCuration(library, state), library.slice(0, 20));
 });
 
 test('the engine sees the curated library and still knows every look', () => {
   const all = getAllVerbatimLooks();
-  setOutfitLibraryCuration(curation([[all[0].id, 'dislike']], all.map(look => look.id)));
+  setOutfitLibraryCuration(curation([[all[0].id, 'dislike'], [all[1].id, 'like']]));
   try {
-    assert.equal(getVerbatimLooks().some(look => look.id === all[0].id), false);
-    assert.equal(getVerbatimLooks().length, all.length - 1);
+    assert.deepEqual(getVerbatimLooks(), [all[1]]);
     assert.equal(getAllVerbatimLooks().length, all.length);
+    // A pass and an undo both remove a previously kept look from the next run.
+    setOutfitLibraryCuration(curation([[all[1].id, 'dislike']]));
+    assert.deepEqual(getVerbatimLooks(), []);
+    setOutfitLibraryCuration(curation([]));
+    assert.deepEqual(getVerbatimLooks(), []);
   } finally {
     setOutfitLibraryCuration(null);
   }
-  assert.equal(getVerbatimLooks().length, all.length);
+  assert.deepEqual(getVerbatimLooks(), []);
 });
 
 test('pictures are studio shots of the look as written, redrawn when the words change', () => {
