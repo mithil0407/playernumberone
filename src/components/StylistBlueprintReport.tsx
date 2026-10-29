@@ -46,10 +46,13 @@ import {
   FACE_SHAPE_LIBRARY,
   GUIDE_CATEGORIES,
   UNDERTONE_LIBRARY,
+  fabricImagePath,
   libraryImagePath,
   toBodyShapeKey,
   toFaceShapeKey,
   toUndertoneKey,
+  type GoalCard,
+  type GoalMark,
   type GuideCategoryKey,
   type LibraryCard,
   type PaletteColour,
@@ -903,7 +906,11 @@ function CoverPage({ page, data }: { page: BlueprintPage; data: StylistBlueprint
 }
 
 function SummaryPage({ page, data }: { page: BlueprintPage; data: StylistBlueprintReportData }) {
-  const { onPageChange, onReportDataChange } = useContext(EditableReportContext);
+  const { onPageChange, onReportDataChange, visibleTotalPages } = useContext(EditableReportContext);
+  // Library reports: the summary is just the four answers. Shape and colours
+  // are the picked labels (changed with the picker on their own pages), and
+  // the long lines under them and the closing quote are gone.
+  const library = libraryPicks(data);
   const colourSummary = `Your palette is built from grounded neutrals you can wear every day, plus a smaller set of colours chosen to suit your skin.`;
   // Everything on this page is read from the report-wide analysis, not from
   // page blocks, so edits write back to the same fields the rest of the report
@@ -973,6 +980,11 @@ function SummaryPage({ page, data }: { page: BlueprintPage; data: StylistBluepri
       onBody: value => updateClassification('client', { lifestyle_summary: value }),
     },
   ];
+  if (library) {
+    cards[0] = { label: '01 - YOUR SHAPE', title: BODY_SHAPE_LIBRARY[library.body].label, onTitle: () => {}, sub: 'body shape', body: '' };
+    cards[1] = { label: '02 - YOUR COLOURS', title: UNDERTONE_LIBRARY[library.undertone].label, onTitle: () => {}, sub: 'undertone', body: '' };
+    cards[2] = { ...cards[2], title: FACE_SHAPE_LIBRARY[library.face].label, onTitle: () => {} };
+  }
   const focusAreas = data.analysis.proportional_focus.filter(area => area.trim());
   // Clearing a chip's text removes it from the report.
   const updateFocusArea = (index: number, value: string) => updateData(current => {
@@ -985,7 +997,7 @@ function SummaryPage({ page, data }: { page: BlueprintPage; data: StylistBluepri
       <div className="summary-grid">
         <aside className="summary-rail">
           <div className="micro faded">In this report</div>
-          <Metric label="Pages" value={String(getStylistBlueprintPageCount(data))} />
+          <Metric label="Pages" value={String(visibleTotalPages ?? getStylistBlueprintPageCount(data))} />
           <Metric label="Outfits" value={String(getStylistBlueprintOutfitCount(data))} />
           <Metric label="Colours" value={String(data.classification.colour.base_palette.length + data.classification.colour.accent_palette.length)} />
         </aside>
@@ -997,28 +1009,32 @@ function SummaryPage({ page, data }: { page: BlueprintPage; data: StylistBluepri
             {cards.map(card => (
               <div key={card.label} className="dossier-card">
                 <div className="mono dossier-label">{card.label}</div>
-                <EditableNode as="div" className="display dossier-title" value={card.title} pageNumber={page.page_number} placeholder="Title" onCommit={value => { if (value) card.onTitle(value); }} />
+                {library && card.label !== '04 - YOUR STYLE'
+                  ? <div className="display dossier-title">{card.title}</div>
+                  : <EditableNode as="div" className="display dossier-title" value={card.title} pageNumber={page.page_number} placeholder="Title" onCommit={value => { if (value) card.onTitle(value); }} />}
                 {card.onSub
                   ? <EditableNode as="div" className="display-it dossier-subtitle" value={card.sub} pageNumber={page.page_number} placeholder="Subtitle" onCommit={card.onSub} />
                   : <div className="display-it dossier-subtitle">{card.sub}</div>}
-                <div className="rule-thin" />
-                {card.onBody
-                  ? <EditableNode as="p" value={card.body} pageNumber={page.page_number} placeholder="What this means for her" onCommit={card.onBody} />
-                  : <p>{card.body}</p>}
+                {(!library || card.body) && <>
+                  <div className="rule-thin" />
+                  {card.onBody
+                    ? <EditableNode as="p" value={card.body} pageNumber={page.page_number} placeholder="What this means for her" onCommit={card.onBody} />
+                    : <p>{card.body}</p>}
+                </>}
               </div>
             ))}
           </div>
           <div className="rule thesis-rule" />
           <div className="thesis">
             <div>
-              <p className="display-it">
+              {!library && <p className="display-it">
                 &quot;<EditableText
                   page={page}
                   value={page.pull_quote || data.classification.body.proportion_directive}
                   update={value => ({ ...page, pull_quote: value })}
                   placeholder="The one line she should remember"
                 />&quot;
-              </p>
+              </p>}
               {focusAreas.length > 0 && (
                 <>
                   <div className="micro faded">What we keep coming back to</div>
@@ -2031,9 +2047,6 @@ function MatrixPage({ page, data }: { page: BlueprintPage; data: StylistBlueprin
 	        <div>
 	          <h2><span className="display">The system,</span><span className="display-it">connected.</span></h2>
 	          <p>{firstBody(page.blocks, `The formulas share anchor pieces, which turns ${outfitCount} outfit formulas into a wider wardrobe system.`)}</p>
-          <div className="matrix-image" aria-hidden="true">
-            <NodeMap count={outfitCount} />
-          </div>
         </div>
         <div className="matrix-table">
           {items.map((item, index) => (
@@ -2048,15 +2061,6 @@ function MatrixPage({ page, data }: { page: BlueprintPage; data: StylistBlueprin
         </div>
       </div>
     </PageFrame>
-  );
-}
-
-function NodeMap({ count = 12 }: { count?: number }) {
-  return (
-    <div className="node-map">
-      {Array.from({ length: count }, (_, index) => <span key={index} style={{ transform: `rotate(${index * (360 / count)}deg) translateY(-120px)` }} />)}
-      <div className="node-center" />
-    </div>
   );
 }
 
@@ -2144,10 +2148,10 @@ function LibraryPicker({ data, field }: { data: StylistBlueprintReportData; fiel
   );
 }
 
-function LibraryCardFigure({ src, card, className = '' }: { src: string; card: LibraryCard; className?: string }) {
+function LibraryCardFigure({ src, card, className = '', children }: { src: string; card: LibraryCard; className?: string; children?: ReactNode }) {
   return (
     <figure className={`lib-card ${className}`}>
-      <div className="lib-card-image"><img src={src} alt={card.name} loading="lazy" decoding="async" /></div>
+      <div className="lib-card-image"><img src={src} alt={card.name} loading="lazy" decoding="async" />{children}</div>
       <figcaption>
         <h3 className="display">{card.name}</h3>
         <p>{card.line}</p>
@@ -2193,6 +2197,53 @@ function LibraryBodyPage({ page, data, imageUrls }: { page: BlueprintPage; data:
   );
 }
 
+/**
+ * Analysis marks over a styling-goal picture, in the same thin-line style as
+ * her own body analysis: a long line, a level (waist or seam) or a width.
+ * The picture is a fixed 2:3, so shares of width and height land where set.
+ */
+function GoalMarks({ marks }: { marks: GoalMark[] }) {
+  const W = 100;
+  const H = 150;
+  return (
+    <div className="goal-marks" aria-hidden="true">
+      <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none">
+        {marks.map((mark, index) => {
+          if (mark.kind === 'vertical') {
+            const x = mark.x * W, y1 = mark.from * H, y2 = mark.to * H;
+            return (
+              <g key={index}>
+                <line x1={x} y1={y1} x2={x} y2={y2} className="goal-mark-halo" />
+                <line x1={x} y1={y1} x2={x} y2={y2} className="goal-mark-line" />
+                <path d={`M${x - 1.8} ${y1 + 3} L${x} ${y1} L${x + 1.8} ${y1 + 3}`} className="goal-mark-line" />
+                <path d={`M${x - 1.8} ${y2 - 3} L${x} ${y2} L${x + 1.8} ${y2 - 3}`} className="goal-mark-line" />
+              </g>
+            );
+          }
+          const y = mark.y * H, x1 = mark.from * W, x2 = mark.to * W;
+          return (
+            <g key={index}>
+              <line x1={x1} y1={y} x2={x2} y2={y} className="goal-mark-halo" />
+              <line x1={x1} y1={y} x2={x2} y2={y} className={mark.kind === 'level' ? 'goal-mark-line dashed' : 'goal-mark-line'} />
+              {mark.kind === 'span'
+                ? <><line x1={x1} y1={y - 2.4} x2={x1} y2={y + 2.4} className="goal-mark-line" /><line x1={x2} y1={y - 2.4} x2={x2} y2={y + 2.4} className="goal-mark-line" /></>
+                : <><circle cx={x1} cy={y} r={1.1} className="goal-mark-dot" /><circle cx={x2} cy={y} r={1.1} className="goal-mark-dot" /></>}
+            </g>
+          );
+        })}
+      </svg>
+      {marks.map((mark, index) => {
+        const style = mark.kind === 'vertical'
+          ? (mark.x > 0.6
+            ? { right: `${(1 - mark.x) * 100 + 3}%`, top: `${((mark.from + mark.to) / 2) * 100}%` }
+            : { left: `${mark.x * 100 + 3}%`, top: `${((mark.from + mark.to) / 2) * 100}%` })
+          : { left: `${((mark.from + mark.to) / 2) * 100}%`, top: `${mark.y * 100}%` };
+        return <span key={index} className={`goal-mark-label goal-mark-label-${mark.kind}`} style={style}>{mark.label}</span>;
+      })}
+    </div>
+  );
+}
+
 function LibraryGoalsPage({ page, data }: { page: BlueprintPage; data: StylistBlueprintReportData }) {
   const picks = libraryPicks(data)!;
   const entry = BODY_SHAPE_LIBRARY[picks.body];
@@ -2203,7 +2254,11 @@ function LibraryGoalsPage({ page, data }: { page: BlueprintPage; data: StylistBl
         <p className="mono lib-kicker">For your {entry.label.toLowerCase()} shape</p>
       </div>
       <div className="lib-goals">
-        {entry.goals.map(goal => <LibraryCardFigure key={goal.id} src={libraryImagePath(picks.body, goal.id)} card={goal} />)}
+        {entry.goals.map((goal: GoalCard) => (
+          <LibraryCardFigure key={goal.id} src={libraryImagePath(picks.body, goal.id)} card={goal}>
+            <GoalMarks marks={goal.marks} />
+          </LibraryCardFigure>
+        ))}
       </div>
     </PageFrame>
   );
@@ -2308,6 +2363,25 @@ function LibraryPalettePage({ page, data }: { page: BlueprintPage; data: Stylist
   );
 }
 
+function LibraryFabricsPage({ page, data }: { page: BlueprintPage; data: StylistBlueprintReportData }) {
+  const picks = libraryPicks(data)!;
+  const entry = BODY_SHAPE_LIBRARY[picks.body];
+  return (
+    <PageFrame page={{ ...page, title: 'Fabrics that work' }} className="library-page library-fabrics">
+      <div className="lib-guide-head">
+        <h2 className="display">Fabrics that work</h2>
+        <p className="mono lib-kicker">For your {entry.label.toLowerCase()} shape</p>
+      </div>
+      <div className="lib-grid lib-grid-square">
+        {entry.fabrics.map(item => <LibraryCardFigure key={item.id} src={fabricImagePath(item.id)} card={item} />)}
+      </div>
+      <div className="lib-fabric-skip">
+        <LibraryList label="Skip" items={entry.fabricSkip} tone="skip" />
+      </div>
+    </PageFrame>
+  );
+}
+
 function LibraryClosingPage({ page, data }: { page: BlueprintPage; data: StylistBlueprintReportData }) {
   const name = data.client?.display_name?.split(' ')[0];
   return (
@@ -2333,6 +2407,7 @@ function libraryPageFor(page: BlueprintPage, data: StylistBlueprintReportData, i
   if (kind === 'library_face') return <LibraryFacePage page={page} data={data} imageUrls={imageUrls} />;
   if (kind === 'library_undertone') return <LibraryUndertonePage page={page} data={data} imageUrls={imageUrls} />;
   if (kind === 'library_palette') return <LibraryPalettePage page={page} data={data} />;
+  if (kind === 'library_fabrics') return <LibraryFabricsPage page={page} data={data} />;
   if (kind === 'library_closing') return <LibraryClosingPage page={page} data={data} />;
   return <LibraryGuidePage page={page} data={data} category={LIBRARY_GUIDE_KIND[kind]} />;
 }
@@ -4568,6 +4643,24 @@ function BlueprintStyles() {
       .library-palette .lib-palette { margin-top: 28px; }
       .lib-picker { display: inline-flex; align-items: center; gap: 8px; margin-top: 14px; padding: 5px 6px 5px 12px; border-radius: 999px; background: rgba(28, 24, 21, 0.55); color: ${IVORY}; font-family: var(--font-manrope), Manrope, ui-sans-serif, system-ui, sans-serif; font-size: 12px; }
       .lib-picker select { border: 0; border-radius: 999px; padding: 5px 10px; background: ${IVORY}; color: ${INK}; font: inherit; font-weight: 600; cursor: pointer; }
+      .lib-card-image { position: relative; }
+      .lib-grid-square .lib-card-image { aspect-ratio: 1 / 1; }
+      .lib-fabric-skip { margin-top: 26px; max-width: 520px; }
+      .lib-fabric-skip .lib-list { margin-top: 0; }
+      .goal-marks { position: absolute; inset: 0; pointer-events: none; }
+      .goal-marks svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+      .goal-mark-halo { stroke: rgba(255, 255, 255, 0.85); stroke-width: 4.5; vector-effect: non-scaling-stroke; fill: none; stroke-linecap: round; }
+      .goal-mark-line { stroke: #A67C3D; stroke-width: 1.6; vector-effect: non-scaling-stroke; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+      .goal-mark-line.dashed { stroke-dasharray: 5 4; }
+      .goal-mark-dot { fill: #A67C3D; stroke: #FFFFFF; stroke-width: 1; vector-effect: non-scaling-stroke; }
+      .goal-mark-label {
+        position: absolute; white-space: nowrap; padding: 4px 9px; border-radius: 999px;
+        background: rgba(28, 24, 21, 0.86); color: ${IVORY};
+        font-family: var(--font-manrope), Manrope, ui-sans-serif, system-ui, sans-serif;
+        font-size: 11px; font-weight: 600; letter-spacing: 0.01em; line-height: 1.2;
+      }
+      .goal-mark-label-level, .goal-mark-label-span { transform: translate(-50%, calc(-100% - 7px)); }
+      .goal-mark-label-vertical { transform: translateY(-50%); }
       .lib-closing { margin: 120px auto 0; max-width: 640px; text-align: center; }
       .lib-closing h2 { font-size: clamp(36px, 5cqi, 60px); line-height: 1.05; letter-spacing: -0.04em; margin: 0; }
       .lib-closing .lib-summary { margin: 26px auto 0; max-width: 44ch; }
