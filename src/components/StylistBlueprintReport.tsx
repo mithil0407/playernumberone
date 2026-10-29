@@ -62,7 +62,8 @@ import { reportHairstyles, withHairstyleEdit } from '@/lib/stylistHairstyleGuide
 import { createContext, type ClipboardEvent, type ElementType, type FocusEvent, type FormEvent, type ReactNode, type Ref, useContext, useEffect, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import type { ImageCropSource } from '@/components/ImageCropDialog';
-import { imageFileFromClipboard, prepareImageForUpload } from '@/components/imageUploadPrep';
+import { imageFileFromClipboard } from '@/components/imageUploadPrep';
+import { Loader2 } from 'lucide-react';
 import { reportPrintLayoutCss } from '@/lib/reportPrint';
 import { outfitCopy, setOutfitCopy } from '@/lib/stylistOutfitEditor';
 import { findRevisedOutfit, isBlankRevisedOutfit, latestRevisionOf, revisedOutfitSlotIndex, revisedOutfitSlotKey } from '@/lib/stylistRevisedOutfits';
@@ -106,11 +107,16 @@ type EditableReportContextValue = {
    */
   imagePrompts?: Partial<Record<StylistBlueprintImageSlotKey, string>>;
   onImageUpload?: (slotKey: StylistBlueprintImageSlotKey, file: File) => void | boolean | Promise<void | boolean>;
-  uploadingImageSlot?: StylistBlueprintImageSlotKey | null;
+  /** Pictures being saved in the background, by slot: shown at once from the stylist's own file. */
+  imageUploads?: Partial<Record<string, StylistImageUploadState>>;
+  onRetryImageUpload?: (slotKey: StylistBlueprintImageSlotKey) => void;
   reportData?: StylistBlueprintReportData;
   visibleTotalPages?: number;
   visiblePageNumbers?: number[];
 };
+
+/** One picture saving in the background. `preview` is an object URL of the stylist's own file. */
+export type StylistImageUploadState = { preview: string; state: 'saving' | 'failed'; error?: string };
 
 const EditableReportContext = createContext<EditableReportContextValue>({ editable: false });
 
@@ -280,7 +286,8 @@ function ImageSlotFrame({
     imageRegenerationDisabled,
     imagePrompts,
     onImageUpload,
-    uploadingImageSlot,
+    imageUploads,
+    onRetryImageUpload,
   } = useContext(EditableReportContext);
   const canRegenerate = Boolean(onImageRegenerate);
   const isRegenerating = regeneratingImageSlot === slotKey;
@@ -290,7 +297,8 @@ function ImageSlotFrame({
   const canUpload = Boolean(onImageUpload);
   // Studio tools appear only when the report studio passes editing handlers; the client report passes none.
   const isStudio = canUpload || canRegenerate || Boolean(prompt);
-  const isUploading = uploadingImageSlot === slotKey;
+  const upload = imageUploads?.[slotKey];
+  const isUploading = upload?.state === 'saving';
   const inputRef = useRef<HTMLInputElement | null>(null);
   const frameRef = useRef<HTMLDivElement | null>(null);
   const [dragging, setDragging] = useState(false);
@@ -306,8 +314,8 @@ function ImageSlotFrame({
     if (next !== currentImageUrl) setCurrentImageUrl(next);
   }, [isStudio, children, currentImageUrl]);
 
-  const uploadDisabledReason = uploadingImageSlot
-    ? isUploading ? 'Saving this photo…' : 'Wait for the other photo to finish saving.'
+  // Other slots stay open while one saves: the page queues the saves.
+  const uploadDisabledReason = isUploading ? 'Saving this photo…'
     : disabled ? 'Available once the report has finished generating.' : '';
   const regenerateDisabledReason = isRegenerating ? 'Creating a new image…' : disabled ? 'Available once the report has finished generating.' : '';
 
@@ -320,10 +328,11 @@ function ImageSlotFrame({
     setCropAspect(frameAspect());
     setCropSource(source);
   };
-  // Like Gamma: a new picture goes straight in, and Crop is there afterwards if it needs it.
-  const acceptFile = async (file: File | null | undefined) => {
+  // A new picture opens the cropper straight away (with the Flow mark already
+  // cropped out); "Upload without cropping" is one click in the cropper.
+  const acceptFile = (file: File | null | undefined) => {
     if (!file || !/^image\/(jpeg|png|webp)$/.test(file.type) || !onImageUpload || uploadDisabledReason) return;
-    await onImageUpload(slotKey, await prepareImageForUpload(file));
+    openCropper({ kind: 'file', file });
   };
   // Click the picture, then Cmd+V. The frame takes focus on click, so the paste lands here.
   // The clipboard is only readable during the event, so the file is taken out straight away.
@@ -332,7 +341,7 @@ function ImageSlotFrame({
     const file = imageFileFromClipboard(event.clipboardData);
     if (!file) return;
     event.preventDefault();
-    void acceptFile(file);
+    acceptFile(file);
   };
   const uploadCropped = async (file: File) => {
     if (!onImageUpload) return false;
@@ -355,10 +364,20 @@ function ImageSlotFrame({
       onDrop={canUpload ? event => {
         event.preventDefault();
         setDragging(false);
-        void acceptFile(event.dataTransfer?.files?.[0]);
+        acceptFile(event.dataTransfer?.files?.[0]);
       } : undefined}
     >
       {children}
+      {upload && (
+        // The stylist's own picture, shown the moment she confirms, while it saves behind the scenes.
+        <div className="slot-upload-preview">
+          {/* eslint-disable-next-line @next/next/no-img-element -- a local object URL of her own file, nothing to optimise */}
+          <img src={upload.preview} alt="" />
+          {upload.state === 'saving'
+            ? <span className="slot-upload-badge"><Loader2 size={12} className="spin-icon" /> Saving…</span>
+            : <button type="button" className="slot-upload-badge is-failed" onClick={() => onRetryImageUpload?.(slotKey)} title={upload.error}>Not saved · Retry</button>}
+        </div>
+      )}
       {dragging && <div className="slot-drop-hint">Drop to {currentImageUrl ? 'replace' : 'add'} photo</div>}
       {pasteReady && !dragging && !isUploading && <div className="slot-paste-hint" aria-hidden="true">Paste ({pasteShortcut()}) to {currentImageUrl ? 'replace' : 'add'}</div>}
       {canUpload && (
@@ -369,18 +388,19 @@ function ImageSlotFrame({
           className="hidden"
           tabIndex={-1}
           aria-hidden="true"
-          onChange={event => { void acceptFile(event.target.files?.[0]); event.currentTarget.value = ''; }}
+          onChange={event => { acceptFile(event.target.files?.[0]); event.currentTarget.value = ''; }}
         />
       )}
       {isStudio && (
         <ImageSlotStudioTools
           frameRef={frameRef}
           label={label}
-          hasImage={Boolean(currentImageUrl)}
+          hasImage={Boolean(currentImageUrl || upload)}
           prompt={prompt}
           canUpload={canUpload}
           canRegenerate={canRegenerate}
-          isUploading={isUploading}
+          // The preview above already shows the save; the tools' full-slot spinner would hide it.
+          isUploading={false}
           isRegenerating={isRegenerating}
           uploadDisabledReason={uploadDisabledReason}
           regenerateDisabledReason={regenerateDisabledReason}
@@ -2515,7 +2535,8 @@ function PremiumReport({
   imageRegenerationDisabled,
   imagePrompts,
   onImageUpload,
-  uploadingImageSlot,
+  imageUploads,
+  onRetryImageUpload,
 }: {
   data: StylistBlueprintReportData;
   imageUrls?: ResolvedStylistBlueprintImageUrls | null;
@@ -2530,13 +2551,15 @@ function PremiumReport({
   imageRegenerationDisabled?: boolean;
   imagePrompts?: Partial<Record<StylistBlueprintImageSlotKey, string>>;
   onImageUpload?: (slotKey: StylistBlueprintImageSlotKey, file: File) => void | boolean | Promise<void | boolean>;
-  uploadingImageSlot?: StylistBlueprintImageSlotKey | null;
+  /** Pictures being saved in the background, by slot: shown at once from the stylist's own file. */
+  imageUploads?: Partial<Record<string, StylistImageUploadState>>;
+  onRetryImageUpload?: (slotKey: StylistBlueprintImageSlotKey) => void;
 }) {
   const visiblePages = getVisibleStylistBlueprintPages(data, { hideContinuationPage, includeHidden: editable });
   const pages = visiblePages.filter(page => !focusPageNumber || page.page_number === focusPageNumber);
   const visibleTotalPages = visiblePages.length;
   return (
-    <EditableReportContext.Provider value={{ editable, onPageChange, onReportDataChange, onImageRegenerate, regeneratingImageSlot, imageRegenerationDisabled, imagePrompts, onImageUpload, uploadingImageSlot, reportData: data, visibleTotalPages, visiblePageNumbers: visiblePages.map(page => page.page_number) }}>
+    <EditableReportContext.Provider value={{ editable, onPageChange, onReportDataChange, onImageRegenerate, regeneratingImageSlot, imageRegenerationDisabled, imagePrompts, onImageUpload, imageUploads, onRetryImageUpload, reportData: data, visibleTotalPages, visiblePageNumbers: visiblePages.map(page => page.page_number) }}>
       <article className={`iconik-report ${editable ? 'iconik-report-editable' : ''}`}>
         <BlueprintStyles />
         <style>{STYLIST_PRINT_LAYOUT_CSS}</style>
@@ -2581,7 +2604,8 @@ export default function StylistBlueprintReport({
   imageRegenerationDisabled,
   imagePrompts,
   onImageUpload,
-  uploadingImageSlot,
+  imageUploads,
+  onRetryImageUpload,
 }: {
   data: StylistBlueprintReportData | LegacyStylistBlueprintReportData;
   imageUrls?: ResolvedStylistBlueprintImageUrls | null;
@@ -2596,7 +2620,9 @@ export default function StylistBlueprintReport({
   imageRegenerationDisabled?: boolean;
   imagePrompts?: Partial<Record<StylistBlueprintImageSlotKey, string>>;
   onImageUpload?: (slotKey: StylistBlueprintImageSlotKey, file: File) => void | boolean | Promise<void | boolean>;
-  uploadingImageSlot?: StylistBlueprintImageSlotKey | null;
+  /** Pictures being saved in the background, by slot: shown at once from the stylist's own file. */
+  imageUploads?: Partial<Record<string, StylistImageUploadState>>;
+  onRetryImageUpload?: (slotKey: StylistBlueprintImageSlotKey) => void;
 }) {
   if (!isVersionedStylistBlueprintReportData(data)) return <LegacyReport data={data} imageUrls={imageUrls} />;
   return (
@@ -2614,7 +2640,8 @@ export default function StylistBlueprintReport({
       imageRegenerationDisabled={imageRegenerationDisabled}
       imagePrompts={imagePrompts}
       onImageUpload={onImageUpload}
-      uploadingImageSlot={uploadingImageSlot}
+      imageUploads={imageUploads}
+      onRetryImageUpload={onRetryImageUpload}
     />
   );
 }
@@ -2676,6 +2703,15 @@ function BlueprintStyles() {
         outline: 2px solid #C9A96E;
         outline-offset: -2px;
       }
+      .slot-upload-preview { position: absolute; inset: 0; z-index: 3; background: #F6F5F2; }
+      .slot-upload-preview img { width: 100%; height: 100%; object-fit: cover; display: block; }
+      .slot-upload-badge {
+        position: absolute; top: 10px; left: 50%; transform: translateX(-50%); z-index: 6;
+        display: inline-flex; align-items: center; gap: 6px; padding: 6px 11px; border-radius: 999px; border: 0;
+        background: rgba(28, 24, 21, 0.82); color: ${IVORY}; font-size: 12px; font-weight: 600; white-space: nowrap;
+        font-family: var(--font-manrope), Manrope, ui-sans-serif, system-ui, sans-serif;
+      }
+      .slot-upload-badge.is-failed { background: #9A4039; cursor: pointer; }
       .slot-paste-hint {
         position: absolute;
         top: 10px;

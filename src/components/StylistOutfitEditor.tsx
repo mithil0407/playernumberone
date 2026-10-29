@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ArrowRight, Check, Copy, Crop, ImagePlus, Loader2, Plus, Trash2, WandSparkles } from 'lucide-react';
 import ImageCropDialog, { type ImageCropSource } from '@/components/ImageCropDialog';
-import { imageFileFromClipboard, prepareImageForUpload } from '@/components/imageUploadPrep';
+import { imageFileFromClipboard } from '@/components/imageUploadPrep';
 import type { BlueprintPage } from '@/lib/stylistBlueprintGenerator';
 import { outfitPieces, setOutfitPieces, outfitCopy, setOutfitCopy, OUTFIT_COPY_FIELDS, type OutfitPiece } from '@/lib/stylistOutfitEditor';
 
@@ -79,7 +79,8 @@ export default function StylistOutfitEditor({ page, onChange, onSave, onUpload, 
     if (!file || disabled || saving) return;
     if (!/^image\/(jpeg|png|webp)$/.test(file.type)) { setError('Choose a JPG, PNG or WebP image.'); return; }
     // Like Gamma: the picture goes straight in; "Crop image" is there afterwards.
-    await upload(await prepareImageForUpload(file));
+    // A new picture opens the cropper straight away; "Upload without cropping" is one click there.
+    openCropper({ kind: 'file', file });
   };
   // Click the drop area, then Cmd+V. The clipboard is only readable during the event.
   const pasteImage = (event: React.ClipboardEvent<HTMLDivElement>) => {
@@ -93,7 +94,7 @@ export default function StylistOutfitEditor({ page, onChange, onSave, onUpload, 
     setWorking(true); setError(''); setMessage('');
     try {
       const saved = await onUpload(file);
-      if (saved) { setMessage('Image saved. Review the report, then approve this page.'); setCropSource(null); }
+      if (saved) { setMessage('Image added. It saves in the background, so you can carry on.'); setCropSource(null); }
       return saved;
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : 'Image upload failed');
@@ -192,7 +193,7 @@ export default function StylistOutfitEditor({ page, onChange, onSave, onUpload, 
           <button disabled={disabled || saving} onClick={() => input.current?.click()} className="rounded-full px-5 py-3 text-sm bg-[#111315] text-[#f5f3ee] disabled:opacity-50">{working ? 'Working…' : imageUrl ? 'Replace image' : 'Choose image'}</button>
           {imageUrl && <button disabled={disabled || saving} onClick={() => openCropper({ kind: 'url', url: imageUrl })} className="inline-flex items-center gap-2 rounded-full px-4 py-3 text-sm border border-[#111315]/15 bg-[#faf9f6] disabled:opacity-50"><Crop size={15} /> Crop image</button>}
         </div>
-        <p className="text-xs text-[#58595b] mt-3">Click this box and paste (⌘V / Ctrl+V), or drop it here · JPG, PNG or WebP · crop afterwards if needed</p>
+        <p className="text-xs text-[#58595b] mt-3">Click this box and paste (⌘V / Ctrl+V), or drop it here · JPG, PNG or WebP · the cropper opens straight away</p>
       </div>
       <button disabled={disabled || saving || !imageUrl || hasUnsavedEdits} onClick={() => void onApprove()} className="w-full flex justify-center gap-2 rounded-full px-4 py-3 text-sm bg-[#2f6b4f] text-white disabled:opacity-40"><Check size={15} /> Approve & next page</button>
       {!imageUrl && <p className="text-xs text-[#58595b]">Upload the matching image before approving this outfit.</p>}
