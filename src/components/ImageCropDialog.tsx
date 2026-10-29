@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { AlertTriangle, Crop, Loader2, Minus, Plus, RotateCcw, RotateCw, X } from 'lucide-react';
+import { canvasToJpeg, cropAvoidingCorner, loadImageElement, MAX_UPLOAD_EDGE, shrinkImageForUpload, watermarkCorner } from '@/components/imageUploadPrep';
 
 /**
  * A pan-and-zoom cropper: the crop window stays fixed and the image moves
@@ -16,12 +17,17 @@ export type ImageCropSource = { kind: 'file'; file: File } | { kind: 'url'; url:
 type Ratio = { key: string; label: string; value: number | 'original' };
 
 const C = { ink: '#2C2622', bg: '#F4EFE5', card: '#EDE5D2', panel: '#FBF8F0', muted: '#655E57', border: 'rgba(44,38,34,0.12)', gold: '#9A7538', danger: '#9A4039' };
-const MAX_OUTPUT_EDGE = 2400;
 const MAX_UPLOAD_BYTES = 8 * 1024 * 1024;
 const MIN_ZOOM = 1;
 const MAX_ZOOM = 5;
 const LOW_RES_EDGE = 700;
 const STAGE_PADDING = 28;
+/**
+ * The picture moved around on screen is a copy no bigger than this. Dragging a
+ * full 12-megapixel phone photo made every mouse move slow; the full picture
+ * is still used for the saved crop.
+ */
+const PREVIEW_EDGE = 2048;
 
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
 
@@ -30,20 +36,60 @@ function describeRatio(value: number) {
   return known.find(([ratio]) => Math.abs(ratio - value) < 0.02)?.[1] ?? null;
 }
 
-function loadImage(url: string) {
-  return new Promise<HTMLImageElement>((resolve, reject) => {
-    const image = new Image();
-    image.decoding = 'async';
-    image.onload = () => resolve(image);
-    image.onerror = () => reject(new Error('This image could not be opened.'));
-    image.src = url;
-  });
+const HIDE_MARK_KEY = 'iconik-crop-hide-flow-mark';
+
+function readHideMarkPreference() {
+  try { return typeof localStorage === 'undefined' || localStorage.getItem(HIDE_MARK_KEY) !== '0'; } catch { return true; }
 }
 
-function canvasToBlob(canvas: HTMLCanvasElement, quality: number) {
-  return new Promise<Blob>((resolve, reject) => {
-    canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error('Could not create the cropped image.')), 'image/jpeg', quality);
-  });
+/** Whether the crop still shows any of the ✦ itself (9–17% of the short side in from the corner). */
+function cropIncludesMark(crop: { left: number; top: number; width: number; height: number }, width: number, height: number, rotation: number) {
+  const short = Math.min(width, height);
+  const { right, bottom } = watermarkCorner(rotation);
+  const near = short * 0.08;
+  const far = short * 0.17;
+  const markX = right ? [width - far, width - near] : [near, far];
+  const markY = bottom ? [height - far, height - near] : [near, far];
+  return crop.left < markX[1] && crop.left + crop.width > markX[0] && crop.top < markY[1] && crop.top + crop.height > markY[0];
+}
+
+/** Studio image links serve a lighter copy by default; cropping needs the stored original. */
+function fullSizeImageUrl(url: string) {
+  if (typeof window === 'undefined') return url;
+  try {
+    const parsed = new URL(url, window.location.href);
+    if (parsed.origin !== window.location.origin || !/^\/api\/stylist-blueprint\/[^/]+\/image$/.test(parsed.pathname)) return url;
+    parsed.searchParams.set('full', '1');
+    return parsed.toString();
+  } catch {
+    return url;
+  }
+}
+
+async function downloadImageBlob(url: string) {
+  // The browser's cached copy first: it is usually already there from the report.
+  for (const cache of ['default', 'no-store'] as const) {
+    try {
+      const response = await fetch(url, { mode: 'cors', cache });
+      if (response.ok) return await response.blob();
+    } catch { /* Try again without the cache. */ }
+  }
+  throw new Error('This image could not be downloaded for cropping.');
+}
+
+/** A smaller copy for moving around on screen, or null when the picture is already small. */
+async function makePreviewUrl(image: HTMLImageElement) {
+  const longest = Math.max(image.naturalWidth, image.naturalHeight);
+  if (longest <= PREVIEW_EDGE) return null;
+  const scale = PREVIEW_EDGE / longest;
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.round(image.naturalWidth * scale);
+  canvas.height = Math.round(image.naturalHeight * scale);
+  const context = canvas.getContext('2d');
+  if (!context) return null;
+  context.imageSmoothingQuality = 'high';
+  context.drawImage(image, 0, 0, canvas.width, canvas.height);
+  return URL.createObjectURL(await canvasToJpeg(canvas, 0.9));
 }
 
 export default function ImageCropDialog({
@@ -69,6 +115,7 @@ export default function ImageCropDialog({
   onUseOriginal?: (file: File) => Promise<boolean | void> | boolean | void;
 }) {
   const [image, setImage] = useState<HTMLImageElement | null>(null);
+  const [previewSrc, setPreviewSrc] = useState('');
   const [loadError, setLoadError] = useState('');
   const [actionError, setActionError] = useState('');
   const [busy, setBusy] = useState<'' | 'crop' | 'original'>('');
@@ -95,23 +142,23 @@ export default function ImageCropDialog({
   // Load the source. Remote images are fetched as blobs so the canvas is never tainted by a cached non-CORS response.
   useEffect(() => {
     let objectUrl = '';
+    let previewUrl: string | null = null;
     let cancelled = false;
     void (async () => {
       try {
-        if (source.kind === 'file') {
-          objectUrl = URL.createObjectURL(source.file);
-        } else {
-          const response = await fetch(source.url, { mode: 'cors', cache: 'no-store' });
-          if (!response.ok) throw new Error('This image could not be downloaded for cropping.');
-          objectUrl = URL.createObjectURL(await response.blob());
-        }
-        const loaded = await loadImage(objectUrl);
-        if (!cancelled) setImage(loaded);
+        objectUrl = URL.createObjectURL(source.kind === 'file' ? source.file : await downloadImageBlob(fullSizeImageUrl(source.url)));
+        const loaded = await loadImageElement(objectUrl);
+        previewUrl = await makePreviewUrl(loaded).catch(() => null);
+        if (!cancelled) { setPreviewSrc(previewUrl ?? objectUrl); setImage(loaded); }
       } catch (caught) {
         if (!cancelled) setLoadError(caught instanceof Error && source.kind === 'file' ? caught.message : 'This image could not be opened for cropping. Download it and upload it again to crop.');
       }
     })();
-    return () => { cancelled = true; if (objectUrl) URL.revokeObjectURL(objectUrl); };
+    return () => {
+      cancelled = true;
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+    };
   }, [source]);
 
   useLayoutEffect(() => {
@@ -179,16 +226,21 @@ export default function ImageCropDialog({
     setOffset(current => clampOffset({ x: current.x * (bounded / zoom), y: current.y * (bounded / zoom) }, bounded));
   }, [clampOffset, zoom]);
 
+  // Attached once; reading the latest zoom through refs instead of re-binding on every wheel tick.
+  const zoomRef = useRef(zoom);
+  zoomRef.current = zoom;
+  const applyZoomRef = useRef(applyZoom);
+  applyZoomRef.current = applyZoom;
   useEffect(() => {
     const element = stageRef.current;
     if (!element) return;
     const onWheel = (event: WheelEvent) => {
       event.preventDefault();
-      applyZoom(zoom * Math.exp(-event.deltaY * 0.0015));
+      applyZoomRef.current(zoomRef.current * Math.exp(-event.deltaY * 0.0015));
     };
     element.addEventListener('wheel', onWheel, { passive: false });
     return () => element.removeEventListener('wheel', onWheel);
-  }, [applyZoom, zoom]);
+  }, []);
 
   const crop = useMemo(() => {
     if (!scale) return null;
@@ -196,12 +248,44 @@ export default function ImageCropDialog({
     const height = frameHeight / scale;
     const left = clamp((imageWidth * scale / 2 - frameWidth / 2 - offset.x) / scale, 0, imageWidth - width);
     const top = clamp((imageHeight * scale / 2 - frameHeight / 2 - offset.y) / scale, 0, imageHeight - height);
-    const outputScale = Math.min(1, MAX_OUTPUT_EDGE / Math.max(width, height));
+    const outputScale = Math.min(1, MAX_UPLOAD_EDGE / Math.max(width, height));
     return { left, top, width, height, outputWidth: Math.max(1, Math.round(width * outputScale)), outputHeight: Math.max(1, Math.round(height * outputScale)) };
   }, [frameHeight, frameWidth, imageHeight, imageWidth, offset, scale]);
   const lowResolution = Boolean(crop && Math.min(crop.width, crop.height) < LOW_RES_EDGE);
 
-  const reset = () => { setZoom(1); setOffset({ x: 0, y: 0 }); setRotation(0); };
+  // Flow's ✦ watermark in the bottom-right corner. On by default and
+  // remembered, because the stylists make most of their images in Flow.
+  const [hideMark, setHideMark] = useState(readHideMarkPreference);
+  const [framingNonce, setFramingNonce] = useState(0);
+  const framingWithoutMark = useCallback(() => {
+    if (!imageWidth || !imageHeight || !frameWidth || !baseScale) return null;
+    const box = cropAvoidingCorner({ width: imageWidth, height: imageHeight, aspect, corner: watermarkCorner(rotation) });
+    const nextZoom = clamp(frameWidth / box.width / baseScale, MIN_ZOOM, MAX_ZOOM);
+    const nextScale = baseScale * nextZoom;
+    const next = { x: imageWidth * nextScale / 2 - frameWidth / 2 - box.left * nextScale, y: imageHeight * nextScale / 2 - frameHeight / 2 - box.top * nextScale };
+    return { zoom: nextZoom, offset: clampOffset(next, nextZoom) };
+  }, [aspect, baseScale, clampOffset, frameHeight, frameWidth, imageHeight, imageWidth, rotation]);
+  // Frame it once per shape, turn or reset, so the stylist's own adjustments are left alone.
+  const framingKey = `${ratioKey}|${rotation}|${Math.round(frameWidth)}|${Math.round(frameHeight)}|${framingNonce}`;
+  const appliedFraming = useRef('');
+  useEffect(() => {
+    if (!hideMark || !ready) { appliedFraming.current = ''; return; }
+    if (appliedFraming.current === framingKey) return;
+    const framing = framingWithoutMark();
+    if (!framing) return;
+    appliedFraming.current = framingKey;
+    setZoom(framing.zoom);
+    setOffset(framing.offset);
+  }, [framingKey, framingWithoutMark, hideMark, ready]);
+  const toggleHideMark = () => {
+    const next = !hideMark;
+    setHideMark(next);
+    try { localStorage.setItem(HIDE_MARK_KEY, next ? '1' : '0'); } catch { /* Optional convenience. */ }
+    if (!next) { setZoom(1); setOffset({ x: 0, y: 0 }); }
+  };
+  const markInCrop = Boolean(hideMark && crop && imageWidth && cropIncludesMark(crop, imageWidth, imageHeight, rotation));
+
+  const reset = () => { setZoom(1); setOffset({ x: 0, y: 0 }); setRotation(0); setFramingNonce(current => current + 1); };
   const rotate = (direction: 1 | -1) => { setRotation(current => (current + direction * 90 + 360) % 360); setOffset({ x: 0, y: 0 }); };
   const blocked = Boolean(busy) || !image;
 
@@ -258,8 +342,8 @@ export default function ImageCropDialog({
       context.translate(imageWidth / 2, imageHeight / 2);
       context.rotate((rotation * Math.PI) / 180);
       context.drawImage(image, -image.naturalWidth / 2, -image.naturalHeight / 2);
-      let blob = await canvasToBlob(canvas, 0.92);
-      if (blob.size > MAX_UPLOAD_BYTES) blob = await canvasToBlob(canvas, 0.8);
+      let blob = await canvasToJpeg(canvas);
+      if (blob.size > MAX_UPLOAD_BYTES) blob = await canvasToJpeg(canvas, 0.8);
       const baseName = source.kind === 'file' ? source.file.name.replace(/\.[^.]+$/, '') : 'report-image';
       const result = await onConfirm(new File([blob], `${baseName}-cropped.jpg`, { type: 'image/jpeg' }));
       if (result === false) setActionError('The image was not saved. Check the message on the report and try again.');
@@ -274,14 +358,17 @@ export default function ImageCropDialog({
     if (source.kind !== 'file' || !onUseOriginal || busy) return;
     setBusy('original'); setActionError('');
     try {
-      const result = await onUseOriginal(source.file);
+      // Same picture, uncropped, but no bigger than the report needs.
+      const file = image ? await shrinkImageForUpload(source.file, image).catch(() => source.file) : source.file;
+      const result = await onUseOriginal(file);
       if (result === false) setActionError('The image was not saved. Check the message on the report and try again.');
     } finally {
       setBusy('');
     }
   };
 
-  const originalTooLarge = source.kind === 'file' && source.file.size > MAX_UPLOAD_BYTES;
+  // Once the picture has opened it is shrunk before upload, so only an unopened one can be too large.
+  const originalTooLarge = source.kind === 'file' && !image && source.file.size > MAX_UPLOAD_BYTES;
 
   return createPortal(
     // React events bubble through portals to the report behind, so they stop here.
@@ -325,19 +412,22 @@ export default function ImageCropDialog({
           {!image && !loadError && <div className="absolute inset-0 flex items-center justify-center gap-2 text-sm" style={{ color: 'rgba(244,239,229,0.7)' }}><Loader2 size={16} className="animate-spin" /> Opening image…</div>}
           {loadError && <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 p-8 text-center text-sm" style={{ color: 'rgba(244,239,229,0.85)' }}><AlertTriangle size={20} /> {loadError}</div>}
           {image && scale > 0 && <>
+            {/* Size is fixed at zoom 1; moving and zooming only change the transform, which the browser does without re-laying out the page. */}
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src={image.src}
+              src={previewSrc || image.src}
               alt=""
               draggable={false}
+              decoding="async"
               className="absolute max-w-none pointer-events-none"
               style={{
-                left: stage.width / 2 + offset.x,
-                top: stage.height / 2 + offset.y,
-                width: image.naturalWidth * scale,
-                height: image.naturalHeight * scale,
-                transform: `translate(-50%, -50%) rotate(${rotation}deg)`,
-                transition: interacting ? 'none' : 'width 120ms ease, height 120ms ease',
+                left: stage.width / 2,
+                top: stage.height / 2,
+                width: image.naturalWidth * baseScale,
+                height: image.naturalHeight * baseScale,
+                transform: `translate3d(${offset.x}px, ${offset.y}px, 0) translate(-50%, -50%) scale(${zoom}) rotate(${rotation}deg)`,
+                willChange: 'transform',
+                transition: interacting ? 'none' : 'transform 120ms ease',
               }}
             />
             <div
@@ -379,15 +469,28 @@ export default function ImageCropDialog({
               const active = ratio.key === selected.key;
               return <button key={ratio.key} type="button" role="radio" aria-checked={active} disabled={blocked} onClick={() => setRatioKey(ratio.key)} className="shrink-0 rounded-full px-3.5 py-1.5 text-xs transition-colors disabled:opacity-40" style={{ background: active ? C.ink : C.card, color: active ? C.bg : C.ink }}>{ratio.label}</button>;
             })}
-            <button type="button" disabled={blocked} onClick={reset} className="shrink-0 ml-auto rounded-full px-3 py-1.5 text-xs underline underline-offset-4 disabled:opacity-40" style={{ color: C.muted }}>Reset</button>
+            <button
+              type="button"
+              aria-pressed={hideMark}
+              disabled={blocked}
+              onClick={toggleHideMark}
+              title="Crop out the ✦ that Flow puts in the bottom-right corner"
+              className="shrink-0 ml-auto inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs transition-colors disabled:opacity-40"
+              style={{ background: hideMark ? C.gold : C.card, color: hideMark ? '#FFFFFF' : C.ink }}
+            >
+              <span aria-hidden="true">✦</span> Hide Flow mark
+            </button>
+            <button type="button" disabled={blocked} onClick={reset} className="shrink-0 rounded-full px-3 py-1.5 text-xs underline underline-offset-4 disabled:opacity-40" style={{ color: C.muted }}>Reset</button>
           </div>
 
           <div className="min-h-[20px] text-xs" aria-live="polite">
             {actionError
               ? <p role="alert" style={{ color: C.danger }}>{actionError}</p>
+              : markInCrop
+                ? <p className="flex items-center gap-1.5" style={{ color: C.gold }}><AlertTriangle size={13} /> The Flow ✦ is inside the crop. Press Reset to crop it out again.</p>
               : lowResolution
                 ? <p className="flex items-center gap-1.5" style={{ color: C.gold }}><AlertTriangle size={13} /> This crop is small ({Math.round(crop!.width)} × {Math.round(crop!.height)} px) and may look soft in the report.</p>
-                : crop && <p style={{ color: C.muted }}>{hasFrame && selected.key !== 'frame' ? 'This shape differs from the report frame, so the report may trim the edges. ' : ''}Saves as {crop.outputWidth} × {crop.outputHeight} px</p>}
+                : crop && <p style={{ color: C.muted }}>{hasFrame && selected.key !== 'frame' ? 'This shape differs from the report frame, so the report may trim the edges. ' : ''}{hideMark ? 'Flow ✦ cropped out · ' : ''}Saves as {crop.outputWidth} × {crop.outputHeight} px</p>}
           </div>
         </div>
 
