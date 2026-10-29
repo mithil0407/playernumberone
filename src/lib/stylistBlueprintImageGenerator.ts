@@ -323,7 +323,12 @@ export function uniqueStylistBlueprintImagePath(reportId: string, fileName: stri
 
 async function uploadBuffer(reportId: string, fileName: string, buffer: Buffer) {
   const path = uniqueStylistBlueprintImagePath(reportId, fileName);
-  const jpeg = await sharp(buffer, { limitInputPixels: 40_000_000 })
+  // The studio cropper already sends a JPEG at report size. Compressing it a
+  // second time only cost time and a little quality, so it is stored as sent.
+  const meta = await sharp(buffer, { limitInputPixels: 40_000_000 }).metadata();
+  const readyAsIs = meta.format === 'jpeg' && (meta.orientation ?? 1) === 1
+    && Math.max(meta.width ?? Infinity, meta.height ?? Infinity) <= STORED_IMAGE_MAX_EDGE;
+  const jpeg = readyAsIs ? buffer : await sharp(buffer, { limitInputPixels: 40_000_000 })
     .rotate()
     .resize({ width: STORED_IMAGE_MAX_EDGE, height: STORED_IMAGE_MAX_EDGE, fit: 'inside', withoutEnlargement: true })
     .jpeg({ quality: 88, mozjpeg: true })

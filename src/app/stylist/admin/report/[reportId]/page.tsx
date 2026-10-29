@@ -38,7 +38,7 @@ import {
   X,
 } from 'lucide-react';
 import { ActionButton, Pill, reviewTheme as S } from '@/components/AdminReviewWorkspace';
-import StylistBlueprintReport from '@/components/StylistBlueprintReport';
+import StylistBlueprintReport, { type StylistImageUploadState } from '@/components/StylistBlueprintReport';
 import StylistOutfitEditor from '@/components/StylistOutfitEditor';
 import { measureImageSlotAspect } from '@/components/ImageCropDialog';
 import type { LegacyStylistBlueprintReportData, StylistBlueprintReportData } from '@/lib/stylistBlueprintGenerator';
@@ -76,6 +76,29 @@ interface GenerationStatus {
   label: string | null;
   progress: { done: number; total: number };
   message: string | null;
+}
+
+/** The URL a report image slot shows, read by walking its key ("application.outfitFlatlays.3"). */
+function imageUrlForSlot(urls: unknown, slotKey: string): string | null {
+  let node: unknown = urls;
+  for (const part of slotKey.split('.')) {
+    if (node == null || typeof node !== 'object') return null;
+    node = (node as Record<string, unknown>)[part];
+  }
+  return typeof node === 'string' ? node : null;
+}
+
+/** Resolves once the browser has the picture (or after a few seconds, whatever happens). */
+function preloadImage(url: string | null) {
+  if (!url) return Promise.resolve();
+  return new Promise<void>(resolve => {
+    const image = new Image();
+    const done = () => resolve();
+    image.onload = done;
+    image.onerror = done;
+    window.setTimeout(done, 8000);
+    image.src = url;
+  });
 }
 
 interface Report {
@@ -218,7 +241,19 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
   const [studioPanel, setStudioPanel] = useState<StudioPanel | null>(null);
   const [manualPrompts, setManualPrompts] = useState<ManualImagePrompt[]>([]);
   const [, setLoadingPrompts] = useState(false);
-  const [uploadingSlot, setUploadingSlot] = useState<StylistBlueprintImageSlotKey | null>(null);
+  // Pictures saving in the background, by slot. Saves (pictures and text) run
+  // one after another through saveQueueRef, because each one checks the report
+  // revision and two at once would trip "this report changed".
+  const [imageUploads, setImageUploads] = useState<Record<string, StylistImageUploadState & { file: File }>>({});
+  const imageUploadsRef = useRef(imageUploads);
+  imageUploadsRef.current = imageUploads;
+  const uploadsPending = Object.values(imageUploads).some(upload => upload.state === 'saving');
+  const saveQueueRef = useRef<Promise<unknown>>(Promise.resolve());
+  const runSerial = useCallback(<T,>(task: () => Promise<T>): Promise<T> => {
+    const run = saveQueueRef.current.then(task, task);
+    saveQueueRef.current = run.catch(() => undefined);
+    return run;
+  }, []);
   const [undoStack, setUndoStack] = useState<StylistBlueprintReportData[]>([]);
   const [printing, setPrinting] = useState(false);
   const unsavedEditsRef = useRef(false);
@@ -689,18 +724,22 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
       setError('Images can be uploaded once the report has finished generating.');
       return false;
     }
-    if (uploadingSlot || saving) {
-      setError(uploadingSlot ? 'Wait for the current image to finish uploading.' : 'Wait for your edits to finish saving.');
-      return false;
-    }
     if (!/^image\/(jpeg|png|webp)$/.test(file.type) || file.size === 0 || file.size > 8 * 1024 * 1024) {
       setError('Choose a JPG, PNG or WebP image smaller than 8 MB.');
       return false;
     }
-    if (!(await saveChangedPagesRef.current())) return false;
-    setUploadingSlot(slotKey);
+    // Show her picture in the slot now and save it in the background, so she
+    // can paste the next one straight away.
+    const preview = URL.createObjectURL(file);
+    setImageUploads(previous => {
+      const old = previous[slotKey];
+      if (old) URL.revokeObjectURL(old.preview);
+      return { ...previous, [slotKey]: { preview, state: 'saving', file } };
+    });
     setError('');
-    try {
+    const stillCurrent = (uploads: Record<string, { preview: string }>) => uploads[slotKey]?.preview === preview;
+    void runSerial(async () => {
+      if (!(await saveNowRef.current())) throw new Error('Your text edits could not be saved, so this photo was not saved either. Try again.');
       const form = new FormData();
       form.set('slotKey', slotKey);
       form.set('file', file);
@@ -712,33 +751,47 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
       }>(response);
       if (!response.ok) throw new Error(responseErrorMessage(data, 'Image upload failed'));
       if (data?.imageUrls && data.report?.updated_at) {
-        // Swap in the one new picture. Reloading the whole report here made
-        // every upload wait on three more requests.
+        // Swap in the one new picture, and take the new revision at once so the
+        // next save in the queue checks against it.
         const saved = data.report;
+        const previous = reportRef.current;
         lastReportUpdateRef.current = saved.updated_at;
-        setReport(prev => {
-          if (!prev) return prev;
-          const next = { ...prev, image_urls: data.imageUrls ?? prev.image_urls, revision: saved.revision, updated_at: saved.updated_at, status: saved.status ?? prev.status, section_approvals: saved.section_approvals ?? prev.section_approvals };
+        if (previous) {
+          const next = { ...previous, image_urls: data.imageUrls ?? previous.image_urls, revision: saved.revision, updated_at: saved.updated_at, status: saved.status ?? previous.status, section_approvals: saved.section_approvals ?? previous.section_approvals };
           reportRef.current = next;
-          return next;
-        });
+          setReport(next);
+        }
+        // Keep showing her picture until the saved copy has loaded, so the slot never flashes.
+        await preloadImage(imageUrlForSlot(data.imageUrls, slotKey));
       } else {
         await refreshGeneratedImages();
       }
+    }).then(() => {
+      setImageUploads(previous => {
+        if (!stillCurrent(previous)) return previous;
+        URL.revokeObjectURL(preview);
+        const { [slotKey]: _done, ...rest } = previous;
+        void _done;
+        return rest;
+      });
       // The image count badge can catch up in the background.
       void fetch(`/api/stylist-blueprint/status/${reportId}`, { cache: 'no-store' })
         .then(async statusResponse => { if (statusResponse.ok) setImageCounts((await statusResponse.json()).imageCounts ?? null); })
         .catch(() => {});
-      return true;
-    } catch (caught) {
-      setError(caught instanceof Error ? caught.message : 'Image upload failed');
-      return false;
-    } finally {
-      setUploadingSlot(null);
-    }
+    }, caught => {
+      const message = caught instanceof Error ? caught.message : 'Image upload failed';
+      setImageUploads(previous => stillCurrent(previous) ? { ...previous, [slotKey]: { ...previous[slotKey], state: 'failed', error: message } } : previous);
+      setError(message);
+    });
+    return true;
   };
 
-  const saveChangedPages = async () => {
+  const retryImageUpload = (slotKey: StylistBlueprintImageSlotKey) => {
+    const upload = imageUploadsRef.current[slotKey];
+    if (upload) void uploadManualImage(slotKey, upload.file);
+  };
+
+  const saveChangedPagesNow = async () => {
     if (saveInFlightRef.current || saveConflict) return false;
     if (!draftData || !hasUnsavedEdits) return true;
     saveInFlightRef.current = true;
@@ -746,7 +799,7 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
     setSaving(true);
     setError('');
     try {
-      const nextApprovals = { ...(report?.section_approvals ?? {}) };
+      const nextApprovals = { ...(reportRef.current?.section_approvals ?? {}) };
       for (const pageNumber of dirtyPages) nextApprovals[`p${pageNumber}`] = false;
       // The hair grid prompt is written from the saved hairstyles and face
       // shape, so the prompt on screen is stale once either changes.
@@ -761,8 +814,10 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
         body: JSON.stringify({
           report_data: draftData,
           page_approvals: nextApprovals,
-          expectedRevision: report?.revision ?? 0,
-          expectedUpdatedAt: report?.updated_at,
+          // From the ref, not this render: a picture saved just before this in
+          // the queue has already moved the revision on.
+          expectedRevision: reportRef.current?.revision ?? 0,
+          expectedUpdatedAt: reportRef.current?.updated_at,
         }),
       });
       const data = await readJsonBody<{ report?: Report; error?: string; invalidatedOutfitImages?: number[]; invalidatedHairImage?: boolean; outfitWarnings?: Array<{ outfit: number; warnings: string[] }> }>(res);
@@ -819,6 +874,10 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
       setSaving(false);
     }
   };
+  const saveNowRef = useRef(saveChangedPagesNow);
+  saveNowRef.current = saveChangedPagesNow;
+  /** Every save waits its turn behind pictures still saving. */
+  const saveChangedPages = () => runSerial(() => saveNowRef.current());
   saveChangedPagesRef.current = saveChangedPages;
 
   useEffect(() => {
@@ -829,7 +888,7 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
 
   useEffect(() => {
     const warnOnLeave = (event: BeforeUnloadEvent) => {
-      if (!unsavedEditsRef.current) return;
+      if (!unsavedEditsRef.current && !Object.values(imageUploadsRef.current).some(upload => upload.state === 'saving')) return;
       event.preventDefault();
       event.returnValue = '';
     };
@@ -846,9 +905,9 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
     return true;
   };
 
-  const busyReason = () => {
+  const busyReason = (includeUploads = true) => {
     if (saveConflict) return 'This report changed. Reload before continuing.';
-    if (uploadingSlot) return 'Uploading a report image.';
+    if (uploadsPending && includeUploads) return 'Saving report photos.';
     if (saving) return 'Saving edits first.';
     if (resumingText) return 'Continuing report generation.';
     if (report?.progress_stage || report?.status === 'generating') return 'Wait for the report to finish generating.';
@@ -2074,7 +2133,8 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
                 imageRegenerationDisabled={generatingImages || replacingOutfitPage !== null || replacingAllOutfits || regeneratingPalette || Boolean(report.progress_stage)}
                 imagePrompts={printing ? undefined : promptsBySlot}
                 onImageUpload={printing ? undefined : (slot, file) => uploadManualImage(slot, file)}
-                uploadingImageSlot={uploadingSlot}
+                imageUploads={printing ? undefined : imageUploads}
+                onRetryImageUpload={retryImageUpload}
               />
             </div>
           </div>
@@ -2190,10 +2250,11 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
             {studioPanel === 'outfit' && activePage && versioned && <StylistClientBrief reportId={reportId} />}
             {studioPanel === 'outfit' && activePage && versioned && (
               <StylistOutfitEditor key={activePageNumber} page={activeSourcePage!} onChange={handlePageChange}
-                saveError={error} onSave={() => saveChangedPagesRef.current()} busy={Boolean(currentBusyReason) && !saving} saving={saving} hasUnsavedEdits={hasUnsavedEdits}
-                imageUrl={activeRevisedOutfit
-                  ? report.image_urls?.revision?.outfitFlatlays?.[revisedOutfitSlotIndex(activePageNumber)] ?? null
-                  : report.image_urls?.application?.outfitFlatlays?.[activePageNumber - getStylistBlueprintOutfitStartPage(versioned)] ?? null}
+                saveError={error} onSave={() => saveChangedPagesRef.current()} busy={Boolean(busyReason(false)) && !saving} saving={saving} hasUnsavedEdits={hasUnsavedEdits}
+                imageUrl={imageUploads[activeRevisedOutfit ? revisedOutfitSlotKey(activePageNumber) : `application.outfitFlatlays.${activePageNumber - getStylistBlueprintOutfitStartPage(versioned)}`]?.preview
+                  ?? (activeRevisedOutfit
+                    ? report.image_urls?.revision?.outfitFlatlays?.[revisedOutfitSlotIndex(activePageNumber)] ?? null
+                    : report.image_urls?.application?.outfitFlatlays?.[activePageNumber - getStylistBlueprintOutfitStartPage(versioned)] ?? null)}
                 onParse={async text => {
                   // The parser reads the page from storage, so anything typed
                   // into the cards has to be saved before it is used as the base.
