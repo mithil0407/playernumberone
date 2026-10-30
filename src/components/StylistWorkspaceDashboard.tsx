@@ -289,7 +289,7 @@ export default function StylistWorkspaceDashboard({ admin = false, stylistSlug, 
     const detailUrl = admin ? `/stylist/admin/workspace/consultations/${item.id}` : `/stylist/${stylistSlug}/consultations/${item.id}`;
     const reportUrl = item.report ? admin ? `/stylist/admin/report/${item.report.id}` : `/stylist/${stylistSlug}/reports/${item.report.id}` : null;
     const nextAction = workspaceNextAction(item);
-    return { detailUrl, nextAction, primaryUrl: nextAction.target === 'report' && reportUrl ? reportUrl : detailUrl };
+    return { detailUrl, formUrl: `${detailUrl}#consultation-form`, nextAction, primaryUrl: view !== 'forms' && nextAction.target === 'report' && reportUrl ? reportUrl : detailUrl };
   };
   const stylistName = (item: WorkspaceQueueItem) => admin ? staff.find(person => person.id === item.stylistId)?.name || 'Unassigned' : null;
   const firstName = result?.stylist?.name?.split(' ')[0];
@@ -386,34 +386,37 @@ export default function StylistWorkspaceDashboard({ admin = false, stylistSlug, 
     {result && result.items.length > 0 && (asRows
       ? <section aria-label="Clients" aria-busy={busy} className="ma-card overflow-hidden" style={{ opacity: busy ? 0.7 : 1, transition: 'opacity .15s' }}>
         {result.items.map(item => {
-          const { primaryUrl, nextAction } = links(item);
-          return <Link key={item.id} prefetch={false} href={primaryUrl} className="group ma-row st-client-row">
+          const { primaryUrl, formUrl, nextAction } = links(item);
+          return <div key={item.id} className="group ma-row st-client-row">
             <div className="flex min-w-0 items-center gap-3">
               <Avatar name={item.clientName || 'Client'} />
               <div className="min-w-0">
-                <div className="truncate text-[15px]" style={{ fontWeight: 600 }} title={item.clientName}>{item.clientName || 'Unnamed client'}</div>
+                <Link prefetch={false} href={view === 'forms' ? formUrl : primaryUrl} className="block truncate text-[15px] hover:underline" style={{ fontWeight: 600 }} title={item.clientName}>{item.clientName || 'Unnamed client'}</Link>
                 <div className="ma-faint truncate text-[13px]">{[stylistName(item), item.clientPhone].filter(Boolean).join(' · ')}</div>
               </div>
             </div>
             <div className="justify-self-end md:justify-self-start"><StagePill item={item} /></div>
             <div className="ma-faint hidden whitespace-nowrap text-[13px] md:block">Consultation {dateLabel(item.consultationDate)}</div>
             <div className="hidden md:block"><DueLabel item={item} /></div>
-            {canRequestRevision(item)
+            <div className="flex flex-wrap items-center justify-end gap-2">
+              <Link prefetch={false} href={formUrl} className="ma-btn ma-btn--secondary ma-btn--sm" aria-label={`View form for ${item.clientName || 'client'}`}>View form</Link>
+              {canRequestRevision(item)
               ? <button
                   type="button"
                   onClick={event => { event.preventDefault(); event.stopPropagation(); setRevisionFor(item); }}
                   title="The client wants some looks changed. Choose them and write the new versions."
-                  className="ma-btn ma-btn--secondary ma-btn--sm hidden justify-self-end md:inline-flex"
+                  className="ma-btn ma-btn--secondary ma-btn--sm hidden md:inline-flex"
                 >
                   <MessageSquarePlus size={13} /> Revise report
                 </button>
-              : <span className="hidden items-center justify-end gap-1 whitespace-nowrap text-[13px] group-hover:underline md:inline-flex" style={{ fontWeight: 500 }}>{nextAction.label} <ArrowRight size={13} /></span>}
-          </Link>;
+              : view !== 'forms' && <Link prefetch={false} href={primaryUrl} className="hidden items-center gap-1 whitespace-nowrap text-[13px] hover:underline md:inline-flex" style={{ fontWeight: 500 }}>{nextAction.label} <ArrowRight size={13} /></Link>}
+            </div>
+          </div>;
         })}
       </section>
       : <section aria-label="Clients" aria-busy={busy} className="grid gap-3 md:grid-cols-2 xl:grid-cols-3" style={{ opacity: busy ? 0.7 : 1, transition: 'opacity .15s' }}>
         {result.items.map(item => {
-          const { detailUrl, primaryUrl, nextAction } = links(item);
+          const { detailUrl, formUrl, primaryUrl, nextAction } = links(item);
           const overdue = isOverdue(item);
           const revision = item.revision;
           const note = item.bucket === 'needs_inputs' ? waitingFor(item) : item.bucket === 'generating' ? 'Being prepared. You can work on another client meanwhile.' : '';
@@ -466,7 +469,7 @@ export default function StylistWorkspaceDashboard({ admin = false, stylistSlug, 
               >
                 Revise report
               </Button>}
-              {primaryUrl !== detailUrl && <Link prefetch={false} href={detailUrl} className="ma-btn ma-btn--ghost ma-btn--sm">Client details</Link>}
+              <Link prefetch={false} href={formUrl} className="ma-btn ma-btn--ghost ma-btn--sm" aria-label={`View form for ${item.clientName || 'client'}`}>View form</Link>
             </div>
           </article>;
         })}

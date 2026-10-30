@@ -78,7 +78,7 @@
 /* ── Workspace client rows and cards ───────────────────────────────────── */
 .st-client-row { grid-template-columns: minmax(0, 1fr) auto; }
 @media (min-width: 768px) {
-  .st-client-row { grid-template-columns: minmax(0, 1.6fr) 150px 170px 170px 150px; }
+  .st-client-row { grid-template-columns: minmax(0, 1.6fr) 150px 170px 140px minmax(200px, auto); }
 }
 .st-client-card {
   display: flex;

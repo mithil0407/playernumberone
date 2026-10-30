@@ -235,8 +235,8 @@ function queueItemCompleteness(item: WorkspaceQueueItem) {
 
 /**
  * One booking can be written more than once by retried checkout webhooks. Keep
- * the richest row for the same client and consultation time while preserving
- * legitimate repeat bookings on different dates.
+ * the richest row for the same client and consultation time. Saved forms are
+ * independent records: keep every one, including same-day consultations.
  */
 export function dedupeWorkspaceQueueItems(items: WorkspaceQueueItem[]) {
   const unique = new Map<string, WorkspaceQueueItem>();
@@ -253,7 +253,15 @@ export function dedupeWorkspaceQueueItems(items: WorkspaceQueueItem[]) {
       unique.set(key, item);
     }
   }
-  return [...unique.values()];
+  const result = [...unique.values()];
+  const ids = new Set(result.map(item => item.id));
+  for (const item of items) {
+    if (item.formCompleted && !ids.has(item.id)) {
+      result.push(item);
+      ids.add(item.id);
+    }
+  }
+  return result;
 }
 
 export function indiaDayEnd(now: number) {
