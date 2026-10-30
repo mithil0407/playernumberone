@@ -10,6 +10,7 @@ import {
 import { Avatar, Button, Pill } from '@/components/manAdmin/ui';
 import StylistManualDeliveryDialog from '@/components/StylistManualDeliveryDialog';
 import StylistUploadLinkActions from '@/components/StylistUploadLinkActions';
+import StylistSavedConsultationForm from '@/components/StylistSavedConsultationForm';
 import { inferMeasurementUnit } from '@/lib/consultationMeasurements';
 type Json = Record<string, unknown>;
 type PhotoKey = 'headshot' | 'full_body_front' | 'full_body_side' | 'one_outfit';
@@ -38,10 +39,6 @@ function Section({ title, hint, children }: { title: string; hint?: string; chil
     <div className="mb-4"><h2 className="ma-h2">{title}</h2>{hint && <p className="ma-faint mt-1 text-[13px]">{hint}</p>}</div>
     {children}
   </section>;
-}
-
-function Field({ label, value }: { label: string; value: unknown }) {
-  return <div className="grid gap-1 py-3 sm:grid-cols-[150px_1fr] sm:gap-3" style={{ borderTop: '1px solid var(--ma-line-2)' }}><p className="ma-faint text-[13px]" style={{ fontWeight: 500 }}>{label}</p><p className="whitespace-pre-line text-[14px] leading-6">{display(value)}</p></div>;
 }
 
 export default function ConsultationWorkspacePage({ params, adminMode = false }: { params: Promise<{ stylistSlug?: string; consultationId: string }>; adminMode?: boolean }) {
@@ -76,6 +73,9 @@ export default function ConsultationWorkspacePage({ params, adminMode = false }:
     });
     setLoading(false);
   }, [consultationId]);
+  useEffect(() => {
+    if (!loading && window.location.hash === '#consultation-form') document.getElementById('consultation-form')?.scrollIntoView();
+  }, [loading]);
   useEffect(() => { void load().catch(caught => { setError(caught instanceof Error ? caught.message : 'Load failed'); setLoading(false); }); }, [load]);
 
   const generate = async (newVersion = false) => {
@@ -150,7 +150,6 @@ export default function ConsultationWorkspacePage({ params, adminMode = false }:
     finally { setWorking(''); }
   };
 
-  const clientData = detail?.source.consultation.client_data ?? {};
   const latest = detail?.reports[0] ?? null;
   const photos = useMemo(() => [
     ['headshot', 'Headshot'], ['full_body_front', 'Full body · front'], ['full_body_side', 'Full body · side'], ['one_outfit', 'One outfit · optional'],
@@ -176,6 +175,7 @@ export default function ConsultationWorkspacePage({ params, adminMode = false }:
           </div>
         </div>
         <div className="flex flex-wrap gap-2">
+          <a href="#consultation-form" className="ma-btn ma-btn--secondary">View form</a>
           {latest ? <Link href={reportUrl(latest.id)} className="ma-btn ma-btn--dark">Continue report <ChevronRight size={15} /></Link>
             : <Button variant="primary" disabled={!detail.source.consultation.stylist_id || !detail.readiness.ready || Boolean(working)} loading={working === 'generate'} icon={<Sparkles size={15} />} onClick={() => void generate()}>Create report</Button>}
         </div>
@@ -248,24 +248,7 @@ export default function ConsultationWorkspacePage({ params, adminMode = false }:
               <Button variant="dark" onClick={() => void saveClientInputs()} disabled={!consultation.stylist_id || Boolean(working)} loading={working === 'inputs'} icon={<UploadCloud size={15} />}>{working === 'inputs' ? 'Saving inputs…' : 'Save measurements & photos'}</Button>
             </div>
           </Section>
-          <Section title="Client direction">
-            <div className="grid gap-x-8 md:grid-cols-2">
-              <div><Field label="Occupation" value={clientData.occupation} /><Field label="Aesthetics" value={clientData.aesthetics} /><Field label="Desired feeling" value={clientData.desiredFeelings} /><Field label="Occasions" value={clientData.occasions} /></div>
-              <div><Field label="Style goals" value={[clientData.styleGoal1, clientData.styleGoal2, clientData.styleGoal3].filter(Boolean)} /><Field label="Special goals" value={clientData.specialGoals} /><Field label="Upcoming events" value={clientData.upcomingEvents} /><Field label="Wardrobe challenge" value={clientData.wardrobeChallenge} /></div>
-            </div>
-          </Section>
-          <Section title="Body, coverage & boundaries">
-            <div className="grid gap-x-8 md:grid-cols-2">
-              <div><Field label="Body shape" value={clientData.bodyShape} /><Field label="Body concerns" value={[clientData.bodyConcerns, clientData.bodyConcernsOther].filter(Boolean)} /><Field label="Fit restrictions" value={[clientData.fitRestrictions, clientData.fitRestrictionsOther].filter(Boolean)} /><Field label="Modesty" value={[clientData.modestyPreference, clientData.modestyReason].filter(Boolean)} /></div>
-              <div><Field label="Boundaries" value={clientData.boundaries} /><Field label="Fabric restrictions" value={[clientData.fabricRestrictions, clientData.fabricsAvoided].filter(Boolean)} /><Field label="Cultural restrictions" value={clientData.culturalRestrictions} /><Field label="Height / weight" value={[clientData.height, clientData.weight].filter(Boolean)} /></div>
-            </div>
-          </Section>
-          <Section title="Style preferences">
-            <div className="grid gap-x-8 md:grid-cols-2">
-              <div><Field label="Western / Indian" value={clientData.outfitRatioPreference || clientData.outfitRatio} /><Field label="Go-to outfits" value={clientData.goToOutfits} /><Field label="Items loved" value={clientData.itemsLoved} /><Field label="Items avoided" value={[clientData.itemsHated, clientData.wardrobeLeastFavorites].filter(Boolean)} /><Field label="Footwear" value={clientData.footwear} /><Field label="Experimentation" value={clientData.styleExperimentation} /></div>
-              <div><Field label="Skin context" value={[clientData.skinTone, clientData.skinType, clientData.skinTint, clientData.sunReaction].filter(Boolean)} /><Field label="Colour preference" value={clientData.colorFamilyPreference} /><Field label="Metal preference" value={clientData.metalPreference} /><Field label="Hair" value={[clientData.hairType, clientData.hairChangeOpenness].filter(Boolean)} /></div>
-            </div>
-          </Section>
+          <StylistSavedConsultationForm data={consultation.client_data} clientName={consultation.client_name} clientPhone={consultation.client_phone} consultationDate={consultation.consultation_date} notes={consultation.notes} />
           <Section title="Your styling notes" hint="The report reads these when it is generated.">
             <textarea disabled={Boolean(working)} value={notes} onChange={event => setNotes(event.target.value)} placeholder="Anything the report should know? Add preferences, corrections or details from your conversation." className="ma-textarea min-h-44" />
             <div className="mt-4 flex flex-wrap gap-2">

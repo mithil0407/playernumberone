@@ -116,6 +116,15 @@ test('workspace shows one card for retried copies of the same consultation day',
   assert.deepEqual(result.map(item => item.id), ['duplicate-complete', 'later-booking']);
 });
 
+test('same-day deduplication never hides a saved consultation form', () => {
+  const first = workspaceQueueItem(queueRow({ id: 'first-form', form_occupation: 'Creative' }));
+  const second = workspaceQueueItem(queueRow({ id: 'second-form', form_occupation: 'Corporate' }));
+  const placeholder = workspaceQueueItem(queueRow({ id: 'imported-booking' }));
+  const items = dedupeWorkspaceQueueItems([first, second, placeholder]);
+  assert.deepEqual(new Set(queryWorkspaceItems(items, { view: 'forms' }).map(item => item.id)), new Set(['first-form', 'second-form']));
+  assert.equal(workspaceCounts(items).forms, 2);
+});
+
 test('reports to do includes ready and blocked work while excluding waiting and delivered clients', () => {
   const completeUpload = { photo_paths: requiredPhotos, measurements: { shoulders: 38, bust: 91, waist: 72, hips: 98 } };
   const items = [
