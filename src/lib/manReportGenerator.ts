@@ -16,7 +16,7 @@ import {
   type ManReportQaResult,
 } from './manReportQa';
 import { normaliseComboGridText } from './manComboGridSection';
-import { normaliseSequentialManOutfitNumbers } from './manOutfitSection';
+import { finaliseManSection4, normaliseSequentialManOutfitNumbers } from './manOutfitSection';
 import {
   describeManContextSplit,
   formatManOutfitLibraryForPrompt,
@@ -1634,7 +1634,7 @@ export async function generateSection4AtQualityFloor(
   const initial = currentSection4.trim() ? currentSection4 : await runSection4(classification, submission, currentSelectionSalt, overrides);
   const repaired = await repairSection4OutfitsUntilQaPass(classification, normaliseSequentialManOutfitNumbers(initial), 2, currentSelectionSalt, overrides);
   if (section4QaPassed(repaired.qa)) {
-    return { ...repaired, reselected: false, selectionSalt: currentSelectionSalt };
+    return { ...repaired, section4: finaliseManSection4(repaired.section4, classification.recommendation_profile), reselected: false, selectionSalt: currentSelectionSalt };
   }
 
   // Full regeneration attempts: a fresh library selection AND generation, each
@@ -1647,7 +1647,7 @@ export async function generateSection4AtQualityFloor(
     );
     const reselected = await repairSection4OutfitsUntilQaPass(classification, reselectedText, 2, selectionSalt, overrides);
     if (section4QaPassed(reselected.qa)) {
-      return { section4: reselected.section4, qa: reselected.qa, repaired: reselected.repaired, reselected: true, selectionSalt };
+      return { section4: finaliseManSection4(reselected.section4, classification.recommendation_profile), qa: reselected.qa, repaired: reselected.repaired, reselected: true, selectionSalt };
     }
     lastQa = reselected.qa;
   }

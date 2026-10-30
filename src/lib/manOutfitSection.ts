@@ -209,3 +209,40 @@ export function normaliseOutfitHeader(block: string, outfitNumber: number, conte
   if (headerPattern.test(block)) return block.replace(headerPattern, header).trim();
   return `${header}\n${block.trim()}`;
 }
+
+/**
+ * Plain grey sneakers look fake in outfit photos, so an unbranded grey pair is
+ * always written as grey Nike Air Force 1s (the writer doesn't reliably do it).
+ */
+export function nameManGreySneakers(s4Text: string): string {
+  return s4Text.replace(/^(\s*FOOTWEAR:\s*)([^\n]*)$/gim, (line, label: string, footwear: string) => {
+    if (!/\bgr[ae]y\b/i.test(footwear) || !/sneakers?|trainers?/i.test(footwear) || /nike|air force|af1|adidas|new balance|veja|common projects/i.test(footwear)) return line;
+    return `${label}${footwear.replace(/(?:(?:light|pale|mid|dark|charcoal)[-\s])?gr[ae]y\b[^—\n]*?\b(?:sneakers?|trainers?)/i, "Grey Nike Air Force 1 '07 low leather sneakers")}`;
+  });
+}
+
+const MAN_SUNGLASSES_CAP = 3;
+
+/**
+ * Fixed rules applied to the written outfits, because the writer doesn't always
+ * follow them: no pleats for a man who never wears them, grey sneakers named as
+ * Air Force 1s, and sunglasses on at most three looks (the first ones keep them).
+ */
+export function finaliseManSection4(s4Text: string, profile?: { never_pieces?: string[] } | null): string {
+  let text = nameManGreySneakers(s4Text);
+  if (profile?.never_pieces?.includes('pleated')) {
+    text = text.replace(/^(\s*BOTTOM:[^\n]*)$/gim, line => line
+      .replace(/\b(?:single|double|twin|forward|reverse)[-\s]pleat(?:ed)?\b/gi, 'flat-front')
+      .replace(/\bpleated\b/gi, 'flat-front')
+      .replace(/flat-front(\s+flat-front)+/gi, 'flat-front'));
+  }
+  let withSunglasses = 0;
+  text = text.replace(/^(\s*ACCESSOR(?:Y|IES):\s*)([^\n]*)$/gim, (line, label: string, value: string) => {
+    if (!/sunglass/i.test(value)) return line;
+    withSunglasses += 1;
+    if (withSunglasses <= MAN_SUNGLASSES_CAP) return line;
+    const kept = value.split(/\s*;\s*/).filter(part => !/sunglass/i.test(part)).join('; ').trim();
+    return `${label}${kept || 'Slim leather-strap watch'}`;
+  });
+  return text;
+}

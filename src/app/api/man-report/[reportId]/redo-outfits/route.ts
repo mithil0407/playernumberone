@@ -13,7 +13,12 @@ import type { ManIntakeSubmission } from '@/lib/supabaseMan';
 import type { ManReportImagePaths } from '@/lib/manImageGenerator';
 import { extractOutfitBlock, normaliseSequentialManOutfitNumbers, replaceOutfitBlock } from '@/lib/manOutfitSection';
 import { invalidateChangedOutfitImages } from '@/lib/manOutfitConsistency';
-import { usesManColourLock, type ManOutfitSelectionOverrides } from '@/lib/manOutfitLibrary';
+import {
+  MAN_OUTFIT_LIBRARY_PORTFOLIO_VERSION,
+  getManOutfitLibraryVersion,
+  usesManColourLock,
+  type ManOutfitSelectionOverrides,
+} from '@/lib/manOutfitLibrary';
 import { withManReportSection4Qa } from '@/lib/manReportQa';
 import { downvotedOutfitNumbers, loadManLookFeedbackTotals, loadManReportOutfitFeedback } from '@/lib/manOutfitFeedback';
 import { revalidateManReportCache } from '@/lib/manReportCache';
@@ -113,6 +118,18 @@ export async function POST(
   const previousOverrides = reportData.outfit_library?.selectionProfile?.overrides ?? {};
   const excluded = [...new Set([...(previousOverrides.excluded ?? []), ...downvotedLooks])];
 
+  // v5: replace only the 👎 outfits, with the head stylist choosing around the kept ones.
+  if (mode === 'downvoted' && getManOutfitLibraryVersion(classification) === MAN_OUTFIT_LIBRARY_PORTFOLIO_VERSION) {
+    if (!downvoted.length) return NextResponse.json({ error: 'No outfits are marked 👎 yet.' }, { status: 400 });
+    try {
+      const { replaceManReportOutfits } = await import('@/lib/manReportOutfitReplace');
+      return NextResponse.json(await replaceManReportOutfits(reportId, { replace: downvoted }));
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      return NextResponse.json({ error: `Outfit regeneration failed: ${message}` }, { status: 500 });
+    }
+  }
+
   let pinned: Record<string, number> = {};
   if (mode === 'downvoted') {
     if (!usesManColourLock(reportData.outfit_library?.version)) {
@@ -125,8 +142,17 @@ export async function POST(
       .filter(item => !downvoted.includes(item.outfitNumber))
       .map(item => [String(item.outfitNumber), item.libraryLookId]));
   }
-  const overrides: ManOutfitSelectionOverrides = { excluded, ...(Object.keys(pinned).length ? { pinned } : {}) };
+  let overrides: ManOutfitSelectionOverrides = { excluded, ...(Object.keys(pinned).length ? { pinned } : {}) };
   const selectionSalt = mode === 'downvoted' ? reportData.outfit_library?.selectionProfile?.selectionSalt ?? '' : '';
+  // v5 "rewrite all": the head stylist chooses a fresh portfolio (never the 👎 looks).
+  if (mode === 'all' && getManOutfitLibraryVersion(classification) === MAN_OUTFIT_LIBRARY_PORTFOLIO_VERSION) {
+    try {
+      const { runManHeadStylist } = await import('@/lib/manHeadStylist');
+      overrides = (await runManHeadStylist(classification, new Date(), { excluded })).overrides;
+    } catch (err) {
+      console.error(`[man-report] head stylist failed for ${reportId}; using the rule-based picks:`, err);
+    }
+  }
 
   let repaired;
   let comboGridText = reportData.sections?.s4_combo_grids ?? '';

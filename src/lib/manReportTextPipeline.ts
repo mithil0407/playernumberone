@@ -1,4 +1,4 @@
-import { usesManLibraryPortfolio } from '@/lib/manOutfitLibrary';
+import { MAN_OUTFIT_LIBRARY_PORTFOLIO_VERSION, getManOutfitLibraryVersion, usesManLibraryPortfolio } from '@/lib/manOutfitLibrary';
 import { invalidateChangedOutfitImages } from '@/lib/manOutfitConsistency';
 import {
   runClassification,
@@ -191,6 +191,19 @@ export async function runManReportTextPipeline(
     if (!hasText(sections.s4_outfits) || section4NeedsQa({ classification, sections: sections as ReportSections, generated_at: new Date().toISOString(), qa })) {
       currentStage = 'generating_s4';
       await updateStage(reportId, currentStage, shareToken);
+      // v5: the head stylist chooses his looks once; the choices are stored as
+      // pins so resumes, QA and redos all see the same portfolio.
+      if (getManOutfitLibraryVersion(classification) === MAN_OUTFIT_LIBRARY_PORTFOLIO_VERSION && !Object.keys(overrides.pinned ?? {}).length) {
+        try {
+          const { runManHeadStylist } = await import('@/lib/manHeadStylist');
+          const stylist = await runManHeadStylist(classification);
+          Object.assign(overrides, stylist.overrides);
+          if (stylist.dropped.length) console.warn(`[man-report] head stylist choices dropped for ${reportId}: ${stylist.dropped.join('; ')}`);
+          await writePartialData(reportId, shareToken, classification, sections, 'generating_s4', qa, selectionSalt, overrides);
+        } catch (error) {
+          console.error(`[man-report] head stylist failed for ${reportId}; using the rule-based picks:`, error);
+        }
+      }
       const section4Result = await generateSection4AtQualityFloor(classification, submission, sections.s4_outfits ?? '', selectionSalt, overrides);
       sections.s4_outfits = normaliseSequentialManOutfitNumbers(section4Result.section4);
       selectionSalt = section4Result.selectionSalt;
