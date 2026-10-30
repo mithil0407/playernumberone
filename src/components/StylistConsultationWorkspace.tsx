@@ -4,14 +4,15 @@ import { use, useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
-  ArrowLeft, Check, ChevronRight, Clock3, ImageIcon, Loader2, RefreshCw,
-  Save, Sparkles, UploadCloud,
+  ArrowLeft, Check, ChevronRight, Clock3, ImageIcon, Loader2, Minus, Plus, RefreshCw,
+  RotateCcw, Save, Sparkles, UploadCloud,
 } from 'lucide-react';
 import { Avatar, Button, Pill } from '@/components/manAdmin/ui';
 import StylistManualDeliveryDialog from '@/components/StylistManualDeliveryDialog';
 import StylistUploadLinkActions from '@/components/StylistUploadLinkActions';
 import StylistSavedConsultationForm from '@/components/StylistSavedConsultationForm';
 import { inferMeasurementUnit } from '@/lib/consultationMeasurements';
+import { OCCASION_LABELS, OUTFIT_OCCASIONS, type OccasionCounts } from '@/lib/stylistOccasionCounts';
 type Json = Record<string, unknown>;
 type PhotoKey = 'headshot' | 'full_body_front' | 'full_body_side' | 'one_outfit';
 type MeasurementKey = 'shoulders' | 'bust' | 'chest' | 'waist' | 'hips';
@@ -25,7 +26,10 @@ type Detail = {
   intake: (Json & { id: string; raw_consultation_notes?: string | null }) | null;
   uploadLink: { url: string | null; expiresAt: string | null } | null;
   reports: Array<{ id: string; status: string; progress_stage: string | null; error_message: string | null; section_approvals: Record<string, boolean>; created_at: string }>;
+  occasionPlan?: { total: number; suggested: OccasionCounts; saved: OccasionCounts | null };
 };
+
+const sameCounts = (a: OccasionCounts | null, b: OccasionCounts | null) => Boolean(a && b) && OUTFIT_OCCASIONS.every(occasion => a![occasion] === b![occasion]);
 
 function display(value: unknown): string {
   if (value === null || value === undefined || value === '') return '—';
@@ -55,6 +59,7 @@ export default function ConsultationWorkspacePage({ params, adminMode = false }:
   const [measurementValues, setMeasurementValues] = useState<Record<MeasurementKey, string>>({ shoulders: '', bust: '', chest: '', waist: '', hips: '' });
   const [manualOpen, setManualOpen] = useState(false);
   const [selectedPhotos, setSelectedPhotos] = useState<Partial<Record<PhotoKey, File>>>({});
+  const [occasionCounts, setOccasionCounts] = useState<OccasionCounts | null>(null);
 
   const load = useCallback(async (preserveNotes = false) => {
     const response = await fetch(`/api/stylist-workspace/consultations/${consultationId}`, { cache: 'no-store' });
@@ -62,6 +67,7 @@ export default function ConsultationWorkspacePage({ params, adminMode = false }:
     if (!response.ok) throw new Error(body.error || 'Could not load consultation');
     setDetail(body);
     if (!preserveNotes) setNotes(body.intake?.raw_consultation_notes || body.source.consultation.notes || '');
+    if (body.occasionPlan) setOccasionCounts(body.occasionPlan.saved ?? body.occasionPlan.suggested);
     const storedMeasurements = (body.source.upload?.measurements ?? {}) as Json;
     setMeasurementUnit(inferMeasurementUnit(storedMeasurements));
     setMeasurementValues({
@@ -83,6 +89,7 @@ export default function ConsultationWorkspacePage({ params, adminMode = false }:
     setWorking('generate'); setError('');
     try {
       await persistNotes();
+      if (occasionsDirty) await persistOccasionCounts(occasionCounts);
       const response = await fetch(`/api/stylist-workspace/consultations/${consultationId}/generate`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ newVersion }),
       });
@@ -102,6 +109,30 @@ export default function ConsultationWorkspacePage({ params, adminMode = false }:
     if (!response.ok) throw new Error(body.error || 'Could not save notes');
     setDetail(current => current ? { ...current, intake: body.intake } : current);
   };
+  const occasionPlan = detail?.occasionPlan ?? null;
+  const occasionTotal = occasionCounts ? OUTFIT_OCCASIONS.reduce((sum, occasion) => sum + occasionCounts[occasion], 0) : 0;
+  const occasionsDirty = Boolean(occasionPlan && occasionCounts && !sameCounts(occasionCounts, occasionPlan.saved ?? occasionPlan.suggested));
+  const persistOccasionCounts = async (counts: OccasionCounts | null) => {
+    if (counts && occasionPlan && OUTFIT_OCCASIONS.reduce((sum, occasion) => sum + counts[occasion], 0) !== occasionPlan.total) {
+      throw new Error(`Outfits per occasion must add up to ${occasionPlan.total}.`);
+    }
+    const response = await fetch(`/api/stylist-workspace/consultations/${consultationId}`, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      // Matching the suggestion is saved as "no choice", so later form changes still flow through.
+      body: JSON.stringify({ action: 'save_overrides', overrides: { outfit_occasion_counts: counts && occasionPlan && !sameCounts(counts, occasionPlan.suggested) ? counts : null } }),
+    });
+    const body = await response.json();
+    if (!response.ok) throw new Error(body.error || 'Could not save outfits per occasion');
+    setDetail(current => current?.occasionPlan ? { ...current, occasionPlan: { ...current.occasionPlan, saved: counts && !sameCounts(counts, current.occasionPlan.suggested) ? counts : null } } : current);
+  };
+  const saveOccasionCounts = async () => {
+    setWorking('occasions'); setError('');
+    try { await persistOccasionCounts(occasionCounts); }
+    catch (caught) { setError(caught instanceof Error ? caught.message : 'Save failed'); }
+    finally { setWorking(''); }
+  };
+  const stepOccasion = (occasion: keyof OccasionCounts, delta: number) => setOccasionCounts(current => current ? { ...current, [occasion]: Math.max(0, current[occasion] + delta) } : current);
+
   const saveNotes = async () => {
     setWorking('save'); setError('');
     try { await persistNotes(); }
@@ -249,6 +280,30 @@ export default function ConsultationWorkspacePage({ params, adminMode = false }:
             </div>
           </Section>
           <StylistSavedConsultationForm data={consultation.client_data} clientName={consultation.client_name} clientPhone={consultation.client_phone} consultationDate={consultation.consultation_date} notes={consultation.notes} />
+          {occasionPlan && occasionCounts && <Section title="Outfits per occasion" hint={`Suggested from what she ticked on the form and her upcoming events. Change the split before creating the report; it must add up to ${occasionPlan.total}.`}>
+            <div className="mb-3 flex flex-wrap items-center gap-2">
+              {occasionPlan.saved && !occasionsDirty ? <Pill tone="green" dot>Set by you</Pill> : !occasionsDirty ? <Pill dot>From her form</Pill> : <Pill tone="amber" dot>Unsaved changes</Pill>}
+              <span className="ma-num text-[13px]" style={{ fontWeight: 600, color: occasionTotal === occasionPlan.total ? 'var(--ma-green)' : 'var(--ma-red)' }}>{occasionTotal} of {occasionPlan.total} outfits</span>
+            </div>
+            <div className="grid gap-2 sm:grid-cols-2">
+              {OUTFIT_OCCASIONS.map(occasion => <div key={occasion} className="flex items-center justify-between gap-3 rounded-2xl px-4 py-2.5" style={{ border: '1px solid var(--ma-line)', background: occasionCounts[occasion] ? 'var(--ma-surface)' : 'var(--ma-surface-2)' }}>
+                <div className="min-w-0">
+                  <p className="truncate text-[14px]" style={{ fontWeight: 500, color: occasionCounts[occasion] ? 'var(--ma-ink)' : 'var(--ma-ink-3)' }}>{OCCASION_LABELS[occasion]}</p>
+                  {occasionPlan.suggested[occasion] !== occasionCounts[occasion] && <p className="ma-faint text-[12px]">Suggested {occasionPlan.suggested[occasion]}</p>}
+                </div>
+                <div className="flex shrink-0 items-center gap-1.5">
+                  <button type="button" aria-label={`One fewer ${OCCASION_LABELS[occasion]} outfit`} className="ma-btn ma-btn--ghost ma-btn--sm" style={{ padding: '0 10px' }} disabled={Boolean(working) || occasionCounts[occasion] === 0} onClick={() => stepOccasion(occasion, -1)}><Minus size={14} /></button>
+                  <span className="ma-num w-6 text-center text-[15px]" style={{ fontWeight: 600 }}>{occasionCounts[occasion]}</span>
+                  <button type="button" aria-label={`One more ${OCCASION_LABELS[occasion]} outfit`} className="ma-btn ma-btn--ghost ma-btn--sm" style={{ padding: '0 10px' }} disabled={Boolean(working) || occasionTotal >= occasionPlan.total} onClick={() => stepOccasion(occasion, 1)}><Plus size={14} /></button>
+                </div>
+              </div>)}
+            </div>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <Button variant="dark" onClick={() => void saveOccasionCounts()} disabled={!consultation.stylist_id || Boolean(working) || !occasionsDirty || occasionTotal !== occasionPlan.total} loading={working === 'occasions'} icon={<Save size={14} />}>Save outfits per occasion</Button>
+              {!sameCounts(occasionCounts, occasionPlan.suggested) && <Button variant="ghost" disabled={Boolean(working)} onClick={() => setOccasionCounts(occasionPlan.suggested)} icon={<RotateCcw size={14} />}>Use the suggestion</Button>}
+            </div>
+            {latest && <p className="ma-faint mt-3 text-[13px]">For a report already created, use “Regenerate all outfits” in the report editor after saving.</p>}
+          </Section>}
           <Section title="Your styling notes" hint="The report reads these when it is generated.">
             <textarea disabled={Boolean(working)} value={notes} onChange={event => setNotes(event.target.value)} placeholder="Anything the report should know? Add preferences, corrections or details from your conversation." className="ma-textarea min-h-44" />
             <div className="mt-4 flex flex-wrap gap-2">

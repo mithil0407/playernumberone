@@ -60,7 +60,7 @@ test('the engine sees the curated library and still knows every look', () => {
 
 test('pictures are studio shots of the look as written, redrawn when the words change', () => {
   const look: VerbatimLook = {
-    id: 'pinterest-34', source: 'pinterest', capsules: ['Professional'], ethnic: false,
+    id: 'pinterest-34', source: 'pinterest', capsules: ['Work'], ethnic: false,
     top: 'Light-blue chambray button-down shirt', layer: 'camel blazer', bottom: 'mid-blue straight-leg jeans',
     shoes: 'not visible', accessories: 'brown belt', styling: 'shirt tucked.',
   };

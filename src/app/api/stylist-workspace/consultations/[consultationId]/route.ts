@@ -11,6 +11,8 @@ import {
   signedConsultationPhotoUrls,
 } from '@/lib/stylistConsultationWorkspace';
 import { consultationUploadUrl } from '@/lib/consultationUploadLink';
+import { parseOccasionCounts, suggestOccasionCounts } from '@/lib/stylistOccasionCounts';
+import { STYLIST_BLUEPRINT_OUTFIT_COUNT } from '@/lib/stylistBlueprintSchema';
 
 export async function GET(
   _request: NextRequest,
@@ -26,7 +28,7 @@ export async function GET(
   const readiness = consultationReadiness(source);
   const [photoUrls, intakeResult, uploadLinkResult] = await Promise.all([
     signedConsultationPhotoUrls(source.upload?.photo_paths ?? {}),
-    supabaseAdmin.from('stylist_intake_responses').select('id, raw_consultation_notes')
+    supabaseAdmin.from('stylist_intake_responses').select('id, raw_consultation_notes, workspace_overrides')
       .eq('consultation_id', consultationId).maybeSingle(),
     supabaseAdmin.from('consultation_upload_links').select('token, expires_at')
       .eq('consultation_id', consultationId).maybeSingle(),
@@ -43,11 +45,20 @@ export async function GET(
       .order('created_at', { ascending: false })
     : { data: [], error: null };
   if (reportError) return NextResponse.json({ error: 'Could not load report history. Please retry.' }, { status: 500 });
+  // Outfits per occasion: suggested from her form answers, unless the stylist saved her own split.
+  const overrides = (intake?.workspace_overrides ?? {}) as Record<string, unknown>;
+  const lifestyle = (overrides.lifestyle_context as Record<string, unknown> | undefined) ?? consultationSourceToIntake(source).lifestyle_context;
+  const occasionPlan = {
+    total: STYLIST_BLUEPRINT_OUTFIT_COUNT,
+    suggested: suggestOccasionCounts({ lifestyle_context: lifestyle as Record<string, unknown> | null }, STYLIST_BLUEPRINT_OUTFIT_COUNT),
+    saved: parseOccasionCounts(overrides.outfit_occasion_counts, STYLIST_BLUEPRINT_OUTFIT_COUNT),
+  };
   return NextResponse.json({
     source,
     readiness,
     photoUrls,
-    intake,
+    intake: intake ? { id: intake.id, raw_consultation_notes: intake.raw_consultation_notes } : null,
+    occasionPlan,
     reports: reports ?? [],
     uploadLink: uploadLinkRow ? { url: uploadUrl, expiresAt: uploadLinkRow.expires_at } : null,
   });
@@ -91,7 +102,17 @@ export async function PATCH(
       'hair_context', 'skin_tone_self_description', 'raw_consultation_notes',
     ]);
     const patch = Object.fromEntries(Object.entries(body.overrides ?? {}).filter(([key]) => allowed.has(key)));
-    const nextOverrides = { ...((intake.workspace_overrides as Record<string, unknown> | null) ?? {}), ...patch };
+    const nextOverrides: Record<string, unknown> = { ...((intake.workspace_overrides as Record<string, unknown> | null) ?? {}), ...patch };
+    // Outfits per occasion live only in workspace_overrides; null goes back to the form's suggestion.
+    if (body.overrides && 'outfit_occasion_counts' in body.overrides) {
+      const value = body.overrides.outfit_occasion_counts;
+      if (value === null) delete nextOverrides.outfit_occasion_counts;
+      else {
+        const counts = parseOccasionCounts(value, STYLIST_BLUEPRINT_OUTFIT_COUNT);
+        if (!counts) return NextResponse.json({ error: `Outfits per occasion must add up to ${STYLIST_BLUEPRINT_OUTFIT_COUNT}.` }, { status: 400 });
+        nextOverrides.outfit_occasion_counts = counts;
+      }
+    }
     const { data, error } = await supabaseAdmin
       .from('stylist_intake_responses')
       .update({ ...patch, workspace_overrides: nextOverrides, updated_at: new Date().toISOString() })
