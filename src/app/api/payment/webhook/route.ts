@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse, after } from 'next/server';
+import { capturedSubscriptionChargeMatches } from '@/lib/razorpayPaymentVerification';
 import crypto from 'crypto';
 import { supabaseAdmin } from '@/lib/supabase';
 import { addCustomerToSheet } from '@/lib/googleSheets';
@@ -50,7 +51,6 @@ async function getAddOnsFromRazorpayOrder(razorpayOrderId: string): Promise<stri
     const orderDetails = await razorpay.orders.fetch(razorpayOrderId);
     const notes = orderDetails.notes || {};
 
-    console.log('Razorpay order notes:', JSON.stringify(notes, null, 2));
 
     // Build add-ons string from actual selection
     // Check both current naming (wardrobe_detox_addon) and legacy naming patterns
@@ -178,19 +178,11 @@ export async function POST(request: NextRequest) {
     // Get the raw body
     const body = await request.text();
 
-    // Log all headers for debugging
-    const headers = Object.fromEntries(request.headers.entries());
-    console.log('Webhook headers:', headers);
-    console.log('Request URL:', request.url);
-    console.log('Request method:', request.method);
-
     // Get Razorpay signature from headers
     const signature = request.headers.get('x-razorpay-signature');
 
     if (!signature) {
       console.log('No Razorpay signature found in headers');
-      console.log('Available headers:', Object.keys(headers));
-      console.log('This might be a test request or wrong webhook URL');
       return NextResponse.json({ status: 'error', message: 'No signature' }, { status: 400 });
     }
 
@@ -212,9 +204,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ status: 'error', message: 'Invalid signature' }, { status: 400 });
     }
 
-    // Log the raw body for debugging
-    console.log('Webhook raw body:', body);
-
     // Parse the webhook payload
     let webhookData;
     try {
@@ -225,7 +214,6 @@ export async function POST(request: NextRequest) {
     }
 
     console.log('Received Razorpay webhook event:', webhookData.event);
-    console.log('Webhook payload:', JSON.stringify(webhookData, null, 2));
 
     // Handle different webhook events
     const { event, payload } = webhookData;
@@ -286,7 +274,6 @@ export async function POST(request: NextRequest) {
 
       default:
         console.log(`Unhandled Razorpay webhook event: ${event}`);
-        console.log('Event payload:', payload);
     }
 
     // Always return 200 to acknowledge receipt
@@ -459,7 +446,7 @@ async function handlePaymentFailed(payment: RazorpayPayment) {
     const { order_id, error_code, error_description } = payment;
 
     // Update order status in database
-    const { error: updateError } = await supabaseAdmin
+    const { data: updatedFailedOrder, error: updateError } = await supabaseAdmin
       .from('orders')
       .update({
         status: 'failed',
@@ -467,11 +454,13 @@ async function handlePaymentFailed(payment: RazorpayPayment) {
         error_code,
         error_description
       })
-      .eq('razorpay_order_id', order_id);
+      .eq('razorpay_order_id', order_id)
+      .eq('status', 'pending')
+      .select('id').maybeSingle();
 
     if (updateError) {
       console.error('Error updating failed order:', updateError);
-    } else {
+    } else if (updatedFailedOrder) {
       console.log(`Order ${order_id} marked as failed`);
 
       const { data: failedOrder } = await supabaseAdmin
@@ -881,13 +870,9 @@ interface RazorpaySubscription {
   };
 }
 
-function generateTempPassword(length = 10): string {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
-  let result = '';
-  for (let i = 0; i < length; i++) {
-    result += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return result;
+function generateTempPassword(length = 20): string {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#$%';
+  return Array.from({ length }, () => chars[crypto.randomInt(chars.length)]).join('');
 }
 
 async function handleManEditSubscriptionEvent(
@@ -993,13 +978,16 @@ async function handleManEditSubscriptionEvent(
   return true;
 }
 
-async function handleSubscriptionActivated(subscription: RazorpaySubscription) {
+async function handleSubscriptionActivated(subscription: RazorpaySubscription, payment?: RazorpayPayment, paymentSubscriptionId?: string) {
   try {
     console.log('Subscription activated:', subscription.id);
 
     if (await handleManEditSubscriptionEvent('subscription.activated', subscription)) {
       return;
     }
+
+    // An activation event alone does not prove that a charge was captured.
+    if (!payment || payment.status !== 'captured') return;
 
     // 1. Update subscription status to active
     const { error: updateError } = await supabaseAdmin
@@ -1024,24 +1012,28 @@ async function handleSubscriptionActivated(subscription: RazorpaySubscription) {
     // 2. Fetch the subscription row to get customer details + DB id
     const { data: dbSub } = await supabaseAdmin
       .from('subscriptions')
-      .select('id, customer_email, customer_name, customer_phone')
+      .select('id, customer_email, customer_name, customer_phone, plan_id, amount, notes')
       .eq('razorpay_subscription_id', subscription.id)
       .single();
 
-    // Fallback to Razorpay notes if DB row not found
-    const customerEmail = dbSub?.customer_email ?? subscription.notes?.customer_email as string;
-    const customerName  = dbSub?.customer_name  ?? subscription.notes?.customer_name  as string ?? customerEmail?.split('@')[0];
-    const customerPhone = dbSub?.customer_phone ?? subscription.notes?.customer_phone as string ?? '';
-    const subscriptionDbId = dbSub?.id;
-
-    if (!customerEmail) {
-      console.error('No customer email found for subscription:', subscription.id);
+    if (!dbSub || !capturedSubscriptionChargeMatches({
+      paymentStatus: payment.status, paymentSubscriptionId,
+      subscriptionId: subscription.id, paymentAmount: payment.amount, savedAmount: dbSub.amount,
+      webhookPlanId: subscription.plan_id, savedPlanId: dbSub.plan_id,
+    })) {
+      console.error('Subscription charge does not match saved plan:', subscription.id);
       return;
     }
+    const customerEmail = dbSub.customer_email;
+    const customerName = dbSub.customer_name || customerEmail?.split('@')[0] || '';
+    const customerPhone = dbSub.customer_phone || '';
+    const subscriptionDbId = dbSub.id;
+    const profileTable = dbSub.notes === 'Iconik Club Men subscription' ? 'men_client_profiles' : 'client_profiles';
+    if (!customerEmail) return;
 
     // 3. Idempotency guard — skip if client_profile already exists for this email
     const { data: existingProfile } = await supabaseAdmin
-      .from('client_profiles')
+      .from(profileTable)
       .select('id')
       .eq('email', customerEmail)
       .maybeSingle();
@@ -1051,16 +1043,15 @@ async function handleSubscriptionActivated(subscription: RazorpaySubscription) {
       return;
     }
 
-    // 4. Create Supabase auth user with a temp password
     const tempPassword = generateTempPassword();
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
-      email:         customerEmail,
-      password:      tempPassword,
+      email: customerEmail,
+      password: tempPassword,
       email_confirm: true,
     });
 
     if (authError || !authData?.user) {
-      console.error('Error creating auth user for Iconik Club:', authError);
+      console.error('Error creating Club customer:', authError);
       return;
     }
 
@@ -1069,7 +1060,7 @@ async function handleSubscriptionActivated(subscription: RazorpaySubscription) {
 
     // 5. Create client_profile row
     const { error: profileError } = await supabaseAdmin
-      .from('client_profiles')
+      .from(profileTable)
       .insert({
         user_id:             userId,
         name:                customerName,
@@ -1085,8 +1076,8 @@ async function handleSubscriptionActivated(subscription: RazorpaySubscription) {
       console.log(`Client profile created for ${customerEmail}`);
     }
 
-    // 6. Send welcome email with credentials
     await sendIconikClubWelcomeEmail(customerName, customerEmail, tempPassword);
+
 
   } catch (error) {
     console.error('Error handling subscription activated:', error);
@@ -1099,6 +1090,33 @@ async function handleSubscriptionCharged(subscription: RazorpaySubscription, pay
     console.log('Payment details:', payment?.id);
 
     if (await handleManEditSubscriptionEvent('subscription.charged', subscription, payment)) {
+      return;
+    }
+
+    if (!payment?.id || !process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) return;
+    const { data: dbSub, error: subscriptionLookupError } = await supabaseAdmin
+      .from('subscriptions').select('*').eq('razorpay_subscription_id', subscription.id).maybeSingle();
+    if (subscriptionLookupError || !dbSub) return;
+    const razorpay = new Razorpay({
+      key_id: process.env.RAZORPAY_KEY_ID,
+      key_secret: process.env.RAZORPAY_KEY_SECRET,
+    });
+    const capturedPayment = await razorpay.payments.fetch(payment.id);
+    let chargeSubscriptionId = capturedPayment.subscription_id;
+    if (!chargeSubscriptionId && capturedPayment.invoice_id) {
+      const invoice = await razorpay.invoices.fetch(capturedPayment.invoice_id);
+      chargeSubscriptionId = (invoice as typeof invoice & { subscription_id?: string }).subscription_id;
+    }
+    if (!capturedSubscriptionChargeMatches({
+      paymentStatus: capturedPayment.status,
+      paymentSubscriptionId: chargeSubscriptionId,
+      subscriptionId: subscription.id,
+      paymentAmount: capturedPayment.amount,
+      savedAmount: dbSub.amount,
+      webhookPlanId: subscription.plan_id,
+      savedPlanId: dbSub.plan_id,
+    })) {
+      console.error('Subscription charge does not match saved plan:', subscription.id);
       return;
     }
 
@@ -1126,15 +1144,8 @@ async function handleSubscriptionCharged(subscription: RazorpaySubscription, pay
     } else {
       console.log(`Subscription ${subscription.id} charged successfully, next billing: ${updateData.next_billing_date}`);
 
-      const { data: dbSub } = await supabaseAdmin
-        .from('subscriptions')
-        .select('*')
-        .eq('razorpay_subscription_id', subscription.id)
-        .maybeSingle();
-
-      if (dbSub) {
-        const eventSuffix = payment?.id || `${subscription.paid_count ?? 'unknown'}:${subscription.current_start ?? Date.now()}`;
-        await recordRevenueEvent({
+      const eventSuffix = payment.id;
+      await recordRevenueEvent({
           eventKey: `subscriptions:${dbSub.id}:charge:${eventSuffix}`,
           sourceMarket: 'india',
           sourceTable: 'subscriptions',
@@ -1145,7 +1156,7 @@ async function handleSubscriptionCharged(subscription: RazorpaySubscription, pay
           customerEmail: dbSub.customer_email,
           customerName: dbSub.customer_name,
           customerPhone: dbSub.customer_phone,
-          amountMinor: payment?.amount ?? dbSub.amount,
+          amountMinor: Number(capturedPayment.amount),
           currency: dbSub.currency === 'USD' || dbSub.currency === 'AUD' ? dbSub.currency : 'INR',
           status: 'paid',
           paymentId: payment?.id,
@@ -1156,9 +1167,12 @@ async function handleSubscriptionCharged(subscription: RazorpaySubscription, pay
             : new Date().toISOString(),
           attribution: attributionFromRow(dbSub),
           metadata: { webhook_event: 'subscription.charged', paid_count: subscription.paid_count },
-        });
-      }
+      });
     }
+
+    await handleSubscriptionActivated(subscription, {
+      ...payment, status: 'captured', amount: Number(capturedPayment.amount),
+    }, chargeSubscriptionId);
 
   } catch (error) {
     console.error('Error handling subscription charged:', error);

@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
 
     if (!subscription?.id) throw new Error('Failed to create Razorpay subscription');
 
-    // Save to DB (non-blocking)
+    // A saved subscription is required before authorization can begin.
     try {
       const existingCustomer = await getCustomerByEmail(customer_email);
       let dbCustomerId = existingCustomer?.id;
@@ -84,7 +84,8 @@ export async function POST(request: NextRequest) {
         notes:                    'Iconik Club Men subscription',
       });
     } catch (dbError) {
-      console.error('DB save failed (non-fatal):', dbError);
+      console.error('Subscription DB save failed:', dbError);
+      return NextResponse.json({ success: false, error: 'Could not prepare your subscription. Please retry.' }, { status: 500 });
     }
 
     return NextResponse.json({

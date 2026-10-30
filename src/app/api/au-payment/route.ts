@@ -1,3 +1,4 @@
+import { priceForDedicatedCheckout } from '@/lib/checkoutPricing';
 import { NextRequest, NextResponse } from 'next/server';
 import { saveAUCustomer, saveAUOrder, supabaseAU } from '@/lib/supabaseAU';
 import { attributionToColumns, firstTouchAttribution } from '@/lib/attribution';
@@ -11,8 +12,13 @@ export async function POST(request: NextRequest) {
             customer_email,
             customer_phone,
             amount,
-            iconik_edit_addon = false,
         } = body;
+        if (body.iconik_edit_addon != null && typeof body.iconik_edit_addon !== 'boolean') {
+            return NextResponse.json({ error: 'Invalid add-on selection.' }, { status: 400 });
+        }
+        const iconik_edit_addon = body.iconik_edit_addon === true;
+        const expectedPrice = priceForDedicatedCheckout('au', iconik_edit_addon);
+        if (Number(amount) !== expectedPrice.amount) return NextResponse.json({ error: 'The checkout price changed. Please refresh and try again.' }, { status: 400 });
         const incomingAttribution = attributionToColumns(body.attribution);
 
         if (!customer_name || !customer_email || !customer_phone || !amount) {
@@ -65,7 +71,8 @@ export async function POST(request: NextRequest) {
             });
             dbOrderId = order.id!;
         } catch (err) {
-            console.log('AU Supabase not configured, using mock IDs:', err);
+            console.error('AU payment order save failed:', err);
+            return NextResponse.json({ error: 'Could not create your order. Please try again.' }, { status: 500 });
         }
 
         try {
@@ -100,14 +107,9 @@ export async function POST(request: NextRequest) {
                 throw new Error('Failed to create Razorpay order');
             }
 
-            // Defer Supabase update — don't block response
-            supabaseAU
-                .from('au_orders')
-                .update({ razorpay_order_id: razorpayOrder.id })
-                .eq('id', dbOrderId)
-                .then(({ error }) => {
-                    if (error) console.log('Failed to update AU order with Razorpay ID:', error);
-                });
+            const { error: updateIdError } = await supabaseAU
+                .from('au_orders').update({ razorpay_order_id: razorpayOrder.id }).eq('id', dbOrderId);
+            if (updateIdError) throw updateIdError;
 
             return NextResponse.json({
                 success: true,

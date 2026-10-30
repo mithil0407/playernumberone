@@ -1,3 +1,4 @@
+import { priceForCheckout } from '@/lib/checkoutPricing';
 import { NextRequest, NextResponse } from 'next/server';
 import { saveCustomer, saveOrder, supabaseAdmin, getCustomerByEmail } from '@/lib/supabase';
 import { attributionToColumns, firstTouchAttribution } from '@/lib/attribution';
@@ -15,7 +16,15 @@ import { recordCheckoutLead } from '@/lib/checkoutRecovery';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { customer_name, customer_email, customer_phone, amount, currency = 'INR', base_product, add_ons, total_base_price, diva_diet_plan_price, smart_shoppers_guide_price, outfit_preview_price, checkout_source, funnel_entry } = body;
+    const { customer_name, customer_email, customer_phone, amount, currency = 'INR', base_product, add_ons: rawAddOns, total_base_price, diva_diet_plan_price, smart_shoppers_guide_price, outfit_preview_price, checkout_source, funnel_entry } = body;
+    if (rawAddOns != null && (typeof rawAddOns !== 'object' || Array.isArray(rawAddOns) || Object.values(rawAddOns).some(value => typeof value !== 'boolean'))) {
+      return NextResponse.json({ success: false, error: 'Invalid add-on selection.' }, { status: 400 });
+    }
+    const add_ons = rawAddOns && typeof rawAddOns === 'object' && !Array.isArray(rawAddOns) ? rawAddOns : {};
+    const expectedPrice = priceForCheckout({ ...body, add_ons });
+    if (!expectedPrice || expectedPrice.amount <= 0 || Number(amount) !== expectedPrice.amount || currency !== expectedPrice.currency) {
+      return NextResponse.json({ success: false, error: 'The checkout price changed. Please refresh and try again.' }, { status: 400 });
+    }
     const linkedScan = typeof body.scan_token === 'string' && body.scan_token
       ? await getStyleScanByToken(body.scan_token, 'id, scan_status')
       : null;
@@ -122,7 +131,8 @@ export async function POST(request: NextRequest) {
 
       // Note: Google Sheets integration moved to webhook - only add data after payment completion
     } catch (error) {
-      console.log('Supabase not configured, using mock IDs:', error);
+      console.error('Payment order save failed:', error);
+      return NextResponse.json({ error: 'Could not create your order. Please try again.' }, { status: 500 });
     }
 
     try {
@@ -152,7 +162,7 @@ export async function POST(request: NextRequest) {
           diva_diet_plan_addon: add_ons.diva_diet_plan ? 'true' : 'false',
           smart_shoppers_guide_addon: add_ons.smart_shoppers_guide ? 'true' : 'false',
           outfit_preview_addon: add_ons.outfit_preview ? 'true' : 'false',
-          iconik_edit_subscription: add_ons.iconik_edit_subscription ? 'true' : 'false',
+          iconik_edit_subscription: 'false', // A separate verified subscription payment grants this entitlement.
           total_base_price: resolvedBasePrice,
           diva_diet_plan_price: diva_diet_plan_price,
           smart_shoppers_guide_price: resolvedSmartShopperPrice,
@@ -183,16 +193,14 @@ export async function POST(request: NextRequest) {
         .eq('id', dbOrderId);
 
       if (updateIdError) {
-        console.error('Failed to update order with Razorpay ID:', updateIdError);
+        throw updateIdError;
       }
 
-      // The payment window is about to open: if it is abandoned or fails, the
-      // recovery emails pick this lead up (recordCheckoutLead never throws).
       if (indiaCheckoutSource && dbOrderId !== 'mock-order-id') {
         await recordCheckoutLead({
           email: customer_email,
           phone: customer_phone,
-          whatsappOptIn: whatsappOptIn,
+          whatsappOptIn,
           checkoutSource: indiaCheckoutSource,
           topic: body.topic,
           addons: add_ons,

@@ -1,3 +1,4 @@
+import { verifyRazorpayOrderPayment } from '@/lib/razorpayPaymentVerification';
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAU } from '@/lib/supabaseAU';
 import { sendAUOrderConfirmationEmail } from '@/lib/email';
@@ -10,77 +11,52 @@ export async function POST(request: NextRequest) {
             db_order_id,
             razorpay_payment_id,
             razorpay_order_id,
+            razorpay_signature,
             // Customer details — passed from checkout handler for email
-            customer_name,
-            customer_email,
-            customer_phone,
-            amount,
-            has_edit_addon,
         } = await request.json();
 
-        if (!razorpay_payment_id) {
-            return NextResponse.json({ error: 'Missing payment ID' }, { status: 400 });
+        if (!razorpay_payment_id || !razorpay_order_id || !razorpay_signature) {
+            return NextResponse.json({ error: 'Missing payment proof' }, { status: 400 });
+        }
+        const { data: savedOrder, error: lookupError } = await supabaseAU
+            .from('au_orders').select('*').eq('razorpay_order_id', razorpay_order_id).maybeSingle();
+        if (lookupError || !savedOrder || (db_order_id && db_order_id !== 'mock-order-id' && savedOrder.id !== db_order_id)) {
+            return NextResponse.json({ error: 'Order not found' }, { status: 404 });
+        }
+        const verified = await verifyRazorpayOrderPayment({
+            paymentId: razorpay_payment_id, orderId: razorpay_order_id,
+            signature: razorpay_signature, order: savedOrder,
+        });
+        if (!verified) return NextResponse.json({ error: 'Payment could not be verified' }, { status: 403 });
+        if (savedOrder.status === 'paid') {
+            return NextResponse.json({ success: true, already_confirmed: true });
+        }
+        if (savedOrder.status !== 'pending') {
+            return NextResponse.json({ error: 'Order is not pending' }, { status: 409 });
         }
 
         let updatedOrder: Record<string, unknown> | null = null;
+        const { data: paidOrder, error: updateError } = await supabaseAU.from('au_orders')
+            .update({ status: 'paid', razorpay_payment_id })
+            .eq('id', savedOrder.id).eq('razorpay_order_id', razorpay_order_id)
+            .eq('status', 'pending').select('*').maybeSingle();
+        if (updateError) return NextResponse.json({ error: 'Failed to update order' }, { status: 500 });
+        if (!paidOrder) return NextResponse.json({ success: true, already_confirmed: true });
+        updatedOrder = paidOrder;
 
-        // Update by db_order_id if available, otherwise fall back to razorpay_order_id
-        if (db_order_id && db_order_id !== 'mock-order-id') {
-            const { data, error } = await supabaseAU
-                .from('au_orders')
-                .update({
-                    status: 'paid',
-                    razorpay_payment_id,
-                    // Persist customer details so the cron can access them later
-                    ...(customer_name && { customer_name }),
-                    ...(customer_phone && { customer_phone }),
-                })
-                .eq('id', db_order_id)
-                .select()
-                .single();
-
-            if (error) {
-                console.error('AU confirm payment error (by db_order_id):', error);
-                // Fall through to razorpay_order_id fallback
-            } else {
-                updatedOrder = data;
-            }
-        }
-
-        if (!updatedOrder && razorpay_order_id) {
-            const { data, error } = await supabaseAU
-                .from('au_orders')
-                .update({
-                    status: 'paid',
-                    razorpay_payment_id,
-                    ...(customer_name && { customer_name }),
-                    ...(customer_phone && { customer_phone }),
-                })
-                .eq('razorpay_order_id', razorpay_order_id)
-                .select()
-                .single();
-
-            if (error) {
-                console.error('AU confirm payment error (by razorpay_order_id):', error);
-                return NextResponse.json({ error: 'Failed to update order' }, { status: 500 });
-            }
-
-            updatedOrder = data;
-        }
-
-        if (updatedOrder && (db_order_id || razorpay_order_id)) {
+if (updatedOrder && (db_order_id || razorpay_order_id)) {
             await recordRevenueEvent({
-                eventKey: `au_orders:${db_order_id && db_order_id !== 'mock-order-id' ? db_order_id : razorpay_order_id}:payment:${razorpay_payment_id}`,
+                eventKey: `au_orders:${String(updatedOrder.id)}:payment:${razorpay_payment_id}`,
                 sourceMarket: 'au',
                 sourceTable: 'au_orders',
-                sourceId: db_order_id && db_order_id !== 'mock-order-id' ? db_order_id : razorpay_order_id,
+                sourceId: String(updatedOrder.id),
                 revenueKind: 'one_time',
                 eventType: 'one_time_payment',
                 productType: 'au_blueprint',
-                customerEmail: customer_email || String(updatedOrder.customer_email ?? ''),
-                customerName: customer_name || String(updatedOrder.customer_name ?? ''),
-                customerPhone: customer_phone || String(updatedOrder.customer_phone ?? ''),
-                amountMinor: toMinorUnits(amount ?? Number(updatedOrder.amount ?? 0)),
+                customerEmail: String(updatedOrder.customer_email ?? ''),
+                customerName: String(updatedOrder.customer_name ?? ''),
+                customerPhone: String(updatedOrder.customer_phone ?? ''),
+                amountMinor: toMinorUnits(Number(updatedOrder.amount ?? 0)),
                 currency: 'AUD',
                 status: 'paid',
                 paymentId: razorpay_payment_id,
@@ -91,12 +67,12 @@ export async function POST(request: NextRequest) {
         }
 
         // ── Send order confirmation email (fire-and-forget) ─────────────────
-        const emailTo = customer_email || String(updatedOrder?.customer_email ?? '');
+        const emailTo = String(updatedOrder?.customer_email ?? '');
         if (emailTo) {
-            const name = customer_name || String(updatedOrder?.customer_name ?? '') || emailTo.split('@')[0];
-            const phone = customer_phone || String(updatedOrder?.customer_phone ?? '');
-            const orderAmount = amount ?? Number(updatedOrder?.amount ?? 0);
-            const editAddon = has_edit_addon ?? Boolean(updatedOrder?.iconik_edit_addon);
+            const name = String(updatedOrder?.customer_name ?? '') || emailTo.split('@')[0];
+            const phone = String(updatedOrder?.customer_phone ?? '');
+            const orderAmount = Number(updatedOrder?.amount ?? 0);
+            const editAddon = Boolean(updatedOrder?.iconik_edit_addon);
 
             sendAUOrderConfirmationEmail({
                 customer_name: name,

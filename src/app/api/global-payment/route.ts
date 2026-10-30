@@ -1,3 +1,4 @@
+import { priceForDedicatedCheckout } from '@/lib/checkoutPricing';
 import { NextRequest, NextResponse } from 'next/server';
 import { saveGlobeCustomer, saveGlobeOrder, supabaseGlobe } from '@/lib/supabaseGlobe';
 import { saveStylistOrder, supabaseStyleScan } from '@/lib/supabaseStyleScan';
@@ -13,8 +14,13 @@ export async function POST(request: NextRequest) {
             customer_email,
             customer_phone,
             amount,
-            iconik_edit_addon = false,
         } = body;
+        if (body.iconik_edit_addon != null && typeof body.iconik_edit_addon !== 'boolean') {
+            return NextResponse.json({ error: 'Invalid add-on selection.' }, { status: 400 });
+        }
+        const iconik_edit_addon = body.iconik_edit_addon === true;
+        const expectedPrice = priceForDedicatedCheckout('global', iconik_edit_addon);
+        if (Number(amount) !== expectedPrice.amount) return NextResponse.json({ error: 'The checkout price changed. Please refresh and try again.' }, { status: 400 });
         const incomingAttribution = attributionToColumns(body.attribution);
 
         if (!customer_name || !customer_email || !customer_phone || !amount) {
@@ -84,7 +90,8 @@ export async function POST(request: NextRequest) {
             });
             stylistOrderId = stylistOrder.id!;
         } catch (err) {
-            console.log('Global Supabase error, using mock IDs:', err);
+            console.error('Global payment order save failed:', err);
+            return NextResponse.json({ error: 'Could not create your order. Please try again.' }, { status: 500 });
         }
 
         try {
@@ -127,7 +134,7 @@ export async function POST(request: NextRequest) {
                 .eq('id', dbOrderId);
 
             if (updateIdError) {
-                console.error('Failed to update global order with Razorpay ID:', updateIdError);
+                throw updateIdError;
             }
 
             if (stylistOrderId !== 'mock-stylist-order-id') {
@@ -137,7 +144,7 @@ export async function POST(request: NextRequest) {
                     .eq('id', stylistOrderId);
 
                 if (updateStylistIdError) {
-                    console.error('Failed to update mirrored stylist order with Razorpay ID:', updateStylistIdError);
+                    throw updateStylistIdError;
                 }
             }
 

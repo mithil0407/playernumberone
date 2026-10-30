@@ -1,3 +1,4 @@
+import { verifyRazorpayOrderPayment } from '@/lib/razorpayPaymentVerification';
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { sendManConfirmationEmail } from '@/lib/email';
@@ -25,50 +26,43 @@ export async function POST(request: NextRequest) {
       db_order_id,
       razorpay_payment_id,
       razorpay_order_id,
-      customer_email,
-      customer_phone,
-      amount,
-      has_outfit_preview,
+      razorpay_signature,
     } = await request.json();
 
-    if (!razorpay_payment_id) {
-      return NextResponse.json({ error: 'Missing payment ID' }, { status: 400 });
+    if (!razorpay_payment_id || !razorpay_order_id || !razorpay_signature) {
+        return NextResponse.json({ error: 'Missing payment proof' }, { status: 400 });
+    }
+    const { data: savedOrder, error: lookupError } = await supabaseAdmin
+        .from('orders').select('*').eq('razorpay_order_id', razorpay_order_id).maybeSingle();
+    if (lookupError || !savedOrder || (db_order_id && db_order_id !== 'mock-order-id' && savedOrder.id !== db_order_id)) {
+        return NextResponse.json({ error: 'Order not found' }, { status: 404 });
+    }
+    const verified = await verifyRazorpayOrderPayment({
+        paymentId: razorpay_payment_id, orderId: razorpay_order_id,
+        signature: razorpay_signature, order: savedOrder, expectedCurrency: 'USD',
+    });
+    if (!verified) return NextResponse.json({ error: 'Payment could not be verified' }, { status: 403 });
+    if (savedOrder.product_type !== 'man_blueprint_intl') return NextResponse.json({ error: 'Wrong checkout' }, { status: 403 });
+    if (savedOrder.status === 'paid' || savedOrder.status === 'completed') {
+        return NextResponse.json({ success: true, already_confirmed: true });
+    }
+    if (savedOrder.status !== 'pending') {
+        return NextResponse.json({ error: 'Order is not pending' }, { status: 409 });
     }
 
     let updatedOrder: Record<string, unknown> | null = null;
-
-    // Mark as paid (but NOT email_sent yet — we set that only after the email succeeds)
-    if (db_order_id && db_order_id !== 'mock-order-id') {
-      const { data, error } = await supabaseAdmin
-        .from('orders')
+    const { data: paidOrder, error: updateError } = await supabaseAdmin.from('orders')
         .update({ status: 'paid', razorpay_payment_id })
-        .eq('id', db_order_id)
-        .select('*, customers(name,email,phone)')
-        .single();
-
-      if (!error) updatedOrder = data;
-    }
-
-    if (!updatedOrder && razorpay_order_id) {
-      const { data, error } = await supabaseAdmin
-        .from('orders')
-        .update({ status: 'paid', razorpay_payment_id })
-        .eq('razorpay_order_id', razorpay_order_id)
-        .select('*, customers(name,email,phone)')
-        .single();
-
-      if (error) {
-        console.error('Man confirm payment (intl) DB error:', error);
-        // Non-fatal — still attempt to send the email below
-      } else {
-        updatedOrder = data;
-      }
-    }
+        .eq('id', savedOrder.id).eq('razorpay_order_id', razorpay_order_id)
+        .eq('status', 'pending').select('*, customers(name,email,phone)').maybeSingle();
+    if (updateError) return NextResponse.json({ error: 'Failed to update order' }, { status: 500 });
+    if (!paidOrder) return NextResponse.json({ success: true, already_confirmed: true });
+    updatedOrder = paidOrder;
 
     const relatedCustomer = firstCustomer(updatedOrder?.customers as CustomerRelation);
     const orderAttribution = attributionFromRow(updatedOrder);
-    const emailForTracking = customer_email || String(updatedOrder?.customer_email ?? relatedCustomer?.email ?? '');
-    const phoneForTracking = customer_phone || String(updatedOrder?.customer_phone ?? relatedCustomer?.phone ?? '');
+    const emailForTracking = String(relatedCustomer?.email ?? updatedOrder?.customer_email ?? '');
+    const phoneForTracking = String(relatedCustomer?.phone ?? updatedOrder?.customer_phone ?? '');
 
     if (updatedOrder && (db_order_id || razorpay_order_id)) {
       await recordRevenueEvent({
@@ -82,7 +76,7 @@ export async function POST(request: NextRequest) {
         customerEmail: emailForTracking,
         customerName: relatedCustomer?.name ?? null,
         customerPhone: phoneForTracking,
-        amountMinor: toMinorUnits(amount ?? Number(updatedOrder.amount ?? 0)),
+        amountMinor: toMinorUnits(Number(updatedOrder.amount ?? 0)),
         currency: 'USD',
         status: 'paid',
         paymentId: razorpay_payment_id,
@@ -91,13 +85,13 @@ export async function POST(request: NextRequest) {
         metadata: { source: 'man-confirm-payment' },
       });
 
-      const contentIds = [MAN_BLUEPRINT_PRODUCT_ID, ...(has_outfit_preview ? [MAN_OUTFIT_PREVIEW_PRODUCT_ID] : [])];
+      const contentIds = [MAN_BLUEPRINT_PRODUCT_ID, ...(String(updatedOrder.add_ons ?? '').includes('Outfit Preview') ? [MAN_OUTFIT_PREVIEW_PRODUCT_ID] : [])];
       await sendMetaPurchaseEvent({
         eventId: razorpay_payment_id,
         eventSourceUrl: 'https://www.iconik.pro/man/checkout',
         customerEmail: emailForTracking,
         customerPhone: phoneForTracking,
-        amount: Number(amount ?? updatedOrder.amount ?? 0),
+        amount: Number(updatedOrder.amount ?? 0),
         currency: 'USD',
         contentName: 'ICONIK Man Complete Package',
         contentIds,
@@ -112,9 +106,9 @@ export async function POST(request: NextRequest) {
     // Send confirmation email with USD symbol
     const emailTo = emailForTracking;
     if (emailTo) {
-      const phone = customer_phone || String(updatedOrder?.customer_phone ?? relatedCustomer?.phone ?? '');
-      const orderAmount = amount ?? Number(updatedOrder?.amount ?? 0);
-      const addOns = has_outfit_preview ? 'Outfit Preview on You' : String(updatedOrder?.add_ons ?? '');
+      const phone = phoneForTracking;
+      const orderAmount = Number(updatedOrder?.amount ?? 0);
+      const addOns = String(updatedOrder?.add_ons ?? '');
       const customerName = String(relatedCustomer?.name ?? emailTo.split('@')[0]);
 
       try {
