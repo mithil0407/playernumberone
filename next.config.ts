@@ -26,6 +26,7 @@ const nextConfig: NextConfig = {
   outputFileTracingIncludes: {
     '/api/stylist-blueprint/**': [
       './outfitlibrary.md',
+      './outfitlibrarytags.json',
       './src/lib/stylistOutfitLibrary.md',
       './src/lib/womenOutfitRecommendationSkill.md',
     ],
@@ -37,6 +38,7 @@ const nextConfig: NextConfig = {
     ],
     '/api/stylist-workspace/**': [
       './outfitlibrary.md',
+      './outfitlibrarytags.json',
       './src/lib/stylistOutfitLibrary.md',
       './src/lib/womenOutfitRecommendationSkill.md',
     ],

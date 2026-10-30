@@ -264,6 +264,14 @@ export function consultationIntakeDiff(current: ConsultationIntakeRecord, next: 
   });
 }
 
+/** Saved stylist choices that are not intake columns, such as the outfits per occasion. */
+const NON_COLUMN_OVERRIDES = new Set(['outfit_occasion_counts']);
+
+/** The overrides that replace intake columns; the rest stay inside workspace_overrides only. */
+export function intakeColumnOverrides(overrides: JsonRecord) {
+  return Object.fromEntries(Object.entries(overrides).filter(([key]) => !NON_COLUMN_OVERRIDES.has(key)));
+}
+
 export async function ensureConsultationIntake(input: {
   consultationId: string;
   stylistId: string;
@@ -288,7 +296,7 @@ export async function ensureConsultationIntake(input: {
   const overrides = record(existing?.workspace_overrides);
   const payload = {
     ...mapped,
-    ...overrides,
+    ...intakeColumnOverrides(overrides),
     workspace_overrides: overrides,
   };
 
